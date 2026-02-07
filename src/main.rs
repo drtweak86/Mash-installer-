@@ -1,4 +1,3 @@
-mod apt;
 mod argon;
 mod buildroot;
 mod config;
@@ -6,6 +5,7 @@ mod docker;
 mod doctor;
 mod fonts;
 mod github;
+mod pkg;
 mod platform;
 mod rclone;
 mod rust;
@@ -230,9 +230,9 @@ fn run_install(
     // ── Build phase list based on profile / flags ───────────────
     let mut phases: Vec<Phase> = vec![
         Phase {
-            label: "APT core packages",
-            done_msg: "APT core packages installed",
-            run: apt::install_phase,
+            label: "System packages",
+            done_msg: "System packages installed",
+            run: pkg::install_phase,
         },
         Phase {
             label: "Rust toolchain + cargo tools",

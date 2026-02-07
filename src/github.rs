@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use std::process::Command;
 
+use crate::pkg::PkgBackend;
 use crate::InstallContext;
 
 pub fn install_phase(ctx: &InstallContext) -> Result<()> {
@@ -12,9 +13,8 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
 }
 
 fn install_git(ctx: &InstallContext) -> Result<()> {
-    crate::apt::ensure_packages(&["git", "git-lfs"], ctx.dry_run)?;
+    crate::pkg::ensure_packages(&["git", "git-lfs"], ctx.dry_run)?;
 
-    // Enable git-lfs
     if !ctx.dry_run {
         let _ = Command::new("git").args(["lfs", "install"]).status();
     }
@@ -22,18 +22,33 @@ fn install_git(ctx: &InstallContext) -> Result<()> {
 }
 
 fn install_gh(ctx: &InstallContext) -> Result<()> {
-    if crate::apt::is_installed("gh") || which::which("gh").is_ok() {
+    if which::which("gh").is_ok() {
         tracing::info!("GitHub CLI (gh) already installed");
         return Ok(());
     }
 
+    let backend = crate::pkg::detect_backend();
+
+    match backend {
+        PkgBackend::Pacman => {
+            // On Arch/Manjaro gh is `github-cli` in community
+            crate::pkg::ensure_packages(&["gh"], ctx.dry_run)?;
+        }
+        PkgBackend::Apt => {
+            install_gh_apt(ctx)?;
+        }
+    }
+
+    Ok(())
+}
+
+fn install_gh_apt(ctx: &InstallContext) -> Result<()> {
     tracing::info!("Adding GitHub CLI repository");
     if ctx.dry_run {
         tracing::info!("[dry-run] would add gh apt repo and install gh");
         return Ok(());
     }
 
-    // Add gh repo per official instructions
     let keyring = "/etc/apt/keyrings/githubcli-archive-keyring.gpg";
     if !std::path::Path::new(keyring).exists() {
         let status = Command::new("sh")
@@ -61,15 +76,15 @@ fn install_gh(ctx: &InstallContext) -> Result<()> {
             .arg(format!("echo '{line}' | sudo tee {sources} > /dev/null"))
             .status()?;
 
-        crate::apt::update(false)?;
+        crate::pkg::update(false)?;
     }
 
-    crate::apt::ensure_packages(&["gh"], false)?;
+    crate::pkg::ensure_packages(&["gh"], false)?;
     Ok(())
 }
 
 fn install_ssh_tools(ctx: &InstallContext) -> Result<()> {
-    crate::apt::ensure_packages(&["openssh-client"], ctx.dry_run)?;
+    crate::pkg::ensure_packages(&["openssh-client"], ctx.dry_run)?;
     Ok(())
 }
 

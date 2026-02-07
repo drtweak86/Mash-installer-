@@ -9,8 +9,8 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
         return Ok(());
     }
 
-    // Try apt first
-    if try_apt(ctx)? {
+    // Try the system package manager first
+    if try_pkg(ctx)? {
         return Ok(());
     }
 
@@ -19,31 +19,25 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
     Ok(())
 }
 
-fn try_apt(ctx: &InstallContext) -> Result<bool> {
-    if crate::apt::is_installed("rclone") {
+fn try_pkg(ctx: &InstallContext) -> Result<bool> {
+    if crate::pkg::is_installed("rclone") {
         return Ok(true);
     }
 
-    tracing::info!("Attempting rclone install via apt");
+    tracing::info!("Attempting rclone install via package manager");
     if ctx.dry_run {
-        tracing::info!("[dry-run] would try apt install rclone");
+        tracing::info!("[dry-run] would try package manager install rclone");
         return Ok(true);
     }
 
-    let status = Command::new("sudo")
-        .args(["apt-get", "install", "-y", "--install-recommends", "rclone"])
-        .env("DEBIAN_FRONTEND", "noninteractive")
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .status();
-
-    match status {
-        Ok(s) if s.success() => {
-            tracing::info!("Installed rclone via apt");
+    // ensure_packages uses the right backend automatically
+    match crate::pkg::ensure_packages(&["rclone"], false) {
+        Ok(()) => {
+            tracing::info!("Installed rclone via package manager");
             Ok(true)
         }
-        _ => {
-            tracing::info!("rclone not in apt; will use official script");
+        Err(_) => {
+            tracing::info!("rclone not in repos; will use official script");
             Ok(false)
         }
     }

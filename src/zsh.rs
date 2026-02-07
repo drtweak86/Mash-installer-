@@ -16,7 +16,7 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
 }
 
 fn install_zsh(ctx: &InstallContext) -> Result<()> {
-    crate::apt::ensure_packages(&["zsh"], ctx.dry_run)?;
+    crate::pkg::ensure_packages(&["zsh"], ctx.dry_run)?;
     Ok(())
 }
 

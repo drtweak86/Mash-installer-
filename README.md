@@ -1,7 +1,11 @@
 # mash-installer
 
-Idempotent mega-installer for Raspberry Pi 4 / Ubuntu 24.04 arm64 dev machines.
-Also works on Ubuntu 22.04+ (amd64 or arm64).
+Idempotent mega-installer for Raspberry Pi 4 and Linux dev machines.
+
+**Supported distros:**
+- Ubuntu 22.04+ / Debian (apt)
+- Manjaro / Arch Linux / EndeavourOS (pacman)
+- amd64 and arm64 architectures
 
 ## Overview
 
@@ -10,6 +14,9 @@ A two-layer installer:
 1. **`bootstrap.sh`** – tiny bash script that installs minimal prerequisites,
    downloads the prebuilt `mash-setup` binary from GitHub Releases, and runs it.
 2. **`mash-setup`** – Rust binary that performs the full idempotent installation.
+
+The installer auto-detects your package manager (`apt` or `pacman`) and
+translates package names automatically.
 
 ## Quick start
 
@@ -54,20 +61,24 @@ mash-setup config show
 
 ## What gets installed
 
+Package names below use Debian conventions; on Arch-based distros the
+installer translates names automatically (e.g. `build-essential` → `base-devel`,
+`fd-find` → `fd`, `python3` → `python`).
+
 ### All profiles
-- **Build tools**: build-essential, pkg-config, clang, lld, cmake, ninja-build, gcc/g++, gdb, make
+- **Build tools**: build-essential / base-devel, pkg-config, clang, lld, cmake, ninja-build, gcc/g++, gdb, make
 - **Rust**: rustup + stable toolchain, rustfmt, clippy, rust-src
 - **Git**: git, git-lfs, gh (GitHub CLI), openssh-client
 
 ### Dev profile and above
 - **Cargo tools**: cargo-edit, cargo-watch, cargo-audit, bacon, just, sccache
 - **Buildroot deps**: bison, flex, gawk, texinfo, libncurses-dev, libssl-dev, bc, rsync, cpio, etc.
-- **Docker**: docker-ce, docker-ce-cli, containerd.io, docker-buildx-plugin, docker-compose-plugin
+- **Docker**: docker-ce / docker (Arch), docker-buildx, docker-compose
 - **Shell/UX**: zsh, oh-my-zsh (unattended), starship prompt
 - **Fonts**: Terminus, Noto Color Emoji
 - **AI/scripting tools**: python3 + venv + pip, ripgrep, fd-find, fzf, jq, yq
 - **Terminal**: tmux, htop, btop, ncdu, neovim, bat, eza
-- **rclone**: via apt or official script
+- **rclone**: via package manager or official script
 
 ### Full profile
 - Node.js + npm
@@ -76,6 +87,25 @@ mash-setup config show
 ### Optional (flag-gated)
 - **Ollama**: `--enable-ollama` (off by default on ARM)
 - **Argon One**: `--enable-argon` (Raspberry Pi 4 Argon One case fan control)
+
+## Distro-specific notes
+
+### Manjaro / Arch
+
+- Docker is installed from community repos (`docker`, `docker-buildx`, `docker-compose`).
+  No GPG key or third-party repo setup needed.
+- GitHub CLI is `github-cli` in community repos.
+- Packages that don't apply (`software-properties-common`, `apt-transport-https`,
+  `python3-venv`, etc.) are silently skipped.
+- `pacman -Sy` is run to sync the database.  A full `pacman -Syu` before
+  running the installer is recommended but not enforced.
+- `--needed` ensures pacman is idempotent (already-installed packages are skipped).
+
+### Ubuntu / Debian
+
+- Docker is installed from Docker's official apt repo (GPG key + sources list).
+- GitHub CLI is installed from GitHub's official apt repo.
+- All installs use `--install-recommends`.
 
 ## Configuration
 
@@ -125,9 +155,10 @@ gh auth login  # select SSH when prompted
 ## Idempotency
 
 Every phase checks before acting:
-- `dpkg -s` to verify packages are installed
+- `dpkg -s` / `pacman -Q` to verify packages are installed
 - `which` / file existence checks for binaries
 - Config files are backed up before overwriting
+- pacman uses `--needed` to skip installed packages
 
 Re-running `mash-setup install` is safe and will skip already-completed steps.
 
@@ -145,26 +176,26 @@ cross build --release --target aarch64-unknown-linux-gnu
 ## Project structure
 
 ```
-├── bootstrap.sh              # Layer 1: bash bootstrap
+├── bootstrap.sh              # Layer 1: bash bootstrap (apt + pacman)
 ├── Cargo.toml                # Rust project manifest
 ├── src/
-│   ├── main.rs               # CLI wiring (clap)
+│   ├── main.rs               # CLI wiring (clap) + phase orchestration
 │   ├── config.rs             # TOML config load/save
-│   ├── platform.rs           # Distro/arch/Pi detection
+│   ├── platform.rs           # Distro/arch/family/Pi detection
 │   ├── staging.rs            # Staging dir selection + space checks
-│   ├── apt.rs                # apt wrapper with idempotent checks
+│   ├── pkg.rs                # Package manager abstraction (apt + pacman)
 │   ├── rust.rs               # rustup + cargo tools
-│   ├── docker.rs             # Docker Engine install
+│   ├── docker.rs             # Docker Engine install (apt repo or pacman)
 │   ├── zsh.rs                # zsh + oh-my-zsh + starship
 │   ├── fonts.rs              # Font installation
-│   ├── github.rs             # Git, GitHub CLI, SSH
+│   ├── github.rs             # Git, GitHub CLI (apt repo or pacman), SSH
 │   ├── buildroot.rs          # Buildroot dependencies
 │   ├── rclone.rs             # rclone install
 │   ├── argon.rs              # Argon One (optional)
 │   └── doctor.rs             # System diagnostics
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml            # Build + test + lint
+│       ├── ci.yml            # Build + test + lint + shellcheck
 │       └── release.yml       # Release artifacts on tags
 └── README.md
 ```

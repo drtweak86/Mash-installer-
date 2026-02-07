@@ -22,6 +22,6 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
         "python3-venv",
     ];
 
-    crate::apt::ensure_packages(&pkgs, ctx.dry_run)?;
+    crate::pkg::ensure_packages(&pkgs, ctx.dry_run)?;
     Ok(())
 }

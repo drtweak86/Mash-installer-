@@ -21,6 +21,16 @@ pub fn run_doctor() -> Result<()> {
 
     println!();
 
+    // ── Package manager ──
+    section("Package manager");
+    if which::which("pacman").is_ok() {
+        println!("  Backend:       pacman (Arch-based)");
+    } else {
+        println!("  Backend:       apt (Debian-based)");
+    }
+
+    println!();
+
     // ── Disk space ──
     section("Disk space");
     let _ = Command::new("df")
@@ -53,10 +63,10 @@ pub fn run_doctor() -> Result<()> {
         ("tmux", "tmux -V"),
         ("neovim", "nvim --version"),
         ("ripgrep", "rg --version"),
-        ("fd", "fdfind --version"),
+        ("fd", "fd --version"),
         ("fzf", "fzf --version"),
         ("jq", "jq --version"),
-        ("bat", "batcat --version"),
+        ("bat", "bat --version"),
         ("just", "just --version"),
         ("sccache", "sccache --version"),
         ("bacon", "bacon --version"),

@@ -2,17 +2,33 @@ use anyhow::{Context, Result};
 use std::fs;
 use std::process::Command;
 
+use crate::pkg::PkgBackend;
 use crate::InstallContext;
 
 pub fn install_phase(ctx: &InstallContext) -> Result<()> {
-    if crate::apt::is_installed("docker-ce") {
-        tracing::info!("Docker CE already installed");
+    let backend = crate::pkg::detect_backend();
+
+    let already = match backend {
+        PkgBackend::Apt => crate::pkg::is_installed("docker-ce"),
+        PkgBackend::Pacman => crate::pkg::is_installed("docker"),
+    };
+
+    if already {
+        tracing::info!("Docker already installed");
     } else {
-        add_docker_repo(ctx)?;
-        install_docker_packages(ctx)?;
+        match backend {
+            PkgBackend::Apt => {
+                add_docker_apt_repo(ctx)?;
+                install_docker_apt(ctx)?;
+            }
+            PkgBackend::Pacman => {
+                install_docker_pacman(ctx)?;
+            }
+        }
     }
 
     add_user_to_docker_group(ctx)?;
+    enable_docker_service(ctx)?;
 
     if ctx.docker_data_root {
         configure_data_root(ctx)?;
@@ -21,14 +37,15 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
     Ok(())
 }
 
-fn add_docker_repo(ctx: &InstallContext) -> Result<()> {
+// ── APT path ────────────────────────────────────────────────────
+
+fn add_docker_apt_repo(ctx: &InstallContext) -> Result<()> {
     tracing::info!("Adding Docker official GPG key and repository");
     if ctx.dry_run {
         tracing::info!("[dry-run] would add Docker apt repo");
         return Ok(());
     }
 
-    // Add Docker's official GPG key
     let keyring = "/etc/apt/keyrings/docker.asc";
     if !std::path::Path::new(keyring).exists() {
         Command::new("sudo")
@@ -48,10 +65,8 @@ fn add_docker_repo(ctx: &InstallContext) -> Result<()> {
         }
     }
 
-    // Add the repository
     let sources_list = "/etc/apt/sources.list.d/docker.list";
     if !std::path::Path::new(sources_list).exists() {
-        // Detect arch and codename
         let arch_out = Command::new("dpkg").arg("--print-architecture").output()?;
         let arch = String::from_utf8_lossy(&arch_out.stdout).trim().to_string();
 
@@ -75,14 +90,13 @@ fn add_docker_repo(ctx: &InstallContext) -> Result<()> {
             .status()
             .context("writing docker sources list")?;
 
-        // Update apt after adding repo
-        crate::apt::update(false)?;
+        crate::pkg::update(false)?;
     }
 
     Ok(())
 }
 
-fn install_docker_packages(ctx: &InstallContext) -> Result<()> {
+fn install_docker_apt(ctx: &InstallContext) -> Result<()> {
     let pkgs = [
         "docker-ce",
         "docker-ce-cli",
@@ -90,8 +104,18 @@ fn install_docker_packages(ctx: &InstallContext) -> Result<()> {
         "docker-buildx-plugin",
         "docker-compose-plugin",
     ];
-    crate::apt::ensure_packages(&pkgs, ctx.dry_run)
+    crate::pkg::ensure_packages(&pkgs, ctx.dry_run)
 }
+
+// ── Pacman path ─────────────────────────────────────────────────
+
+fn install_docker_pacman(ctx: &InstallContext) -> Result<()> {
+    // On Arch/Manjaro, Docker is in the community repo
+    let pkgs = ["docker", "docker-buildx", "docker-compose"];
+    crate::pkg::ensure_packages(&pkgs, ctx.dry_run)
+}
+
+// ── Common ──────────────────────────────────────────────────────
 
 fn add_user_to_docker_group(ctx: &InstallContext) -> Result<()> {
     let user = std::env::var("SUDO_USER")
@@ -102,7 +126,6 @@ fn add_user_to_docker_group(ctx: &InstallContext) -> Result<()> {
         return Ok(());
     }
 
-    // Check if user is already in docker group
     let groups_out = Command::new("id").arg("-nG").arg(&user).output()?;
     let groups = String::from_utf8_lossy(&groups_out.stdout);
     if groups.split_whitespace().any(|g| g == "docker") {
@@ -125,6 +148,17 @@ fn add_user_to_docker_group(ctx: &InstallContext) -> Result<()> {
     Ok(())
 }
 
+fn enable_docker_service(ctx: &InstallContext) -> Result<()> {
+    if ctx.dry_run {
+        tracing::info!("[dry-run] would enable docker.service");
+        return Ok(());
+    }
+    let _ = Command::new("sudo")
+        .args(["systemctl", "enable", "--now", "docker.service"])
+        .status();
+    Ok(())
+}
+
 fn configure_data_root(ctx: &InstallContext) -> Result<()> {
     let daemon_json = std::path::Path::new("/etc/docker/daemon.json");
     let data_root = ctx.staging_dir.join("docker");
@@ -136,7 +170,6 @@ fn configure_data_root(ctx: &InstallContext) -> Result<()> {
 
     fs::create_dir_all(&data_root)?;
 
-    // Read existing or create new
     let mut config: serde_json::Value = if daemon_json.exists() {
         let text = fs::read_to_string(daemon_json)?;
         serde_json::from_str(&text).unwrap_or(serde_json::json!({}))
@@ -148,7 +181,6 @@ fn configure_data_root(ctx: &InstallContext) -> Result<()> {
 
     let content = serde_json::to_string_pretty(&config)?;
 
-    // Backup existing
     if daemon_json.exists() {
         let backup = daemon_json.with_extension("json.bak");
         fs::copy(daemon_json, &backup)?;
@@ -163,7 +195,6 @@ fn configure_data_root(ctx: &InstallContext) -> Result<()> {
         ))
         .status()?;
 
-    // Restart docker
     let _ = Command::new("sudo")
         .args(["systemctl", "restart", "docker"])
         .status();

@@ -3,10 +3,12 @@
 #  mash-installer bootstrap
 #
 #  Tiny bootstrap script that:
-#    1. Installs minimal prerequisites via apt.
+#    1. Installs minimal prerequisites via the system package manager.
 #    2. Downloads the prebuilt mash-setup binary from GitHub Releases.
 #    3. Verifies sha256 if a checksum file is available.
 #    4. Runs the installer.
+#
+#  Supports: Ubuntu/Debian (apt) and Manjaro/Arch (pacman).
 #
 #  Usage:
 #    curl -fsSL https://raw.githubusercontent.com/drtweak86/Mash-installer-/main/bootstrap.sh | bash
@@ -35,6 +37,17 @@ warn()  { echo -e "${YELLOW}[warn]${RESET}  $*"; }
 error() { echo -e "${RED}[error]${RESET} $*" >&2; }
 die()   { error "$@"; exit 1; }
 
+# ── detect package manager ──────────────────────────────────────
+detect_pkg_manager() {
+    if command -v pacman &>/dev/null; then
+        echo "pacman"
+    elif command -v apt-get &>/dev/null; then
+        echo "apt"
+    else
+        die "No supported package manager found (need apt or pacman)."
+    fi
+}
+
 # ── detect architecture ─────────────────────────────────────────
 detect_arch() {
     local arch
@@ -46,12 +59,11 @@ detect_arch() {
     esac
 }
 
-# ── install minimal deps ────────────────────────────────────────
-install_deps() {
-    info "Installing minimal prerequisites …"
+# ── install minimal deps (apt) ──────────────────────────────────
+install_deps_apt() {
+    info "Installing minimal prerequisites via apt …"
     local pkgs=(ca-certificates curl xz-utils tar coreutils git)
 
-    # jq is nice-to-have for release API parsing; not fatal if missing
     if ! command -v jq &>/dev/null; then
         pkgs+=(jq)
     fi
@@ -63,6 +75,32 @@ install_deps() {
         apt-get update -qq
         DEBIAN_FRONTEND=noninteractive apt-get install -y --install-recommends "${pkgs[@]}"
     fi
+}
+
+# ── install minimal deps (pacman) ───────────────────────────────
+install_deps_pacman() {
+    info "Installing minimal prerequisites via pacman …"
+    local pkgs=(ca-certificates curl xz tar coreutils git)
+
+    if ! command -v jq &>/dev/null; then
+        pkgs+=(jq)
+    fi
+
+    if command -v sudo &>/dev/null; then
+        sudo pacman -Sy --noconfirm --needed "${pkgs[@]}"
+    else
+        pacman -Sy --noconfirm --needed "${pkgs[@]}"
+    fi
+}
+
+# ── install minimal deps (dispatch) ─────────────────────────────
+install_deps() {
+    local mgr
+    mgr="$(detect_pkg_manager)"
+    case "$mgr" in
+        apt)    install_deps_apt ;;
+        pacman) install_deps_pacman ;;
+    esac
 }
 
 # ── find latest release tag ─────────────────────────────────────

@@ -70,6 +70,7 @@ pub fn run_doctor() -> Result<()> {
         ("just", "just --version"),
         ("sccache", "sccache --version"),
         ("bacon", "bacon --version"),
+        ("argononed", "argononed --version"),
     ];
 
     for (name, cmd_str) in &tools {

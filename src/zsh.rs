@@ -1,6 +1,8 @@
 use anyhow::{Context, Result};
-use std::path::PathBuf;
+use std::fmt::Write as _;
+use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::time::SystemTime;
 
 use crate::InstallContext;
 
@@ -8,10 +10,22 @@ fn home_dir() -> PathBuf {
     dirs::home_dir().unwrap_or_else(|| PathBuf::from("/root"))
 }
 
+/// System-wide install path for Powerlevel10k.
+const P10K_SYSTEM_DIR: &str = "/usr/share/powerlevel10k";
+/// The theme file that gets sourced in .zshrc.
+const P10K_THEME_FILE: &str = "/usr/share/powerlevel10k/powerlevel10k.zsh-theme";
+
 pub fn install_phase(ctx: &InstallContext) -> Result<()> {
     install_zsh(ctx)?;
     install_omz(ctx)?;
     install_starship(ctx)?;
+
+    if ctx.enable_p10k {
+        install_p10k(ctx)?;
+    } else {
+        tracing::info!("Powerlevel10k skipped (pass --enable-p10k to install)");
+    }
+
     Ok(())
 }
 
@@ -75,10 +89,170 @@ fn install_starship(ctx: &InstallContext) -> Result<()> {
         let content = std::fs::read_to_string(&zshrc).unwrap_or_default();
         if !content.contains("starship init zsh") {
             let addition = "\n# Starship prompt\neval \"$(starship init zsh)\"\n";
+            backup_file(&zshrc)?;
             std::fs::write(&zshrc, format!("{content}{addition}"))?;
             tracing::info!("Added starship init to .zshrc");
         }
     }
 
+    Ok(())
+}
+
+// ── Powerlevel10k ───────────────────────────────────────────────
+
+fn install_p10k(ctx: &InstallContext) -> Result<()> {
+    // 1. Try system package manager first (Arch has zsh-theme-powerlevel10k)
+    if try_p10k_pkg(ctx)? {
+        add_p10k_source_to_zshrc(ctx)?;
+        return Ok(());
+    }
+
+    // 2. Git-clone fallback to system-wide location
+    install_p10k_git(ctx)?;
+    add_p10k_source_to_zshrc(ctx)?;
+    Ok(())
+}
+
+/// Try installing Powerlevel10k via the system package manager.
+/// Returns true if it succeeded (or was already installed).
+fn try_p10k_pkg(ctx: &InstallContext) -> Result<bool> {
+    let backend = crate::pkg::detect_backend();
+
+    match backend {
+        crate::pkg::PkgBackend::Pacman => {
+            // Manjaro/Arch: available as `zsh-theme-powerlevel10k`
+            if crate::pkg::is_installed("zsh-theme-powerlevel10k")
+                || Path::new("/usr/share/zsh-theme-powerlevel10k").exists()
+            {
+                tracing::info!("Powerlevel10k already installed via package manager");
+                return Ok(true);
+            }
+            tracing::info!("Attempting Powerlevel10k install via pacman");
+            if ctx.dry_run {
+                tracing::info!("[dry-run] would install zsh-theme-powerlevel10k");
+                return Ok(true);
+            }
+            match crate::pkg::ensure_packages(&["zsh-theme-powerlevel10k"], false) {
+                Ok(()) => {
+                    tracing::info!("Installed Powerlevel10k via pacman");
+                    Ok(true)
+                }
+                Err(_) => {
+                    tracing::info!(
+                        "zsh-theme-powerlevel10k not in repos; falling back to git clone"
+                    );
+                    Ok(false)
+                }
+            }
+        }
+        crate::pkg::PkgBackend::Apt => {
+            // Not in standard Ubuntu/Debian repos
+            Ok(false)
+        }
+    }
+}
+
+/// Clone Powerlevel10k into the system-wide directory.
+fn install_p10k_git(ctx: &InstallContext) -> Result<()> {
+    let dest = Path::new(P10K_SYSTEM_DIR);
+
+    if dest.exists() {
+        tracing::info!("Powerlevel10k already present at {}", dest.display());
+        return Ok(());
+    }
+
+    tracing::info!("Cloning Powerlevel10k to {}", dest.display());
+    if ctx.dry_run {
+        tracing::info!(
+            "[dry-run] would git clone powerlevel10k to {}",
+            dest.display()
+        );
+        return Ok(());
+    }
+
+    let status = Command::new("sudo")
+        .args([
+            "git",
+            "clone",
+            "--depth=1",
+            "https://github.com/romkatv/powerlevel10k.git",
+            P10K_SYSTEM_DIR,
+        ])
+        .status()
+        .context("cloning powerlevel10k")?;
+
+    if !status.success() {
+        anyhow::bail!("Failed to clone Powerlevel10k");
+    }
+
+    tracing::info!("Powerlevel10k installed to {}", dest.display());
+    Ok(())
+}
+
+/// Add a guarded source block to the user's .zshrc if not already present.
+/// Backs up the file before modifying.
+fn add_p10k_source_to_zshrc(ctx: &InstallContext) -> Result<()> {
+    let zshrc = home_dir().join(".zshrc");
+
+    // Determine the theme file path.
+    // Arch pacman installs to /usr/share/zsh-theme-powerlevel10k/;
+    // our git-clone installs to /usr/share/powerlevel10k/.
+    let pacman_theme = "/usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme";
+    let source_marker = "powerlevel10k.zsh-theme";
+
+    if zshrc.exists() {
+        let content = std::fs::read_to_string(&zshrc).unwrap_or_default();
+        if content.contains(source_marker) {
+            tracing::info!("Powerlevel10k source already present in .zshrc");
+            return Ok(());
+        }
+    }
+
+    // Build a guarded source block that checks both possible locations
+    let mut block = String::new();
+    writeln!(block).unwrap();
+    writeln!(
+        block,
+        "# Powerlevel10k prompt theme (added by mash-installer)"
+    )
+    .unwrap();
+    writeln!(block, "if [ -f {pacman_theme} ]; then").unwrap();
+    writeln!(block, "  source {pacman_theme}").unwrap();
+    writeln!(block, "elif [ -f {P10K_THEME_FILE} ]; then").unwrap();
+    writeln!(block, "  source {P10K_THEME_FILE}").unwrap();
+    writeln!(block, "fi").unwrap();
+
+    if ctx.dry_run {
+        tracing::info!("[dry-run] would append Powerlevel10k source block to .zshrc");
+        return Ok(());
+    }
+
+    if zshrc.exists() {
+        backup_file(&zshrc)?;
+        let content = std::fs::read_to_string(&zshrc).unwrap_or_default();
+        std::fs::write(&zshrc, format!("{content}{block}"))?;
+    } else {
+        std::fs::write(&zshrc, block)?;
+    }
+
+    tracing::info!("Added Powerlevel10k source block to .zshrc");
+    Ok(())
+}
+
+// ── Helpers ─────────────────────────────────────────────────────
+
+/// Create a timestamped .bak copy of a file before modifying it.
+fn backup_file(path: &Path) -> Result<()> {
+    if !path.exists() {
+        return Ok(());
+    }
+    let ts = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    let backup = path.with_extension(format!("bak.{ts}"));
+    std::fs::copy(path, &backup)
+        .with_context(|| format!("backing up {} to {}", path.display(), backup.display()))?;
+    tracing::info!("Backed up {} → {}", path.display(), backup.display());
     Ok(())
 }

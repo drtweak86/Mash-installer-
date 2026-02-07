@@ -58,6 +58,10 @@ enum Commands {
         #[arg(long)]
         enable_argon: bool,
 
+        /// Enable Powerlevel10k zsh theme installation
+        #[arg(long)]
+        enable_p10k: bool,
+
         /// Set Docker data-root to staging_dir/docker
         #[arg(long)]
         docker_data_root: bool,
@@ -97,6 +101,7 @@ pub struct InstallContext {
     pub interactive: bool,
     pub enable_ollama: bool,
     pub enable_argon: bool,
+    pub enable_p10k: bool,
     pub docker_data_root: bool,
     pub mp: MultiProgress,
     /// Overall progress bar (% done + ETA).
@@ -166,6 +171,7 @@ fn main() -> Result<()> {
             interactive,
             enable_ollama,
             enable_argon,
+            enable_p10k,
             docker_data_root,
         } => {
             let profile_level = match profile {
@@ -181,6 +187,7 @@ fn main() -> Result<()> {
                 interactive,
                 enable_ollama,
                 enable_argon,
+                enable_p10k,
                 docker_data_root,
             )
         }
@@ -199,6 +206,7 @@ struct Phase {
     run: fn(&InstallContext) -> Result<()>,
 }
 
+#[allow(clippy::too_many_arguments)]
 fn run_install(
     profile: ProfileLevel,
     staging_dir_override: Option<PathBuf>,
@@ -206,6 +214,7 @@ fn run_install(
     interactive: bool,
     enable_ollama: bool,
     enable_argon: bool,
+    enable_p10k: bool,
     docker_data_root: bool,
 ) -> Result<()> {
     println!();
@@ -304,6 +313,7 @@ fn run_install(
         interactive,
         enable_ollama,
         enable_argon,
+        enable_p10k,
         docker_data_root,
         mp,
         overall,

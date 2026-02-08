@@ -55,7 +55,12 @@ detect_arch() {
     case "$arch" in
         aarch64|arm64) echo "aarch64-unknown-linux-gnu" ;;
         x86_64|amd64)  echo "x86_64-unknown-linux-gnu" ;;
-        *)             die "Unsupported architecture: $arch" ;;
+        armv7l|armhf)
+            die "Unsupported architecture: $arch (32-bit ARM). Switch to a 64-bit OS (aarch64) to run this installer."
+            ;;
+        *)
+            die "Unsupported architecture: $arch"
+            ;;
     esac
 }
 

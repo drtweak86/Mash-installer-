@@ -27,6 +27,13 @@ impl PlatformInfo {
 pub fn detect() -> Result<PlatformInfo> {
     let arch = std::env::consts::ARCH.to_string();
 
+    if arch.starts_with("arm") && arch != "aarch64" {
+        bail!(
+            "32-bit ARM ({arch}) is not supported; install a 64-bit (aarch64) \
+             image before running mash-setup. See docs/QAREPORT.md (Medium 6)."
+        );
+    }
+
     // Read /etc/os-release
     let os_release = fs::read_to_string("/etc/os-release").unwrap_or_default();
     let distro = parse_os_field(&os_release, "ID").unwrap_or_else(|| "unknown".into());

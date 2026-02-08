@@ -13,6 +13,25 @@ pub enum PkgBackend {
 }
 
 static PACMAN_SYNCED: AtomicBool = AtomicBool::new(false);
+pub trait PackageInstaller {
+    fn is_installed(&self, pkg: &str) -> bool;
+    fn update(&self, dry_run: bool) -> Result<()>;
+    fn ensure_packages(&self, pkgs: &[&str], dry_run: bool) -> Result<()>;
+    fn try_optional(&self, pkg: &str, dry_run: bool);
+}
+
+struct AptInstaller;
+struct PacmanInstaller;
+
+static APT_INSTALLER: AptInstaller = AptInstaller;
+static PACMAN_INSTALLER: PacmanInstaller = PacmanInstaller;
+
+fn installer_for(driver: &dyn DistroDriver) -> &'static dyn PackageInstaller {
+    match driver.pkg_backend() {
+        PkgBackend::Apt => &APT_INSTALLER,
+        PkgBackend::Pacman => &PACMAN_INSTALLER,
+    }
+}
 
 /// Auto-detect the system package manager.
 #[allow(dead_code)]
@@ -24,76 +43,26 @@ pub fn detect_backend() -> PkgBackend {
 
 /// Check whether a package is already installed.
 pub fn is_installed(driver: &dyn DistroDriver, pkg: &str) -> bool {
-    match driver.pkg_backend() {
-        PkgBackend::Apt => apt_is_installed(pkg),
-        PkgBackend::Pacman => {
-            let native = driver
-                .translate_package(pkg)
-                .unwrap_or_else(|| pkg.to_string());
-            pacman_is_installed(native.as_str())
-        }
-    }
+    installer_for(driver).is_installed(pkg)
 }
 
 /// Refresh the package database.
 pub fn update(driver: &dyn DistroDriver, dry_run: bool) -> Result<()> {
-    match driver.pkg_backend() {
-        PkgBackend::Apt => apt_update(dry_run),
-        PkgBackend::Pacman => ensure_pacman_synced(dry_run),
-    }
+    installer_for(driver).update(dry_run)
 }
 
 /// Install a list of packages idempotently.
 /// Names are given in Debian-canonical form; they are translated
 /// by the driver.
 pub fn ensure_packages(driver: &dyn DistroDriver, pkgs: &[&str], dry_run: bool) -> Result<()> {
-    let backend = driver.pkg_backend();
     let native = distro::translate_names(driver, pkgs);
     let native_refs: Vec<&str> = native.iter().map(String::as_str).collect();
-
-    match backend {
-        PkgBackend::Apt => apt_ensure(&native_refs, dry_run),
-        PkgBackend::Pacman => {
-            ensure_pacman_synced(dry_run)?;
-            pacman_ensure(&native_refs, dry_run)
-        }
-    }
+    installer_for(driver).ensure_packages(&native_refs, dry_run)
 }
 
 /// Best-effort install of a single optional package (never fatal).
 pub fn try_optional(driver: &dyn DistroDriver, pkg: &str, dry_run: bool) {
-    let backend = driver.pkg_backend();
-    let native = match driver.translate_package(pkg) {
-        Some(name) => name,
-        None => return,
-    };
-
-    if is_installed(driver, pkg) {
-        return;
-    }
-    if dry_run {
-        tracing::info!("[dry-run] would attempt optional: {native}");
-        return;
-    }
-
-    let status = match backend {
-        PkgBackend::Apt => Command::new("sudo")
-            .args(["apt-get", "install", "-y", "--install-recommends", &native])
-            .env("DEBIAN_FRONTEND", "noninteractive")
-            .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null())
-            .status(),
-        PkgBackend::Pacman => Command::new("sudo")
-            .args(["pacman", "-S", "--noconfirm", "--needed", &native])
-            .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null())
-            .status(),
-    };
-
-    match status {
-        Ok(s) if s.success() => tracing::info!("Installed optional package: {native}"),
-        _ => tracing::warn!("Optional package '{native}' not available; skipping"),
-    }
+    installer_for(driver).try_optional(pkg, dry_run);
 }
 
 // ── APT backend ─────────────────────────────────────────────────
@@ -227,6 +196,76 @@ fn pacman_ensure(pkgs: &[&str], dry_run: bool) -> Result<()> {
     Ok(())
 }
 
+impl PackageInstaller for AptInstaller {
+    fn is_installed(&self, pkg: &str) -> bool {
+        apt_is_installed(pkg)
+    }
+
+    fn update(&self, dry_run: bool) -> Result<()> {
+        apt_update(dry_run)
+    }
+
+    fn ensure_packages(&self, pkgs: &[&str], dry_run: bool) -> Result<()> {
+        apt_ensure(pkgs, dry_run)
+    }
+
+    fn try_optional(&self, pkg: &str, dry_run: bool) {
+        if self.is_installed(pkg) {
+            return;
+        }
+        if dry_run {
+            tracing::info!("[dry-run] would attempt optional: {pkg}");
+            return;
+        }
+
+        let status = Command::new("sudo")
+            .args(["apt-get", "install", "-y", "--install-recommends", pkg])
+            .env("DEBIAN_FRONTEND", "noninteractive")
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status();
+        match status {
+            Ok(s) if s.success() => tracing::info!("Installed optional package: {pkg}"),
+            _ => tracing::warn!("Optional package '{pkg}' not available; skipping"),
+        }
+    }
+}
+
+impl PackageInstaller for PacmanInstaller {
+    fn is_installed(&self, pkg: &str) -> bool {
+        pacman_is_installed(pkg)
+    }
+
+    fn update(&self, dry_run: bool) -> Result<()> {
+        ensure_pacman_synced(dry_run)
+    }
+
+    fn ensure_packages(&self, pkgs: &[&str], dry_run: bool) -> Result<()> {
+        ensure_pacman_synced(dry_run)?;
+        pacman_ensure(pkgs, dry_run)
+    }
+
+    fn try_optional(&self, pkg: &str, dry_run: bool) {
+        if self.is_installed(pkg) {
+            return;
+        }
+        if dry_run {
+            tracing::info!("[dry-run] would attempt optional: {pkg}");
+            return;
+        }
+
+        let status = Command::new("sudo")
+            .args(["pacman", "-S", "--noconfirm", "--needed", pkg])
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status();
+        match status {
+            Ok(s) if s.success() => tracing::info!("Installed optional package: {pkg}"),
+            _ => tracing::warn!("Optional package '{pkg}' not available; skipping"),
+        }
+    }
+}
+
 // ── Phase 1: core packages ─────────────────────────────────────
 
 pub fn install_phase(ctx: &InstallContext) -> Result<()> {
@@ -311,7 +350,10 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{driver::{RepoKind, ServiceName}, distro};
+    use crate::{
+        distro,
+        driver::{RepoKind, ServiceName},
+    };
 
     struct TestDriver;
 

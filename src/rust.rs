@@ -84,7 +84,6 @@ fn install_cargo_tools(ctx: &InstallContext) -> Result<()> {
         ("cargo-edit", "cargo-add"), // provides `cargo add`
         ("cargo-watch", "cargo-watch"),
         ("cargo-audit", "cargo-audit"),
-        ("cargo-maelstrom", "cargo-maelstrom"), // hermetic test runner
         ("bacon", "bacon"),
         ("just", "just"),
         ("sccache", "sccache"),

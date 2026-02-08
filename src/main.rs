@@ -15,7 +15,9 @@ mod zsh;
 use anyhow::Result;
 use clap::{Parser, Subcommand, ValueEnum};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use std::io::{self, IsTerminal, Write};
 use std::path::PathBuf;
+use std::process::Command;
 use tracing::info;
 
 /// Mash Installer – idempotent mega-installer for Raspberry Pi / Ubuntu dev machines.
@@ -208,14 +210,14 @@ struct Phase {
 
 #[allow(clippy::too_many_arguments)]
 fn run_install(
-    profile: ProfileLevel,
+    mut profile: ProfileLevel,
     staging_dir_override: Option<PathBuf>,
     dry_run: bool,
     interactive: bool,
-    enable_ollama: bool,
-    enable_argon: bool,
-    enable_p10k: bool,
-    docker_data_root: bool,
+    mut enable_ollama: bool,
+    mut enable_argon: bool,
+    mut enable_p10k: bool,
+    mut docker_data_root: bool,
 ) -> Result<()> {
     println!();
     println!("╔══════════════════════════════════════════════╗");
@@ -230,6 +232,24 @@ fn run_install(
     );
     if let Some(ref model) = plat.pi_model {
         info!("Raspberry Pi model: {}", model);
+    }
+
+    if interactive {
+        if let Some(selection) = prompt_install_menu(
+            profile,
+            enable_ollama,
+            enable_argon,
+            enable_p10k,
+            docker_data_root,
+            &plat,
+            dry_run,
+        )? {
+            profile = selection.profile;
+            enable_ollama = selection.enable_ollama;
+            enable_argon = selection.enable_argon;
+            enable_p10k = selection.enable_p10k;
+            docker_data_root = selection.docker_data_root;
+        }
     }
 
     let cfg = config::load_or_default()?;
@@ -362,4 +382,267 @@ fn run_install(
     println!();
 
     Ok(())
+}
+
+struct MenuSelection {
+    profile: ProfileLevel,
+    enable_ollama: bool,
+    enable_argon: bool,
+    enable_p10k: bool,
+    docker_data_root: bool,
+}
+
+fn prompt_install_menu(
+    profile: ProfileLevel,
+    enable_ollama: bool,
+    enable_argon: bool,
+    enable_p10k: bool,
+    docker_data_root: bool,
+    platform: &platform::PlatformInfo,
+    dry_run: bool,
+) -> Result<Option<MenuSelection>> {
+    if !io::stdin().is_terminal() || !io::stdout().is_terminal() {
+        tracing::info!("Interactive mode requested, but no TTY available; skipping menu");
+        return Ok(None);
+    }
+
+    if ensure_dialog_available(dry_run) {
+        let selected_profile = dialog_profile_menu(profile)?;
+        let (ollama, argon, p10k, data_root) = dialog_feature_menu(
+            enable_ollama,
+            enable_argon,
+            enable_p10k,
+            docker_data_root,
+            platform,
+        )?;
+
+        let mut sel = MenuSelection {
+            profile: selected_profile.unwrap_or(profile),
+            enable_ollama: ollama.unwrap_or(enable_ollama),
+            enable_argon: argon.unwrap_or(enable_argon),
+            enable_p10k: p10k.unwrap_or(enable_p10k),
+            docker_data_root: data_root.unwrap_or(docker_data_root),
+        };
+
+        if platform.pi_model.is_none() {
+            sel.enable_argon = false;
+        }
+
+        return Ok(Some(sel));
+    }
+
+    tracing::info!("dialog not available; falling back to text prompts");
+    text_prompt_menu(
+        profile,
+        enable_ollama,
+        enable_argon,
+        enable_p10k,
+        docker_data_root,
+        platform,
+    )
+}
+
+fn ensure_dialog_available(dry_run: bool) -> bool {
+    if which::which("dialog").is_ok() {
+        return true;
+    }
+    if dry_run {
+        return false;
+    }
+    if crate::pkg::ensure_packages(&["dialog"], false).is_ok() {
+        return which::which("dialog").is_ok();
+    }
+    false
+}
+
+fn dialog_profile_menu(current: ProfileLevel) -> Result<Option<ProfileLevel>> {
+    let default_min = if current == ProfileLevel::Minimal { "on" } else { "off" };
+    let default_dev = if current == ProfileLevel::Dev { "on" } else { "off" };
+    let default_full = if current == ProfileLevel::Full { "on" } else { "off" };
+
+    let output = Command::new("dialog")
+        .args([
+            "--stdout",
+            "--title",
+            "mash-setup",
+            "--radiolist",
+            "Select installation profile",
+            "12",
+            "70",
+            "3",
+            "minimal",
+            "Minimal (core tools + git)",
+            default_min,
+            "dev",
+            "Dev (full workstation)",
+            default_dev,
+            "full",
+            "Full (dev + extras)",
+            default_full,
+        ])
+        .output();
+
+    let out = match output {
+        Ok(o) if o.status.success() => String::from_utf8_lossy(&o.stdout).trim().to_string(),
+        _ => return Ok(None),
+    };
+
+    let selected = match out.as_str() {
+        "minimal" => Some(ProfileLevel::Minimal),
+        "dev" => Some(ProfileLevel::Dev),
+        "full" => Some(ProfileLevel::Full),
+        _ => None,
+    };
+
+    Ok(selected)
+}
+
+fn dialog_feature_menu(
+    enable_ollama: bool,
+    enable_argon: bool,
+    enable_p10k: bool,
+    docker_data_root: bool,
+    platform: &platform::PlatformInfo,
+) -> Result<(Option<bool>, Option<bool>, Option<bool>, Option<bool>)> {
+    let ollama_on = if enable_ollama { "on" } else { "off" };
+    let argon_on = if enable_argon { "on" } else { "off" };
+    let p10k_on = if enable_p10k { "on" } else { "off" };
+    let data_root_on = if docker_data_root { "on" } else { "off" };
+
+    let argon_label = if platform.pi_model.is_some() {
+        "Install Argon One fan control (Pi only)"
+    } else {
+        "Install Argon One fan control (Pi only, N/A)"
+    };
+
+    let output = Command::new("dialog")
+        .args([
+            "--stdout",
+            "--title",
+            "mash-setup",
+            "--checklist",
+            "Optional features",
+            "14",
+            "74",
+            "4",
+            "ollama",
+            "Install Ollama (off by default on ARM)",
+            ollama_on,
+            "argon",
+            argon_label,
+            argon_on,
+            "p10k",
+            "Install Powerlevel10k theme",
+            p10k_on,
+            "docker-data-root",
+            "Set Docker data-root to staging_dir/docker",
+            data_root_on,
+        ])
+        .output();
+
+    let out = match output {
+        Ok(o) if o.status.success() => String::from_utf8_lossy(&o.stdout).trim().to_string(),
+        _ => return Ok((None, None, None, None)),
+    };
+
+    let has = |tag: &str| out.split_whitespace().any(|t| t == tag);
+
+    Ok((
+        Some(has("ollama")),
+        Some(has("argon")),
+        Some(has("p10k")),
+        Some(has("docker-data-root")),
+    ))
+}
+
+fn text_prompt_menu(
+    profile: ProfileLevel,
+    enable_ollama: bool,
+    enable_argon: bool,
+    enable_p10k: bool,
+    docker_data_root: bool,
+    platform: &platform::PlatformInfo,
+) -> Result<Option<MenuSelection>> {
+    let current = match profile {
+        ProfileLevel::Minimal => "minimal",
+        ProfileLevel::Dev => "dev",
+        ProfileLevel::Full => "full",
+    };
+
+    let input_profile = prompt_line(
+        &format!(
+            "Profile [minimal/dev/full] (default: {}): ",
+            current
+        ),
+        current,
+    )?;
+
+    let selected_profile = match input_profile.as_str() {
+        "minimal" => ProfileLevel::Minimal,
+        "full" => ProfileLevel::Full,
+        _ => ProfileLevel::Dev,
+    };
+
+    let mut features = Vec::new();
+    if enable_ollama {
+        features.push("ollama");
+    }
+    if enable_argon {
+        features.push("argon");
+    }
+    if enable_p10k {
+        features.push("p10k");
+    }
+    if docker_data_root {
+        features.push("docker-data-root");
+    }
+    let default_features = if features.is_empty() {
+        "none".to_string()
+    } else {
+        features.join(",")
+    };
+
+    let input_features = prompt_line(
+        &format!(
+            "Optional features (comma-separated: ollama,argon,p10k,docker-data-root) [default: {}]: ",
+            default_features
+        ),
+        &default_features,
+    )?;
+
+    let mut has = |name: &str| input_features.split(',').map(|s| s.trim()).any(|s| s == name);
+
+    let mut selected = MenuSelection {
+        profile: selected_profile,
+        enable_ollama: has("ollama"),
+        enable_argon: has("argon"),
+        enable_p10k: has("p10k"),
+        docker_data_root: has("docker-data-root"),
+    };
+
+    if input_features.trim() == "none" {
+        selected.enable_ollama = false;
+        selected.enable_argon = false;
+        selected.enable_p10k = false;
+        selected.docker_data_root = false;
+    }
+
+    if platform.pi_model.is_none() {
+        selected.enable_argon = false;
+    }
+
+    Ok(Some(selected))
+}
+
+fn prompt_line(prompt: &str, default: &str) -> Result<String> {
+    print!("{prompt}");
+    io::stdout().flush()?;
+    let mut input = String::new();
+    io::stdin().read_line(&mut input)?;
+    let trimmed = input.trim();
+    if trimmed.is_empty() {
+        Ok(default.to_string())
+    } else {
+        Ok(trimmed.to_string())
+    }
 }

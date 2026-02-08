@@ -8,6 +8,7 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
     install_git(ctx)?;
     install_gh(ctx)?;
     install_ssh_tools(ctx)?;
+    remind_gh_auth_if_needed();
     print_ssh_notes();
     Ok(())
 }
@@ -86,6 +87,25 @@ fn install_gh_apt(ctx: &InstallContext) -> Result<()> {
 fn install_ssh_tools(ctx: &InstallContext) -> Result<()> {
     crate::pkg::ensure_packages(&["openssh-client"], ctx.dry_run)?;
     Ok(())
+}
+
+fn remind_gh_auth_if_needed() {
+    if which::which("gh").is_err() {
+        return;
+    }
+
+    let status = Command::new("gh")
+        .args(["auth", "status", "-h", "github.com"])
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status();
+
+    match status {
+        Ok(s) if s.success() => {}
+        _ => tracing::info!(
+            "GitHub CLI is not authenticated. Run `gh auth login` (select SSH) when you need GitHub access."
+        ),
+    }
 }
 
 fn print_ssh_notes() {

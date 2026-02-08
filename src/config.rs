@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 
 /// Central configuration persisted at ~/.config/mash-installer/config.toml
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct MashConfig {
     #[serde(default = "default_staging_dir")]
     pub staging_dir: PathBuf,
@@ -23,6 +24,7 @@ pub struct MashConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct AgentDirs {
     #[serde(default = "default_agent_larry")]
     pub larry: PathBuf,
@@ -33,6 +35,7 @@ pub struct AgentDirs {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct CacheDirs {
     #[serde(default = "default_cache_installer")]
     pub installer: PathBuf,
@@ -45,6 +48,7 @@ pub struct CacheDirs {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct DockerConfig {
     /// Optional custom data-root for Docker daemon.
     #[serde(default)]
@@ -55,6 +59,7 @@ pub struct DockerConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct GitConfig {
     /// Enforce SSH remotes (advisory – the installer will not rewrite remotes).
     #[serde(default = "bool_true")]

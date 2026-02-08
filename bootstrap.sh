@@ -87,9 +87,9 @@ install_deps_pacman() {
     fi
 
     if command -v sudo &>/dev/null; then
-        sudo pacman -Sy --noconfirm --needed "${pkgs[@]}"
+        sudo pacman -Syu --noconfirm --needed "${pkgs[@]}"
     else
-        pacman -Sy --noconfirm --needed "${pkgs[@]}"
+        pacman -Syu --noconfirm --needed "${pkgs[@]}"
     fi
 }
 

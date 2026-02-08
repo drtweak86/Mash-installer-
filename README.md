@@ -46,7 +46,6 @@ mash-setup install [OPTIONS]
     --staging-dir <PATH>           Override staging directory
     --dry-run                      Print what would happen without executing
     --interactive                  Enable interactive prompts
-    --enable-ollama                Install Ollama (off by default on ARM)
     --enable-argon                 Install Argon One fan scripts
     --docker-data-root             Set Docker data-root to staging_dir/docker
 
@@ -94,8 +93,8 @@ installer translates names automatically (e.g. `build-essential` → `base-devel
 - flamegraph (cargo)
 
 ### Optional (flag-gated)
-- **Ollama**: `--enable-ollama` (off by default on ARM)
 - **Argon One**: `--enable-argon` (Raspberry Pi 4 Argon One case fan control)
+- **Docker data-root**: `--docker-data-root`
 
 ## Distro-specific notes
 
@@ -106,8 +105,7 @@ installer translates names automatically (e.g. `build-essential` → `base-devel
 - GitHub CLI is `github-cli` in community repos.
 - Packages that don't apply (`software-properties-common`, `apt-transport-https`,
   `python3-venv`, etc.) are silently skipped.
-- `pacman -Sy` is run to sync the database.  A full `pacman -Syu` before
-  running the installer is recommended but not enforced.
+- `pacman -Syu` is run to sync the database and avoid partial-upgrade issues.
 - `--needed` ensures pacman is idempotent (already-installed packages are skipped).
 
 ### Ubuntu / Debian
@@ -141,6 +139,9 @@ compose_plugin = true
 [git]
 enforce_ssh = true
 ```
+
+If `docker.data_root` is set, the installer will configure Docker to use that path.
+The `--docker-data-root` flag overrides the config and uses `staging_dir/docker`.
 
 ### Staging directory
 
@@ -212,4 +213,3 @@ cross build --release --target aarch64-unknown-linux-gnu
 ## License
 
 MIT
-

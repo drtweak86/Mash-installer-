@@ -30,8 +30,13 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
     add_user_to_docker_group(ctx)?;
     enable_docker_service(ctx)?;
 
-    if ctx.docker_data_root {
-        configure_data_root(ctx)?;
+    let desired_data_root = if ctx.docker_data_root {
+        Some(ctx.staging_dir.join("docker"))
+    } else {
+        ctx.config.docker.data_root.clone()
+    };
+    if let Some(data_root) = desired_data_root {
+        configure_data_root(ctx, &data_root)?;
     }
 
     Ok(())
@@ -46,6 +51,7 @@ fn add_docker_apt_repo(ctx: &InstallContext) -> Result<()> {
         return Ok(());
     }
 
+    let repo_os = docker_repo_os(ctx)?;
     let keyring = "/etc/apt/keyrings/docker.asc";
     if !std::path::Path::new(keyring).exists() {
         Command::new("sudo")
@@ -56,7 +62,7 @@ fn add_docker_apt_repo(ctx: &InstallContext) -> Result<()> {
         let status = Command::new("sh")
             .arg("-c")
             .arg(format!(
-                "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo tee {keyring} > /dev/null && sudo chmod a+r {keyring}"
+                "curl -fsSL https://download.docker.com/linux/{repo_os}/gpg | sudo tee {keyring} > /dev/null && sudo chmod a+r {keyring}"
             ))
             .status()
             .context("downloading Docker GPG key")?;
@@ -77,9 +83,12 @@ fn add_docker_apt_repo(ctx: &InstallContext) -> Result<()> {
         let codename = String::from_utf8_lossy(&codename_out.stdout)
             .trim()
             .to_string();
+        if codename.is_empty() {
+            anyhow::bail!("Unable to determine distro codename for Docker repo setup");
+        }
 
         let repo_line = format!(
-            "deb [arch={arch} signed-by={keyring}] https://download.docker.com/linux/ubuntu {codename} stable"
+            "deb [arch={arch} signed-by={keyring}] https://download.docker.com/linux/{repo_os} {codename} stable"
         );
 
         Command::new("sh")
@@ -94,6 +103,17 @@ fn add_docker_apt_repo(ctx: &InstallContext) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn docker_repo_os(ctx: &InstallContext) -> Result<&'static str> {
+    match ctx.platform.distro.as_str() {
+        "ubuntu" | "linuxmint" | "pop" => Ok("ubuntu"),
+        "debian" | "raspbian" => Ok("debian"),
+        other if ctx.platform.distro_family == "debian" => {
+            anyhow::bail!("Unsupported Debian-family distro '{other}' for Docker repo setup")
+        }
+        other => anyhow::bail!("Unsupported distro '{other}' for Docker repo setup"),
+    }
 }
 
 fn install_docker_apt(ctx: &InstallContext) -> Result<()> {
@@ -159,11 +179,11 @@ fn enable_docker_service(ctx: &InstallContext) -> Result<()> {
     Ok(())
 }
 
-fn configure_data_root(ctx: &InstallContext) -> Result<()> {
+fn configure_data_root(ctx: &InstallContext, data_root: &std::path::Path) -> Result<()> {
     let daemon_json = std::path::Path::new("/etc/docker/daemon.json");
-    let data_root = ctx.staging_dir.join("docker");
 
     tracing::info!("Configuring Docker data-root to {}", data_root.display());
+    crate::staging::ensure_space_for_path(data_root)?;
     if ctx.dry_run {
         return Ok(());
     }
@@ -172,7 +192,12 @@ fn configure_data_root(ctx: &InstallContext) -> Result<()> {
 
     let mut config: serde_json::Value = if daemon_json.exists() {
         let text = fs::read_to_string(daemon_json)?;
-        serde_json::from_str(&text).unwrap_or(serde_json::json!({}))
+        let parsed: serde_json::Value =
+            serde_json::from_str(&text).context("parsing /etc/docker/daemon.json")?;
+        match parsed {
+            serde_json::Value::Object(_) => parsed,
+            _ => anyhow::bail!("/etc/docker/daemon.json must be a JSON object"),
+        }
     } else {
         serde_json::json!({})
     };

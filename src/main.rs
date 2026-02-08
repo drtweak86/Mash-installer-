@@ -52,10 +52,6 @@ enum Commands {
         #[arg(long)]
         interactive: bool,
 
-        /// Enable Ollama installation (off by default on ARM)
-        #[arg(long)]
-        enable_ollama: bool,
-
         /// Enable Argon One fan script installation
         #[arg(long)]
         enable_argon: bool,
@@ -101,7 +97,6 @@ pub struct InstallContext {
     pub staging_dir: PathBuf,
     pub dry_run: bool,
     pub interactive: bool,
-    pub enable_ollama: bool,
     pub enable_argon: bool,
     pub enable_p10k: bool,
     pub docker_data_root: bool,
@@ -171,7 +166,6 @@ fn main() -> Result<()> {
             staging_dir,
             dry_run,
             interactive,
-            enable_ollama,
             enable_argon,
             enable_p10k,
             docker_data_root,
@@ -187,7 +181,6 @@ fn main() -> Result<()> {
                 staging_dir,
                 dry_run,
                 interactive,
-                enable_ollama,
                 enable_argon,
                 enable_p10k,
                 docker_data_root,
@@ -214,7 +207,6 @@ fn run_install(
     staging_dir_override: Option<PathBuf>,
     dry_run: bool,
     interactive: bool,
-    mut enable_ollama: bool,
     mut enable_argon: bool,
     mut enable_p10k: bool,
     mut docker_data_root: bool,
@@ -237,7 +229,6 @@ fn run_install(
     if interactive {
         if let Some(selection) = prompt_install_menu(
             profile,
-            enable_ollama,
             enable_argon,
             enable_p10k,
             docker_data_root,
@@ -245,7 +236,6 @@ fn run_install(
             dry_run,
         )? {
             profile = selection.profile;
-            enable_ollama = selection.enable_ollama;
             enable_argon = selection.enable_argon;
             enable_p10k = selection.enable_p10k;
             docker_data_root = selection.docker_data_root;
@@ -331,7 +321,6 @@ fn run_install(
         staging_dir: staging,
         dry_run,
         interactive,
-        enable_ollama,
         enable_argon,
         enable_p10k,
         docker_data_root,
@@ -376,9 +365,6 @@ fn run_install(
     println!("  - Log out and back in for docker group membership to take effect.");
     println!("  - Run `mash-setup doctor` to verify everything.");
     println!("  - Config lives at ~/.config/mash-installer/config.toml");
-    if ctx.platform.arch == "aarch64" && !ctx.enable_ollama {
-        println!("  - Ollama was skipped (ARM). Re-run with --enable-ollama to install.");
-    }
     println!();
 
     Ok(())
@@ -386,7 +372,6 @@ fn run_install(
 
 struct MenuSelection {
     profile: ProfileLevel,
-    enable_ollama: bool,
     enable_argon: bool,
     enable_p10k: bool,
     docker_data_root: bool,
@@ -394,7 +379,6 @@ struct MenuSelection {
 
 fn prompt_install_menu(
     profile: ProfileLevel,
-    enable_ollama: bool,
     enable_argon: bool,
     enable_p10k: bool,
     docker_data_root: bool,
@@ -408,17 +392,11 @@ fn prompt_install_menu(
 
     if ensure_dialog_available(dry_run) {
         let selected_profile = dialog_profile_menu(profile)?;
-        let (ollama, argon, p10k, data_root) = dialog_feature_menu(
-            enable_ollama,
-            enable_argon,
-            enable_p10k,
-            docker_data_root,
-            platform,
-        )?;
+        let (argon, p10k, data_root) =
+            dialog_feature_menu(enable_argon, enable_p10k, docker_data_root, platform)?;
 
         let mut sel = MenuSelection {
             profile: selected_profile.unwrap_or(profile),
-            enable_ollama: ollama.unwrap_or(enable_ollama),
             enable_argon: argon.unwrap_or(enable_argon),
             enable_p10k: p10k.unwrap_or(enable_p10k),
             docker_data_root: data_root.unwrap_or(docker_data_root),
@@ -434,7 +412,6 @@ fn prompt_install_menu(
     tracing::info!("dialog not available; falling back to text prompts");
     text_prompt_menu(
         profile,
-        enable_ollama,
         enable_argon,
         enable_p10k,
         docker_data_root,
@@ -498,13 +475,11 @@ fn dialog_profile_menu(current: ProfileLevel) -> Result<Option<ProfileLevel>> {
 }
 
 fn dialog_feature_menu(
-    enable_ollama: bool,
     enable_argon: bool,
     enable_p10k: bool,
     docker_data_root: bool,
     platform: &platform::PlatformInfo,
-) -> Result<(Option<bool>, Option<bool>, Option<bool>, Option<bool>)> {
-    let ollama_on = if enable_ollama { "on" } else { "off" };
+) -> Result<(Option<bool>, Option<bool>, Option<bool>)> {
     let argon_on = if enable_argon { "on" } else { "off" };
     let p10k_on = if enable_p10k { "on" } else { "off" };
     let data_root_on = if docker_data_root { "on" } else { "off" };
@@ -524,10 +499,7 @@ fn dialog_feature_menu(
             "Optional features",
             "14",
             "74",
-            "4",
-            "ollama",
-            "Install Ollama (off by default on ARM)",
-            ollama_on,
+            "3",
             "argon",
             argon_label,
             argon_on,
@@ -548,7 +520,6 @@ fn dialog_feature_menu(
     let has = |tag: &str| out.split_whitespace().any(|t| t == tag);
 
     Ok((
-        Some(has("ollama")),
         Some(has("argon")),
         Some(has("p10k")),
         Some(has("docker-data-root")),
@@ -557,7 +528,6 @@ fn dialog_feature_menu(
 
 fn text_prompt_menu(
     profile: ProfileLevel,
-    enable_ollama: bool,
     enable_argon: bool,
     enable_p10k: bool,
     docker_data_root: bool,
@@ -584,9 +554,6 @@ fn text_prompt_menu(
     };
 
     let mut features = Vec::new();
-    if enable_ollama {
-        features.push("ollama");
-    }
     if enable_argon {
         features.push("argon");
     }
@@ -604,7 +571,7 @@ fn text_prompt_menu(
 
     let input_features = prompt_line(
         &format!(
-            "Optional features (comma-separated: ollama,argon,p10k,docker-data-root) [default: {}]: ",
+            "Optional features (comma-separated: argon,p10k,docker-data-root) [default: {}]: ",
             default_features
         ),
         &default_features,
@@ -614,14 +581,12 @@ fn text_prompt_menu(
 
     let mut selected = MenuSelection {
         profile: selected_profile,
-        enable_ollama: has("ollama"),
         enable_argon: has("argon"),
         enable_p10k: has("p10k"),
         docker_data_root: has("docker-data-root"),
     };
 
     if input_features.trim() == "none" {
-        selected.enable_ollama = false;
         selected.enable_argon = false;
         selected.enable_p10k = false;
         selected.docker_data_root = false;

@@ -229,15 +229,15 @@ fn pacman_is_installed(pkg: &str) -> bool {
 
 fn pacman_sync(dry_run: bool) -> Result<()> {
     if dry_run {
-        tracing::info!("[dry-run] pacman -Sy");
+        tracing::info!("[dry-run] pacman -Syu");
         return Ok(());
     }
     let status = Command::new("sudo")
-        .args(["pacman", "-Sy", "--noconfirm"])
+        .args(["pacman", "-Syu", "--noconfirm"])
         .status()
-        .context("running pacman -Sy")?;
+        .context("running pacman -Syu")?;
     if !status.success() {
-        anyhow::bail!("pacman -Sy failed");
+        anyhow::bail!("pacman -Syu failed");
     }
     Ok(())
 }

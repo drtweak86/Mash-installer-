@@ -20,16 +20,17 @@ pub fn resolve(cli_override: Option<&Path>, cfg: &MashConfig) -> Result<PathBuf>
         None => cfg.staging_dir.clone(),
     };
 
-    // Ensure parent exists so statvfs can succeed
-    if let Some(parent) = dir.parent() {
-        if parent.exists() {
-            check_space(parent)?;
-        }
-    }
+    ensure_space_for_path(&dir)?;
 
     fs::create_dir_all(&dir).with_context(|| format!("creating staging dir {}", dir.display()))?;
 
     Ok(dir)
+}
+
+/// Ensure the filesystem that would contain `path` has enough free space.
+pub fn ensure_space_for_path(path: &Path) -> Result<()> {
+    let existing = find_existing_ancestor(path);
+    check_space(&existing)
 }
 
 /// Check that the filesystem containing `path` has enough free space.
@@ -58,6 +59,16 @@ fn check_space(path: &Path) -> Result<()> {
     }
 
     Ok(())
+}
+
+/// Find the closest existing ancestor so statvfs can succeed.
+fn find_existing_ancestor(path: &Path) -> PathBuf {
+    for ancestor in path.ancestors() {
+        if ancestor.exists() {
+            return ancestor.to_path_buf();
+        }
+    }
+    PathBuf::from("/")
 }
 
 /// Best-effort mount-point detection via /proc/mounts.

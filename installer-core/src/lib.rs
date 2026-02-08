@@ -3,6 +3,7 @@ mod buildroot;
 mod config;
 mod docker;
 mod doctor;
+mod driver;
 mod fonts;
 mod github;
 mod pkg;
@@ -20,6 +21,10 @@ use std::io::{self, IsTerminal, Write};
 use std::path::PathBuf;
 use std::process::Command;
 use tracing::{error, info};
+
+pub use driver::DistroDriver;
+pub use pkg::PkgBackend;
+pub use platform::{detect as detect_platform, PlatformInfo};
 
 /// Mash Installer – idempotent mega-installer for Raspberry Pi / Ubuntu dev machines.
 #[derive(Parser)]

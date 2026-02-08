@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use crate::{driver::DistroDriver, InstallContext};
+use crate::{distro, driver::DistroDriver, InstallContext};
 
 // ── Package-manager detection ───────────────────────────────────
 
@@ -17,17 +17,7 @@ static PACMAN_SYNCED: AtomicBool = AtomicBool::new(false);
 /// Auto-detect the system package manager.
 #[allow(dead_code)]
 pub fn detect_backend() -> PkgBackend {
-    if which::which("pacman").is_ok() {
-        PkgBackend::Pacman
-    } else {
-        PkgBackend::Apt
-    }
-}
-
-fn translate_names(driver: &dyn DistroDriver, pkgs: &[&str]) -> Vec<String> {
-    pkgs.iter()
-        .filter_map(|pkg| driver.translate_package(pkg))
-        .collect()
+    distro::detect_backend()
 }
 
 // ── Public helpers (backend-agnostic) ───────────────────────────
@@ -58,7 +48,7 @@ pub fn update(driver: &dyn DistroDriver, dry_run: bool) -> Result<()> {
 /// by the driver.
 pub fn ensure_packages(driver: &dyn DistroDriver, pkgs: &[&str], dry_run: bool) -> Result<()> {
     let backend = driver.pkg_backend();
-    let native = translate_names(driver, pkgs);
+    let native = distro::translate_names(driver, pkgs);
     let native_refs: Vec<&str> = native.iter().map(String::as_str).collect();
 
     match backend {
@@ -321,7 +311,7 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::driver::{RepoKind, ServiceName};
+    use crate::{driver::{RepoKind, ServiceName}, distro};
 
     struct TestDriver;
 
@@ -363,7 +353,7 @@ mod tests {
     fn translate_names_respects_driver() {
         let driver = TestDriver;
         let pkgs = ["foo", "bar", "drop"];
-        let names = translate_names(&driver, &pkgs);
+        let names = distro::translate_names(&driver, &pkgs);
         assert_eq!(names, vec!["foo-native".to_string(), "bar".to_string()]);
     }
 }

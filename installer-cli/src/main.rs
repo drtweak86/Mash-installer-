@@ -1,13 +1,9 @@
 use anyhow::{Context, Result};
 use clap::Parser;
-use installer_arch;
 use installer_core::{detect_platform, DistroDriver, InstallOptions, PlatformInfo, ProfileLevel};
-use installer_debian;
-use installer_fedora;
 use std::io::{self, Write};
 use std::path::PathBuf;
 use tracing::{info, warn};
-use tracing_subscriber;
 
 #[derive(Parser)]
 #[command(
@@ -82,15 +78,15 @@ fn main() -> Result<()> {
     installer_core::run_with_driver(driver, options).context("installer failed")
 }
 
-fn auto_detect_driver<'a>(
-    drivers: &'a [&'static dyn DistroDriver],
+fn auto_detect_driver(
+    drivers: &[&'static dyn DistroDriver],
     platform: &PlatformInfo,
 ) -> Option<&'static dyn DistroDriver> {
     drivers.iter().copied().find(|d| d.matches(platform))
 }
 
-fn run_driver_selection<'a>(
-    drivers: &'a [&'static dyn DistroDriver],
+fn run_driver_selection(
+    drivers: &[&'static dyn DistroDriver],
     platform: &PlatformInfo,
 ) -> &'static dyn DistroDriver {
     println!("Step 1/3: Distro selection");
@@ -109,9 +105,7 @@ fn run_driver_selection<'a>(
     select_driver_from_list(drivers)
 }
 
-fn select_driver_from_list<'a>(
-    drivers: &'a [&'static dyn DistroDriver],
-) -> &'static dyn DistroDriver {
+fn select_driver_from_list(drivers: &[&'static dyn DistroDriver]) -> &'static dyn DistroDriver {
     println!("Available distro drivers:");
     for (idx, driver) in drivers.iter().enumerate() {
         println!(
@@ -125,21 +119,65 @@ fn select_driver_from_list<'a>(
     drivers.get(index - 1).copied().unwrap_or(drivers[0])
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct ModuleSelection {
     enable_argon: bool,
     enable_p10k: bool,
     docker_data_root: bool,
 }
 
-impl Default for ModuleSelection {
-    fn default() -> Self {
+impl ModuleSelection {
+    fn full() -> Self {
         Self {
-            enable_argon: false,
-            enable_p10k: false,
-            docker_data_root: false,
+            enable_argon: true,
+            enable_p10k: true,
+            docker_data_root: true,
         }
     }
+}
+
+struct ModuleOption {
+    alias: &'static str,
+    label: &'static str,
+    description: &'static str,
+    default: bool,
+    setter: fn(&mut ModuleSelection, bool),
+}
+
+const MODULE_OPTIONS: &[ModuleOption] = &[
+    ModuleOption {
+        alias: "A",
+        label: "Argon One fan control",
+        description: "Install Argon One scripts (Pi only)",
+        default: false,
+        setter: set_argon,
+    },
+    ModuleOption {
+        alias: "P",
+        label: "Powerlevel10k prompt",
+        description: "Enable p10k + zsh polish modules",
+        default: true,
+        setter: set_p10k,
+    },
+    ModuleOption {
+        alias: "D",
+        label: "Docker data-root",
+        description: "Manage Docker data-root inside staging",
+        default: false,
+        setter: set_docker_data_root,
+    },
+];
+
+fn set_argon(selection: &mut ModuleSelection, value: bool) {
+    selection.enable_argon = value;
+}
+
+fn set_p10k(selection: &mut ModuleSelection, value: bool) {
+    selection.enable_p10k = value;
+}
+
+fn set_docker_data_root(selection: &mut ModuleSelection, value: bool) {
+    selection.docker_data_root = value;
 }
 
 fn run_module_menu(driver_name: &str) -> ModuleSelection {
@@ -149,17 +187,19 @@ fn run_module_menu(driver_name: &str) -> ModuleSelection {
     let choice = prompt_choice("Choose install mode", 1, 2);
 
     if choice == 1 {
-        ModuleSelection {
-            enable_argon: true,
-            enable_p10k: true,
-            docker_data_root: true,
-        }
+        ModuleSelection::full()
     } else {
-        ModuleSelection {
-            enable_argon: prompt_yes_no("Enable Argon One fan control?", false),
-            enable_p10k: prompt_yes_no("Enable Powerlevel10k prompt?", true),
-            docker_data_root: prompt_yes_no("Manage Docker data-root?", false),
+        println!("Available module toggles (use aliases to remember choices):");
+        for opt in MODULE_OPTIONS {
+            println!("  [{}] {} – {}", opt.alias, opt.label, opt.description);
         }
+        let mut selection = ModuleSelection::default();
+        for opt in MODULE_OPTIONS {
+            let prompt = format!("Enable {} (alias {})?", opt.label, opt.alias);
+            let enabled = prompt_yes_no(&prompt, opt.default);
+            (opt.setter)(&mut selection, enabled);
+        }
+        selection
     }
 }
 
@@ -180,25 +220,23 @@ fn run_profile_menu() -> ProfileLevel {
 }
 
 fn prompt_choice(prompt: &str, default: usize, max_choice: usize) -> usize {
-    loop {
-        print!("{} [{}]: ", prompt, default);
-        io::stdout().flush().ok();
-        let mut line = String::new();
-        if io::stdin().read_line(&mut line).is_err() {
-            return default;
-        }
-        let trimmed = line.trim();
-        if trimmed.is_empty() {
-            return default;
-        }
-        if let Ok(idx) = trimmed.parse::<usize>() {
-            if idx > 0 && idx <= max_choice {
-                return idx;
-            }
-        }
-        println!("Invalid choice, defaulting to {}", default);
+    print!("{} [{}]: ", prompt, default);
+    io::stdout().flush().ok();
+    let mut line = String::new();
+    if io::stdin().read_line(&mut line).is_err() {
         return default;
     }
+    let trimmed = line.trim();
+    if trimmed.is_empty() {
+        return default;
+    }
+    if let Ok(idx) = trimmed.parse::<usize>() {
+        if idx > 0 && idx <= max_choice {
+            return idx;
+        }
+    }
+    println!("Invalid choice, defaulting to {}", default);
+    default
 }
 
 fn prompt_yes_no(prompt: &str, default: bool) -> bool {

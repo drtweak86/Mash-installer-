@@ -2,6 +2,7 @@ use anyhow::Result;
 use std::process::Command;
 
 /// Run diagnostics and print a summary of what is installed / missing.
+#[allow(dead_code)]
 pub fn run_doctor() -> Result<()> {
     println!("mash-setup doctor");
     println!("==================");
@@ -152,10 +153,12 @@ pub fn run_doctor() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn section(name: &str) {
     println!("── {name} ──");
 }
 
+#[allow(dead_code)]
 fn show_cmd(label: &str, cmd: &str, args: &[&str]) {
     match Command::new(cmd).args(args).output() {
         Ok(o) => {
@@ -166,6 +169,7 @@ fn show_cmd(label: &str, cmd: &str, args: &[&str]) {
     }
 }
 
+#[allow(dead_code)]
 fn show_file(path: &str, keys: &[&str]) {
     if let Ok(content) = std::fs::read_to_string(path) {
         for key in keys {
@@ -178,6 +182,7 @@ fn show_file(path: &str, keys: &[&str]) {
     }
 }
 
+#[allow(dead_code)]
 fn check_tool(name: &str, cmd_str: &str) {
     let parts: Vec<&str> = cmd_str.split_whitespace().collect();
     let result = Command::new(parts[0]).args(&parts[1..]).output();

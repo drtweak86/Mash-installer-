@@ -20,7 +20,7 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
 }
 
 fn try_pkg(ctx: &InstallContext) -> Result<bool> {
-    if crate::pkg::is_installed("rclone") {
+    if crate::pkg::is_installed(ctx.driver, "rclone") {
         return Ok(true);
     }
 
@@ -31,7 +31,7 @@ fn try_pkg(ctx: &InstallContext) -> Result<bool> {
     }
 
     // ensure_packages uses the right backend automatically
-    match crate::pkg::ensure_packages(&["rclone"], false) {
+    match crate::pkg::ensure_packages(ctx.driver, &["rclone"], false) {
         Ok(()) => {
             tracing::info!("Installed rclone via package manager");
             Ok(true)

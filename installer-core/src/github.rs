@@ -1,8 +1,7 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use std::process::Command;
 
-use crate::pkg::PkgBackend;
-use crate::InstallContext;
+use crate::{apt_repo, driver::RepoKind, pkg::PkgBackend, InstallContext};
 
 pub fn install_phase(ctx: &InstallContext) -> Result<()> {
     install_git(ctx)?;
@@ -14,7 +13,7 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
 }
 
 fn install_git(ctx: &InstallContext) -> Result<()> {
-    crate::pkg::ensure_packages(&["git", "git-lfs"], ctx.dry_run)?;
+    crate::pkg::ensure_packages(ctx.driver, &["git", "git-lfs"], ctx.dry_run)?;
 
     if !ctx.dry_run {
         let _ = Command::new("git").args(["lfs", "install"]).status();
@@ -28,14 +27,13 @@ fn install_gh(ctx: &InstallContext) -> Result<()> {
         return Ok(());
     }
 
-    let backend = crate::pkg::detect_backend();
-
-    match backend {
+    match ctx.pkg_backend {
         PkgBackend::Pacman => {
             // On Arch/Manjaro gh is `github-cli` in community
-            crate::pkg::ensure_packages(&["gh"], ctx.dry_run)?;
+            crate::pkg::ensure_packages(ctx.driver, &["gh"], ctx.dry_run)?;
         }
         PkgBackend::Apt => {
+            apt_repo::ensure_repo(ctx, RepoKind::GitHubCli)?;
             install_gh_apt(ctx)?;
         }
     }
@@ -44,48 +42,12 @@ fn install_gh(ctx: &InstallContext) -> Result<()> {
 }
 
 fn install_gh_apt(ctx: &InstallContext) -> Result<()> {
-    tracing::info!("Adding GitHub CLI repository");
-    if ctx.dry_run {
-        tracing::info!("[dry-run] would add gh apt repo and install gh");
-        return Ok(());
-    }
-
-    let keyring = "/etc/apt/keyrings/githubcli-archive-keyring.gpg";
-    if !std::path::Path::new(keyring).exists() {
-        let status = Command::new("sh")
-            .arg("-c")
-            .arg(format!(
-                "curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee {keyring} > /dev/null && sudo chmod go+r {keyring}"
-            ))
-            .status()
-            .context("adding gh GPG key")?;
-        if !status.success() {
-            anyhow::bail!("Failed to add GitHub CLI GPG key");
-        }
-    }
-
-    let sources = "/etc/apt/sources.list.d/github-cli-stable.list";
-    if !std::path::Path::new(sources).exists() {
-        let arch_out = Command::new("dpkg").arg("--print-architecture").output()?;
-        let arch = String::from_utf8_lossy(&arch_out.stdout).trim().to_string();
-
-        let line = format!(
-            "deb [arch={arch} signed-by={keyring}] https://cli.github.com/packages stable main"
-        );
-        Command::new("sh")
-            .arg("-c")
-            .arg(format!("echo '{line}' | sudo tee {sources} > /dev/null"))
-            .status()?;
-
-        crate::pkg::update(false)?;
-    }
-
-    crate::pkg::ensure_packages(&["gh"], false)?;
+    crate::pkg::ensure_packages(ctx.driver, &["gh"], false)?;
     Ok(())
 }
 
 fn install_ssh_tools(ctx: &InstallContext) -> Result<()> {
-    crate::pkg::ensure_packages(&["openssh-client"], ctx.dry_run)?;
+    crate::pkg::ensure_packages(ctx.driver, &["openssh-client"], ctx.dry_run)?;
     Ok(())
 }
 

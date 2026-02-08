@@ -179,6 +179,7 @@ pub fn load_or_default() -> Result<MashConfig> {
 }
 
 /// Write the default config to disk (config init).
+#[allow(dead_code)]
 pub fn init_config() -> Result<()> {
     let path = config_path();
     if let Some(parent) = path.parent() {
@@ -199,6 +200,7 @@ pub fn init_config() -> Result<()> {
 }
 
 /// Print the current config (config show).
+#[allow(dead_code)]
 pub fn show_config() -> Result<()> {
     let cfg = load_or_default()?;
     let text = toml::to_string_pretty(&cfg)?;

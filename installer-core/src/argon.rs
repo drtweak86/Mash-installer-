@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use std::path::Path;
 use std::process::Command;
 
-use crate::{pkg::PkgBackend, systemd, InstallContext};
+use crate::{driver::ServiceName, pkg::PkgBackend, systemd, InstallContext};
 
 /// Clone target for the argononed C daemon.
 const ARGONONED_REPO: &str = "https://gitlab.com/DarkElvenAngel/argononed.git";
@@ -24,8 +24,7 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
         return Ok(());
     }
 
-    let backend = crate::pkg::detect_backend();
-    match backend {
+    match ctx.pkg_backend {
         PkgBackend::Pacman => install_argononed(ctx),
         PkgBackend::Apt => install_argon_oem(ctx),
     }
@@ -55,7 +54,7 @@ fn install_argononed(ctx: &InstallContext) -> Result<()> {
 
     clone_argononed()?;
     build_argononed()?;
-    enable_argononed_service()?;
+    enable_argononed_service(ctx)?;
 
     tracing::info!("argononed installed and service enabled");
     Ok(())
@@ -64,7 +63,7 @@ fn install_argononed(ctx: &InstallContext) -> Result<()> {
 fn ensure_argononed_deps(ctx: &InstallContext) -> Result<()> {
     // dtc = device tree compiler, needed by argononed's build
     // git is already installed from earlier phases
-    crate::pkg::ensure_packages(&["dtc"], ctx.dry_run)?;
+    crate::pkg::ensure_packages(ctx.driver, &["dtc"], ctx.dry_run)?;
     Ok(())
 }
 
@@ -122,7 +121,7 @@ fn build_argononed() -> Result<()> {
     Ok(())
 }
 
-fn enable_argononed_service() -> Result<()> {
+fn enable_argononed_service(ctx: &InstallContext) -> Result<()> {
     if !systemd::is_available() {
         tracing::warn!("systemd not detected; skipping argononed.service enable");
         return Ok(());
@@ -130,12 +129,13 @@ fn enable_argononed_service() -> Result<()> {
     let _ = Command::new("sudo")
         .args(["systemctl", "daemon-reload"])
         .status();
+    let service = ctx.driver.service_unit(ServiceName::ArgonOne);
     let status = Command::new("sudo")
-        .args(["systemctl", "enable", "argononed.service"])
+        .args(["systemctl", "enable", service])
         .status()
-        .context("enabling argononed.service")?;
+        .context(format!("enabling {service}"))?;
     if !status.success() {
-        tracing::warn!("Failed to enable argononed.service; you may need to reboot first");
+        tracing::warn!("Failed to enable {service}; you may need to reboot first");
     }
     Ok(())
 }

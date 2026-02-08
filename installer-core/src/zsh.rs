@@ -32,7 +32,7 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
 }
 
 fn install_zsh(ctx: &InstallContext) -> Result<()> {
-    crate::pkg::ensure_packages(&["zsh"], ctx.dry_run)?;
+    crate::pkg::ensure_packages(ctx.driver, &["zsh"], ctx.dry_run)?;
     Ok(())
 }
 
@@ -121,12 +121,10 @@ fn install_p10k(ctx: &InstallContext) -> Result<()> {
 /// Try installing Powerlevel10k via the system package manager.
 /// Returns true if it succeeded (or was already installed).
 fn try_p10k_pkg(ctx: &InstallContext) -> Result<bool> {
-    let backend = crate::pkg::detect_backend();
-
-    match backend {
+    match ctx.pkg_backend {
         crate::pkg::PkgBackend::Pacman => {
             // Manjaro/Arch: available as `zsh-theme-powerlevel10k`
-            if crate::pkg::is_installed("zsh-theme-powerlevel10k")
+            if crate::pkg::is_installed(ctx.driver, "zsh-theme-powerlevel10k")
                 || Path::new("/usr/share/zsh-theme-powerlevel10k").exists()
             {
                 tracing::info!("Powerlevel10k already installed via package manager");
@@ -137,7 +135,7 @@ fn try_p10k_pkg(ctx: &InstallContext) -> Result<bool> {
                 tracing::info!("[dry-run] would install zsh-theme-powerlevel10k");
                 return Ok(true);
             }
-            match crate::pkg::ensure_packages(&["zsh-theme-powerlevel10k"], false) {
+            match crate::pkg::ensure_packages(ctx.driver, &["zsh-theme-powerlevel10k"], false) {
                 Ok(()) => {
                     tracing::info!("Installed Powerlevel10k via pacman");
                     Ok(true)

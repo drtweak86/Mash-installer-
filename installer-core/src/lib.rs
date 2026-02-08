@@ -1,3 +1,4 @@
+mod apt_repo;
 mod argon;
 mod buildroot;
 mod config;
@@ -19,7 +20,7 @@ use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use std::path::PathBuf;
 use tracing::{error, info};
 
-pub use driver::DistroDriver;
+pub use driver::{AptRepoConfig, DistroDriver, RepoKind, ServiceName};
 pub use pkg::PkgBackend;
 pub use platform::{detect as detect_platform, PlatformInfo};
 
@@ -49,6 +50,8 @@ pub struct InstallContext {
     pub config: config::MashConfig,
     pub platform: platform::PlatformInfo,
     pub driver_name: &'static str,
+    pub driver: &'static dyn DistroDriver,
+    pub pkg_backend: PkgBackend,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -203,6 +206,8 @@ pub fn run_with_driver(driver: &'static dyn DistroDriver, opts: InstallOptions) 
         config: cfg,
         platform: plat,
         driver_name: driver.name(),
+        driver,
+        pkg_backend: driver.pkg_backend(),
     };
 
     let mut completed_phases = Vec::new();

@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use crate::InstallContext;
+use crate::{driver::DistroDriver, InstallContext};
 
 // ── Package-manager detection ───────────────────────────────────
 
@@ -15,6 +15,7 @@ pub enum PkgBackend {
 static PACMAN_SYNCED: AtomicBool = AtomicBool::new(false);
 
 /// Auto-detect the system package manager.
+#[allow(dead_code)]
 pub fn detect_backend() -> PkgBackend {
     if which::which("pacman").is_ok() {
         PkgBackend::Pacman
@@ -23,77 +24,30 @@ pub fn detect_backend() -> PkgBackend {
     }
 }
 
-// ── Debian → Arch package-name translation ──────────────────────
-
-/// Translate a canonical (Debian) package name to its Arch equivalent.
-/// Returns `None` when the package should be skipped entirely on Arch.
-fn translate_for_arch(debian: &str) -> Option<&str> {
-    match debian {
-        // ── skip on Arch (not applicable) ──
-        "software-properties-common" | "apt-transport-https" => None,
-        "lsb-release" => None,
-        "python3-venv" => None, // included in python on Arch
-
-        // ── renamed ──
-        "build-essential" => Some("base-devel"),
-        "pkg-config" => Some("pkgconf"),
-        "ninja-build" => Some("ninja"),
-        "g++" => None, // part of gcc on Arch
-        "xz-utils" => Some("xz"),
-        "python3" => Some("python"),
-        "python3-pip" => Some("python-pip"),
-        "fd-find" => Some("fd"),
-        "libncurses-dev" => Some("ncurses"),
-        "libssl-dev" => Some("openssl"),
-        "openssh-client" => Some("openssh"),
-        "fonts-terminus" => Some("terminus-font"),
-        "fonts-noto-color-emoji" => Some("noto-fonts-emoji"),
-        "xfonts-terminus" => None, // X11 bitmap; not relevant on Arch
-
-        // ── Docker (Arch community packages) ──
-        "docker-ce" => Some("docker"),
-        "docker-ce-cli" => None, // part of `docker`
-        "containerd.io" => None, // pulled as dependency
-        "docker-buildx-plugin" => Some("docker-buildx"),
-        "docker-compose-plugin" => Some("docker-compose"),
-
-        // ── GitHub CLI ──
-        "gh" => Some("github-cli"),
-
-        // ── same name on both ──
-        _ => Some(debian),
-    }
-}
-
-/// Map a slice of canonical (Debian) names to the native package names
-/// for the active backend.  Drops packages that should be skipped.
-fn translate_names(pkgs: &[&str], backend: PkgBackend) -> Vec<String> {
-    match backend {
-        PkgBackend::Apt => pkgs.iter().map(|s| s.to_string()).collect(),
-        PkgBackend::Pacman => pkgs
-            .iter()
-            .filter_map(|p| translate_for_arch(p))
-            .map(|s| s.to_string())
-            .collect(),
-    }
+fn translate_names(driver: &dyn DistroDriver, pkgs: &[&str]) -> Vec<String> {
+    pkgs.iter()
+        .filter_map(|pkg| driver.translate_package(pkg))
+        .collect()
 }
 
 // ── Public helpers (backend-agnostic) ───────────────────────────
 
 /// Check whether a package is already installed.
-pub fn is_installed(pkg: &str) -> bool {
-    match detect_backend() {
+pub fn is_installed(driver: &dyn DistroDriver, pkg: &str) -> bool {
+    match driver.pkg_backend() {
         PkgBackend::Apt => apt_is_installed(pkg),
         PkgBackend::Pacman => {
-            let native = translate_for_arch(pkg).unwrap_or(pkg);
-            pacman_is_installed(native)
+            let native = driver
+                .translate_package(pkg)
+                .unwrap_or_else(|| pkg.to_string());
+            pacman_is_installed(native.as_str())
         }
     }
 }
 
 /// Refresh the package database.
-pub fn update(dry_run: bool) -> Result<()> {
-    match detect_backend() {
+pub fn update(driver: &dyn DistroDriver, dry_run: bool) -> Result<()> {
+    match driver.pkg_backend() {
         PkgBackend::Apt => apt_update(dry_run),
         PkgBackend::Pacman => ensure_pacman_synced(dry_run),
     }
@@ -101,10 +55,10 @@ pub fn update(dry_run: bool) -> Result<()> {
 
 /// Install a list of packages idempotently.
 /// Names are given in Debian-canonical form; they are translated
-/// automatically on Arch.
-pub fn ensure_packages(pkgs: &[&str], dry_run: bool) -> Result<()> {
-    let backend = detect_backend();
-    let native = translate_names(pkgs, backend);
+/// by the driver.
+pub fn ensure_packages(driver: &dyn DistroDriver, pkgs: &[&str], dry_run: bool) -> Result<()> {
+    let backend = driver.pkg_backend();
+    let native = translate_names(driver, pkgs);
     let native_refs: Vec<&str> = native.iter().map(String::as_str).collect();
 
     match backend {
@@ -117,17 +71,14 @@ pub fn ensure_packages(pkgs: &[&str], dry_run: bool) -> Result<()> {
 }
 
 /// Best-effort install of a single optional package (never fatal).
-pub fn try_optional(pkg: &str, dry_run: bool) {
-    let backend = detect_backend();
-    let native = match backend {
-        PkgBackend::Apt => pkg.to_string(),
-        PkgBackend::Pacman => match translate_for_arch(pkg) {
-            Some(n) => n.to_string(),
-            None => return, // skip on Arch
-        },
+pub fn try_optional(driver: &dyn DistroDriver, pkg: &str, dry_run: bool) {
+    let backend = driver.pkg_backend();
+    let native = match driver.translate_package(pkg) {
+        Some(name) => name,
+        None => return,
     };
 
-    if is_installed(pkg) {
+    if is_installed(driver, pkg) {
         return;
     }
     if dry_run {
@@ -289,7 +240,7 @@ fn pacman_ensure(pkgs: &[&str], dry_run: bool) -> Result<()> {
 // ── Phase 1: core packages ─────────────────────────────────────
 
 pub fn install_phase(ctx: &InstallContext) -> Result<()> {
-    update(ctx.dry_run)?;
+    update(ctx.driver, ctx.dry_run)?;
 
     // Always-needed core packages (Debian canonical names)
     let mut pkgs: Vec<&str> = vec![
@@ -352,15 +303,15 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
         .filter(|p| !optional.contains(p))
         .collect();
 
-    ensure_packages(&required, ctx.dry_run)?;
+    ensure_packages(ctx.driver, &required, ctx.dry_run)?;
 
     // Always attempt lldb
-    try_optional("lldb", ctx.dry_run);
+    try_optional(ctx.driver, "lldb", ctx.dry_run);
 
     // Dev+ optional packages
     if ctx.profile >= crate::ProfileLevel::Dev {
         for pkg in &["btop", "bat", "eza", "yq"] {
-            try_optional(pkg, ctx.dry_run);
+            try_optional(ctx.driver, pkg, ctx.dry_run);
         }
     }
 

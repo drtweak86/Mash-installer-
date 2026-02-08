@@ -2,8 +2,7 @@ use anyhow::{Context, Result};
 use std::path::Path;
 use std::process::Command;
 
-use crate::pkg::PkgBackend;
-use crate::InstallContext;
+use crate::{pkg::PkgBackend, systemd, InstallContext};
 
 /// Clone target for the argononed C daemon.
 const ARGONONED_REPO: &str = "https://gitlab.com/DarkElvenAngel/argononed.git";
@@ -124,6 +123,10 @@ fn build_argononed() -> Result<()> {
 }
 
 fn enable_argononed_service() -> Result<()> {
+    if !systemd::is_available() {
+        tracing::warn!("systemd not detected; skipping argononed.service enable");
+        return Ok(());
+    }
     let _ = Command::new("sudo")
         .args(["systemctl", "daemon-reload"])
         .status();

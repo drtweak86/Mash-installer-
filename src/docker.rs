@@ -2,8 +2,7 @@ use anyhow::{Context, Result};
 use std::fs;
 use std::process::Command;
 
-use crate::pkg::PkgBackend;
-use crate::InstallContext;
+use crate::{pkg::PkgBackend, systemd, InstallContext};
 
 pub fn install_phase(ctx: &InstallContext) -> Result<()> {
     let backend = crate::pkg::detect_backend();
@@ -169,6 +168,10 @@ fn add_user_to_docker_group(ctx: &InstallContext) -> Result<()> {
 fn enable_docker_service(ctx: &InstallContext) -> Result<()> {
     if ctx.dry_run {
         tracing::info!("[dry-run] would enable docker.service");
+        return Ok(());
+    }
+    if !systemd::is_available() {
+        tracing::warn!("systemd not detected; skipping docker.service enable");
         return Ok(());
     }
     let _ = Command::new("sudo")

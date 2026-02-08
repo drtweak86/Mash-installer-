@@ -10,6 +10,7 @@ mod platform;
 mod rclone;
 mod rust;
 mod staging;
+mod systemd;
 mod zsh;
 
 use anyhow::Result;

@@ -30,14 +30,15 @@ pub fn resolve(cli_override: Option<&Path>, cfg: &MashConfig) -> Result<PathBuf>
 /// Ensure the filesystem that would contain `path` has enough free space.
 pub fn ensure_space_for_path(path: &Path) -> Result<()> {
     let existing = find_existing_ancestor(path);
-    check_space(&existing)
+    check_space(path, &existing)
 }
 
 /// Check that the filesystem containing `path` has enough free space.
 /// Refuse to proceed if the mount point is `/` and space is low.
-fn check_space(path: &Path) -> Result<()> {
+fn check_space(path: &Path, existing: &Path) -> Result<()> {
     let stat = nix::sys::statvfs::statvfs(path)
-        .with_context(|| format!("statvfs on {}", path.display()))?;
+        .or_else(|_| nix::sys::statvfs::statvfs(existing))
+        .with_context(|| format!("statvfs on {}", existing.display()))?;
 
     let avail = stat.blocks_available() as u64 * stat.fragment_size() as u64;
     let mount = find_mount_point(path);

@@ -263,7 +263,13 @@ name = "installer-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "clap",
+ "installer-arch",
  "installer-core",
+ "installer-debian",
+ "installer-fedora",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

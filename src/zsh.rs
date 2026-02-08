@@ -14,6 +14,8 @@ fn home_dir() -> PathBuf {
 const P10K_SYSTEM_DIR: &str = "/usr/share/powerlevel10k";
 /// The theme file that gets sourced in .zshrc.
 const P10K_THEME_FILE: &str = "/usr/share/powerlevel10k/powerlevel10k.zsh-theme";
+const STARSHIP_VERSION: &str = "1.27.0";
+const P10K_TAG: &str = "v1.13.0";
 
 pub fn install_phase(ctx: &InstallContext) -> Result<()> {
     install_zsh(ctx)?;
@@ -75,7 +77,10 @@ fn install_starship(ctx: &InstallContext) -> Result<()> {
 
     let status = Command::new("sh")
         .arg("-c")
-        .arg("curl -sS https://starship.rs/install.sh | sh -s -- -y")
+        .arg(format!(
+            "STARSHIP_VERSION={} curl -sS https://starship.rs/install.sh | sh -s -- -y",
+            STARSHIP_VERSION
+        ))
         .status()
         .context("installing starship")?;
 
@@ -175,6 +180,9 @@ fn install_p10k_git(ctx: &InstallContext) -> Result<()> {
             "git",
             "clone",
             "--depth=1",
+            "--branch",
+            P10K_TAG,
+            "--single-branch",
             "https://github.com/romkatv/powerlevel10k.git",
             P10K_SYSTEM_DIR,
         ])

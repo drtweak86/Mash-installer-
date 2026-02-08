@@ -127,16 +127,15 @@ download_binary() {
     curl -fsSL -o "${tmp_dir}/${asset_name}" "${base_url}/${asset_name}" \
         || die "Failed to download ${base_url}/${asset_name}"
 
-    # Verify checksum if available
+    # Require checksum verification
     local sha_file="${asset_name}.sha256"
-    if curl -fsSL -o "${tmp_dir}/${sha_file}" "${base_url}/${sha_file}" 2>/dev/null; then
-        info "Verifying SHA-256 checksum …"
-        (cd "$tmp_dir" && sha256sum -c "$sha_file") \
-            || die "Checksum verification failed!"
-        info "Checksum OK"
-    else
-        warn "No .sha256 file found; skipping verification"
+    if ! curl -fsSL -o "${tmp_dir}/${sha_file}" "${base_url}/${sha_file}"; then
+        die "Checksum file ${sha_file} missing for ${asset_name}"
     fi
+    info "Verifying SHA-256 checksum …"
+    (cd "$tmp_dir" && sha256sum -c "$sha_file") \
+        || die "Checksum verification failed!"
+    info "Checksum OK"
 
     chmod +x "${tmp_dir}/${asset_name}"
     echo "${tmp_dir}/${asset_name}"

@@ -31,6 +31,8 @@ curl -fsSL https://raw.githubusercontent.com/drtweak86/Mash-installer-/master/bo
   | bash -s -- --profile dev --staging-dir /mnt/data/mash-installer
 ```
 
+The bootstrapper now *requires* a `.sha256` checksum file for the downloaded `mash-setup` binary; the script exits if the checksum is missing or fails to verify, matching the QA report's High Priority 1 recommendation (see `docs/QAREPORT.md`).
+
 You can also download the bootstrap script first and inspect or run it locally if you prefer:
 ```bash
 curl -fsSL -o bootstrap.sh https://raw.githubusercontent.com/drtweak86/Mash-installer-/master/bootstrap.sh

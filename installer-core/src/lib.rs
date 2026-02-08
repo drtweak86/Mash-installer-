@@ -1,13 +1,15 @@
 mod apt_repo;
 mod argon;
-mod distro;
+mod backend;
 mod buildroot;
 mod config;
+mod distro;
 mod docker;
 mod doctor;
 mod driver;
 mod fonts;
 mod github;
+mod package_manager;
 mod pkg;
 mod platform;
 mod rclone;
@@ -21,8 +23,8 @@ use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use std::path::PathBuf;
 use tracing::{error, info};
 
+pub use backend::PkgBackend;
 pub use driver::{AptRepoConfig, DistroDriver, RepoKind, ServiceName};
-pub use pkg::PkgBackend;
 pub use platform::{detect as detect_platform, PlatformInfo};
 
 /// Options provided by the CLI that drive `run_with_driver`.

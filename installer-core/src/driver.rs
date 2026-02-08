@@ -1,4 +1,4 @@
-use crate::{pkg::PkgBackend, platform::PlatformInfo};
+use crate::{backend::PkgBackend, platform::PlatformInfo};
 use anyhow::Result;
 
 /// Represents named repositories the installer may need to add.

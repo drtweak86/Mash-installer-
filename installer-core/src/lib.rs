@@ -148,7 +148,7 @@ impl InstallContext {
     }
 }
 
-fn main() -> Result<()> {
+pub fn run() -> Result<()> {
     let cli = Cli::parse();
 
     // Initialise tracing

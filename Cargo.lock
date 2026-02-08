@@ -252,6 +252,52 @@ dependencies = [
 ]
 
 [[package]]
+name = "installer-arch"
+version = "0.1.0"
+dependencies = [
+ "installer-core",
+]
+
+[[package]]
+name = "installer-cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "installer-core",
+]
+
+[[package]]
+name = "installer-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "dirs",
+ "indicatif",
+ "nix",
+ "serde",
+ "serde_json",
+ "toml",
+ "tracing",
+ "tracing-subscriber",
+ "which",
+]
+
+[[package]]
+name = "installer-debian"
+version = "0.1.0"
+dependencies = [
+ "installer-core",
+]
+
+[[package]]
+name = "installer-fedora"
+version = "0.1.0"
+dependencies = [
+ "installer-core",
+]
+
+[[package]]
 name = "is_terminal_polyfill"
 version = "1.70.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -306,23 +352,6 @@ name = "log"
 version = "0.4.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e5032e24019045c762d3c0f28f5b6b8bbf38563a65908389bf7978758920897"
-
-[[package]]
-name = "mash-setup"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "dirs",
- "indicatif",
- "nix",
- "serde",
- "serde_json",
- "toml",
- "tracing",
- "tracing-subscriber",
- "which",
-]
 
 [[package]]
 name = "matchers"

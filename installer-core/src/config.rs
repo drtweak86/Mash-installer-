@@ -4,7 +4,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 /// Central configuration persisted at ~/.config/mash-installer/config.toml
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(default)]
 pub struct MashConfig {
     #[serde(default = "default_staging_dir")]
@@ -23,7 +23,7 @@ pub struct MashConfig {
     pub git: GitConfig,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(default)]
 pub struct AgentDirs {
     #[serde(default = "default_agent_larry")]
@@ -34,7 +34,7 @@ pub struct AgentDirs {
     pub claude: PathBuf,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(default)]
 pub struct CacheDirs {
     #[serde(default = "default_cache_installer")]
@@ -47,7 +47,7 @@ pub struct CacheDirs {
     pub rustup: PathBuf,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(default)]
 pub struct DockerConfig {
     /// Optional custom data-root for Docker daemon.
@@ -58,7 +58,7 @@ pub struct DockerConfig {
     pub compose_plugin: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(default)]
 pub struct GitConfig {
     /// Enforce SSH remotes (advisory – the installer will not rewrite remotes).
@@ -212,4 +212,65 @@ pub fn show_config() -> Result<()> {
     }
     println!("{text}");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::env;
+    use std::ffi::OsString;
+    use std::path::Path;
+    use tempfile::tempdir;
+
+    struct HomeGuard(Option<OsString>);
+
+    impl HomeGuard {
+        fn set(path: impl AsRef<Path>) -> Self {
+            let previous = env::var_os("HOME");
+            env::set_var("HOME", path.as_ref());
+            HomeGuard(previous)
+        }
+    }
+
+    impl Drop for HomeGuard {
+        fn drop(&mut self) {
+            if let Some(prev) = &self.0 {
+                env::set_var("HOME", prev);
+            } else {
+                env::remove_var("HOME");
+            }
+        }
+    }
+
+    #[test]
+    fn test_load_or_default_creates_default() -> Result<()> {
+        let tmp = tempdir()?;
+        let _home_guard = HomeGuard::set(tmp.path());
+
+        let cfg = load_or_default()?;
+        assert_eq!(cfg, MashConfig::default());
+        Ok(())
+    }
+
+    #[test]
+    fn test_load_or_default_loads_existing() -> Result<()> {
+        let tmp = tempdir()?;
+        let _home_guard = HomeGuard::set(tmp.path());
+
+        let expected = MashConfig {
+            staging_dir: PathBuf::from("/tmp/custom-staging"),
+            ..Default::default()
+        };
+
+        let path = config_path();
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        let text = toml::to_string_pretty(&expected)?;
+        fs::write(&path, &text)?;
+
+        let loaded = load_or_default()?;
+        assert_eq!(loaded, expected);
+        Ok(())
+    }
 }

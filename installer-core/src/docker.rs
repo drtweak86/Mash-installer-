@@ -36,7 +36,7 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
     let desired_data_root = if ctx.options.docker_data_root {
         Some(ctx.options.staging_dir.join("docker"))
     } else {
-        ctx.platform.config.docker.data_root.clone()
+        ctx.platform.config().docker.data_root.clone()
     };
     if let Some(data_root) = desired_data_root {
         configure_data_root(ctx, &data_root)?;

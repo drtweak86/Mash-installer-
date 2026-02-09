@@ -24,7 +24,7 @@ use std::path::PathBuf;
 use tracing::{error, info};
 
 pub use backend::PkgBackend;
-use context::{OptionsContext, PlatformContext};
+use context::{ConfigService, OptionsContext, PlatformContext};
 pub use driver::{AptRepoConfig, DistroDriver, RepoKind, ServiceName};
 pub use platform::{detect as detect_platform, PlatformInfo};
 
@@ -73,8 +73,8 @@ pub fn run_with_driver(
         info!("Raspberry Pi model: {}", model);
     }
 
-    let cfg = config::load_or_default()?;
-    let staging = staging::resolve(opts.staging_dir.as_deref(), &cfg)?;
+    let config_service = ConfigService::load()?;
+    let staging = staging::resolve(opts.staging_dir.as_deref(), config_service.config())?;
     info!("Staging directory: {}", staging.display());
 
     let options = OptionsContext {
@@ -88,7 +88,7 @@ pub fn run_with_driver(
     };
 
     let platform_ctx = PlatformContext {
-        config: cfg,
+        config_service,
         platform: plat,
         driver_name: driver.name(),
         driver,

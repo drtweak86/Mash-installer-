@@ -55,6 +55,11 @@ pub trait DistroDriver: Sync + Send {
             ServiceName::ArgonOne => "argononed.service",
         }
     }
+
+    /// Check whether a system package (canonical name) is already installed.
+    fn is_package_installed(&self, _package: &str) -> bool {
+        false
+    }
 }
 
 #[cfg(test)]

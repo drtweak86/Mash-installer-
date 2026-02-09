@@ -1,4 +1,4 @@
-use crate::{package_manager, InstallContext};
+use crate::{driver::DistroDriver, package_manager, InstallContext};
 use anyhow::Result;
 
 // ── Phase 1: core packages ─────────────────────────────────────
@@ -67,7 +67,16 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
         .filter(|p| !optional.contains(p))
         .collect();
 
-    package_manager::ensure_packages(ctx.platform.driver, &required, ctx.options.dry_run)?;
+    let missing_required = missing_packages(ctx.platform.driver, &required);
+    if missing_required.is_empty() {
+        tracing::info!("System packages already installed");
+    } else {
+        package_manager::ensure_packages(
+            ctx.platform.driver,
+            &missing_required,
+            ctx.options.dry_run,
+        )?;
+    }
 
     // Always attempt lldb
     package_manager::try_optional(ctx.platform.driver, "lldb", ctx.options.dry_run);
@@ -80,6 +89,14 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn missing_packages<'a>(driver: &dyn DistroDriver, packages: &'a [&'a str]) -> Vec<&'a str> {
+    packages
+        .iter()
+        .copied()
+        .filter(|pkg| !driver.is_package_installed(pkg))
+        .collect()
 }
 
 #[cfg(test)]
@@ -132,5 +149,48 @@ mod tests {
         let pkgs = ["foo", "bar", "drop"];
         let names = distro::translate_names(&driver, &pkgs);
         assert_eq!(names, vec!["foo-native".to_string(), "bar".to_string()]);
+    }
+
+    struct InstalledDriver;
+
+    impl DistroDriver for InstalledDriver {
+        fn name(&self) -> &'static str {
+            "installed"
+        }
+
+        fn description(&self) -> &'static str {
+            "reports installed packages"
+        }
+
+        fn matches(&self, _: &crate::platform::PlatformInfo) -> bool {
+            true
+        }
+
+        fn pkg_backend(&self) -> PkgBackend {
+            PkgBackend::Apt
+        }
+
+        fn translate_package(&self, canonical: &str) -> Option<String> {
+            Some(canonical.to_string())
+        }
+
+        fn apt_repo_config(&self, _repo: RepoKind) -> Option<crate::driver::AptRepoConfig> {
+            None
+        }
+
+        fn service_unit(&self, _service: ServiceName) -> &'static str {
+            "installed.service"
+        }
+
+        fn is_package_installed(&self, package_name: &str) -> bool {
+            matches!(package_name, "curl" | "git")
+        }
+    }
+
+    #[test]
+    fn missing_packages_filters_installed_items() {
+        let driver = InstalledDriver;
+        let pkgs = ["curl", "git", "tar"];
+        assert_eq!(super::missing_packages(&driver, &pkgs), vec!["tar"]);
     }
 }

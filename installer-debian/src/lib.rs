@@ -1,5 +1,6 @@
 use anyhow::{bail, Result};
-use installer_core::{AptRepoConfig, DistroDriver, PkgBackend, PlatformInfo, RepoKind};
+use installer_core::{cmd, AptRepoConfig, DistroDriver, PkgBackend, PlatformInfo, RepoKind};
+use std::process::Command;
 
 pub struct DebianDriver;
 
@@ -36,6 +37,19 @@ impl DistroDriver for DebianDriver {
                 sources_path: "/etc/apt/sources.list.d/github-cli-stable.list",
                 repo_line: github_repo_line,
             }),
+        }
+    }
+
+    fn is_package_installed(&self, package_name: &str) -> bool {
+        let native = match self.translate_package(package_name) {
+            Some(name) => name,
+            None => return false,
+        };
+        let mut cmd = Command::new("dpkg-query");
+        cmd.args(["-W", "-f=${Status}", native.as_str()]);
+        match cmd::run(&mut cmd) {
+            Ok(output) => String::from_utf8_lossy(&output.stdout).contains("install ok installed"),
+            Err(_) => false,
         }
     }
 }

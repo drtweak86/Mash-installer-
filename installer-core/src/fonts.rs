@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use crate::InstallContext;
+use crate::{package_manager, InstallContext};
 
 pub fn install_phase(ctx: &InstallContext) -> Result<()> {
     // Canonical (Debian) names – pkg.rs translates for Arch automatically
@@ -10,7 +10,7 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
         "xfonts-terminus",
     ];
 
-    crate::pkg::ensure_packages(ctx.driver, &pkgs, ctx.dry_run)?;
+    package_manager::ensure_packages(ctx.platform.driver, &pkgs, ctx.options.dry_run)?;
 
     tracing::info!(
         "Nerd Fonts are not available via system packages. \

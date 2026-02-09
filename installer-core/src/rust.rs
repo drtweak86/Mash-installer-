@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use std::path::PathBuf;
 use std::process::Command;
 
-use crate::InstallContext;
+use crate::{cmd, InstallContext};
 
 /// Check if rustup is installed for the current user.
 fn has_rustup() -> bool {
@@ -31,7 +31,7 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
     install_components(ctx)?;
 
     // 3. Cargo tools (dev+ profile)
-    if ctx.profile >= crate::ProfileLevel::Dev {
+    if ctx.options.profile >= crate::ProfileLevel::Dev {
         install_cargo_tools(ctx)?;
     }
 
@@ -41,27 +41,25 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
 fn install_rustup(ctx: &InstallContext) -> Result<()> {
     if has_rustup() {
         tracing::info!("rustup already installed; updating");
-        if !ctx.dry_run {
-            let _ = Command::new(rustup_bin()).arg("update").status();
+        if !ctx.options.dry_run {
+            let mut update_cmd = Command::new(rustup_bin());
+            update_cmd.arg("update");
+            if let Err(err) = cmd::run(&mut update_cmd) {
+                tracing::warn!("rustup update failed; continuing ({err})");
+            }
         }
         return Ok(());
     }
 
     tracing::info!("Installing rustup + stable toolchain");
-    if ctx.dry_run {
+    if ctx.options.dry_run {
         tracing::info!("[dry-run] curl rustup.rs | sh -s -- -y");
         return Ok(());
     }
 
-    let status = Command::new("sh")
-        .arg("-c")
-        .arg("curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable")
-        .status()
-        .context("installing rustup")?;
-
-    if !status.success() {
-        anyhow::bail!("rustup installation failed");
-    }
+    let mut install_cmd = Command::new("sh");
+    install_cmd.arg("-c").arg("curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable");
+    cmd::run(&mut install_cmd).context("installing rustup")?;
     Ok(())
 }
 
@@ -69,12 +67,14 @@ fn install_components(ctx: &InstallContext) -> Result<()> {
     let components = ["rustfmt", "clippy", "rust-src"];
     for comp in &components {
         tracing::info!("Ensuring component: {comp}");
-        if ctx.dry_run {
+        if ctx.options.dry_run {
             continue;
         }
-        let _ = Command::new(rustup_bin())
-            .args(["component", "add", comp])
-            .status();
+        let mut comp_cmd = Command::new(rustup_bin());
+        comp_cmd.args(["component", "add", comp]);
+        if let Err(err) = cmd::run(&mut comp_cmd) {
+            tracing::warn!("Failed to add component {comp}; continuing ({err})");
+        }
     }
     Ok(())
 }
@@ -96,27 +96,29 @@ fn install_cargo_tools(ctx: &InstallContext) -> Result<()> {
             continue;
         }
         tracing::info!("Installing {crate_name} via cargo install");
-        if ctx.dry_run {
+        if ctx.options.dry_run {
             continue;
         }
-        let status = Command::new(cargo_bin())
-            .args(["install", crate_name])
-            .status();
-        match status {
-            Ok(s) if s.success() => tracing::info!("Installed {crate_name}"),
-            _ => tracing::warn!("Failed to install {crate_name}; continuing"),
+        let mut install_cmd = Command::new(cargo_bin());
+        install_cmd.args(["install", crate_name]);
+        if let Err(err) = cmd::run(&mut install_cmd) {
+            tracing::warn!("Failed to install {crate_name}; continuing ({err})");
+        } else {
+            tracing::info!("Installed {crate_name}");
         }
     }
 
     // flamegraph – only on full profile (needs perf which is tricky on Pi)
-    if ctx.profile >= crate::ProfileLevel::Full {
+    if ctx.options.profile >= crate::ProfileLevel::Full {
         let bin_path = cargo_home().join("bin/flamegraph");
         if !bin_path.exists() && which::which("flamegraph").is_err() {
             tracing::info!("Installing flamegraph");
-            if !ctx.dry_run {
-                let _ = Command::new(cargo_bin())
-                    .args(["install", "flamegraph"])
-                    .status();
+            if !ctx.options.dry_run {
+                let mut flame_cmd = Command::new(cargo_bin());
+                flame_cmd.args(["install", "flamegraph"]);
+                if let Err(err) = cmd::run(&mut flame_cmd) {
+                    tracing::warn!("Failed to install flamegraph; continuing ({err})");
+                }
             }
         }
     }

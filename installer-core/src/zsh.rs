@@ -1,10 +1,9 @@
 use anyhow::{Context, Result};
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::time::SystemTime;
 
-use crate::InstallContext;
+use crate::{cmd, package_manager, InstallContext, PkgBackend};
 
 fn home_dir() -> PathBuf {
     dirs::home_dir().unwrap_or_else(|| PathBuf::from("/root"))
@@ -22,7 +21,7 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
     install_omz(ctx)?;
     install_starship(ctx)?;
 
-    if ctx.enable_p10k {
+    if ctx.options.enable_p10k {
         install_p10k(ctx)?;
     } else {
         tracing::info!("Powerlevel10k skipped (pass --enable-p10k to install)");
@@ -32,7 +31,7 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
 }
 
 fn install_zsh(ctx: &InstallContext) -> Result<()> {
-    crate::pkg::ensure_packages(ctx.driver, &["zsh"], ctx.dry_run)?;
+    package_manager::ensure_packages(ctx.platform.driver, &["zsh"], ctx.options.dry_run)?;
     Ok(())
 }
 
@@ -44,21 +43,19 @@ fn install_omz(ctx: &InstallContext) -> Result<()> {
     }
 
     tracing::info!("Installing oh-my-zsh (unattended)");
-    if ctx.dry_run {
+    if ctx.options.dry_run {
         tracing::info!("[dry-run] would install oh-my-zsh");
         return Ok(());
     }
 
-    let status = Command::new("sh")
+    if let Err(err) = cmd::Command::new("sh")
         .arg("-c")
         .arg(
             r#"RUNZSH=no CHSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)""#,
         )
-        .status()
-        .context("installing oh-my-zsh")?;
-
-    if !status.success() {
-        tracing::warn!("oh-my-zsh installation returned non-zero; continuing");
+        .execute()
+    {
+        tracing::warn!("oh-my-zsh installation returned non-zero; continuing ({err})");
     }
     Ok(())
 }
@@ -70,22 +67,20 @@ fn install_starship(ctx: &InstallContext) -> Result<()> {
     }
 
     tracing::info!("Installing starship prompt");
-    if ctx.dry_run {
+    if ctx.options.dry_run {
         tracing::info!("[dry-run] would install starship");
         return Ok(());
     }
 
-    let status = Command::new("sh")
+    if let Err(err) = cmd::Command::new("sh")
         .arg("-c")
         .arg(format!(
             "STARSHIP_VERSION={} curl -sS https://starship.rs/install.sh | sh -s -- -y",
             STARSHIP_VERSION
         ))
-        .status()
-        .context("installing starship")?;
-
-    if !status.success() {
-        tracing::warn!("starship installation failed; continuing");
+        .execute()
+    {
+        tracing::warn!("starship installation failed; continuing ({err})");
     }
 
     // Add starship init to .zshrc if not already there
@@ -121,21 +116,25 @@ fn install_p10k(ctx: &InstallContext) -> Result<()> {
 /// Try installing Powerlevel10k via the system package manager.
 /// Returns true if it succeeded (or was already installed).
 fn try_p10k_pkg(ctx: &InstallContext) -> Result<bool> {
-    match ctx.pkg_backend {
-        crate::pkg::PkgBackend::Pacman => {
+    match ctx.platform.pkg_backend {
+        PkgBackend::Pacman => {
             // Manjaro/Arch: available as `zsh-theme-powerlevel10k`
-            if crate::pkg::is_installed(ctx.driver, "zsh-theme-powerlevel10k")
+            if package_manager::is_installed(ctx.platform.driver, "zsh-theme-powerlevel10k")
                 || Path::new("/usr/share/zsh-theme-powerlevel10k").exists()
             {
                 tracing::info!("Powerlevel10k already installed via package manager");
                 return Ok(true);
             }
             tracing::info!("Attempting Powerlevel10k install via pacman");
-            if ctx.dry_run {
+            if ctx.options.dry_run {
                 tracing::info!("[dry-run] would install zsh-theme-powerlevel10k");
                 return Ok(true);
             }
-            match crate::pkg::ensure_packages(ctx.driver, &["zsh-theme-powerlevel10k"], false) {
+            match package_manager::ensure_packages(
+                ctx.platform.driver,
+                &["zsh-theme-powerlevel10k"],
+                false,
+            ) {
                 Ok(()) => {
                     tracing::info!("Installed Powerlevel10k via pacman");
                     Ok(true)
@@ -148,7 +147,7 @@ fn try_p10k_pkg(ctx: &InstallContext) -> Result<bool> {
                 }
             }
         }
-        crate::pkg::PkgBackend::Apt => {
+        PkgBackend::Apt => {
             // Not in standard Ubuntu/Debian repos
             Ok(false)
         }
@@ -165,7 +164,7 @@ fn install_p10k_git(ctx: &InstallContext) -> Result<()> {
     }
 
     tracing::info!("Cloning Powerlevel10k to {}", dest.display());
-    if ctx.dry_run {
+    if ctx.options.dry_run {
         tracing::info!(
             "[dry-run] would git clone powerlevel10k to {}",
             dest.display()
@@ -173,7 +172,7 @@ fn install_p10k_git(ctx: &InstallContext) -> Result<()> {
         return Ok(());
     }
 
-    let status = Command::new("sudo")
+    cmd::Command::new("sudo")
         .args([
             "git",
             "clone",
@@ -184,12 +183,8 @@ fn install_p10k_git(ctx: &InstallContext) -> Result<()> {
             "https://github.com/romkatv/powerlevel10k.git",
             P10K_SYSTEM_DIR,
         ])
-        .status()
+        .execute()
         .context("cloning powerlevel10k")?;
-
-    if !status.success() {
-        anyhow::bail!("Failed to clone Powerlevel10k");
-    }
 
     tracing::info!("Powerlevel10k installed to {}", dest.display());
     Ok(())
@@ -228,7 +223,7 @@ fn add_p10k_source_to_zshrc(ctx: &InstallContext) -> Result<()> {
     writeln!(block, "  source {P10K_THEME_FILE}").unwrap();
     writeln!(block, "fi").unwrap();
 
-    if ctx.dry_run {
+    if ctx.options.dry_run {
         tracing::info!("[dry-run] would append Powerlevel10k source block to .zshrc");
         return Ok(());
     }

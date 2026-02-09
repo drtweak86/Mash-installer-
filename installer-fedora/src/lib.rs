@@ -1,4 +1,5 @@
-use installer_core::{DistroDriver, PkgBackend, PlatformInfo};
+use installer_core::{cmd, DistroDriver, PkgBackend, PlatformInfo};
+use std::process::Command;
 
 pub struct FedoraDriver;
 
@@ -37,10 +38,38 @@ impl DistroDriver for FedoraDriver {
             _ => Some(canonical.to_string()),
         }
     }
+
+    fn is_package_installed(&self, package_name: &str) -> bool {
+        let native = match self.translate_package(package_name) {
+            Some(name) => name,
+            None => return false,
+        };
+        let mut cmd = Command::new("pacman");
+        cmd.args(["-Q", native.as_str()]);
+        cmd::run(&mut cmd).is_ok()
+    }
 }
 
 static FEDORA_DRIVER: FedoraDriver = FedoraDriver;
 
 pub fn driver() -> &'static dyn DistroDriver {
     &FEDORA_DRIVER
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn gpp_translates_to_gcc_cxx() {
+        assert_eq!(
+            driver().translate_package("g++"),
+            Some("gcc-c++".to_string())
+        );
+    }
+
+    #[test]
+    fn optional_packages_translate_to_none() {
+        assert!(driver().translate_package("docker-ce-cli").is_none());
+    }
 }

@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use std::process::Command;
 
-use crate::InstallContext;
+use crate::{cmd, package_manager, InstallContext};
 
 pub fn install_phase(ctx: &InstallContext) -> Result<()> {
     if which::which("rclone").is_ok() {
@@ -20,18 +20,18 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
 }
 
 fn try_pkg(ctx: &InstallContext) -> Result<bool> {
-    if crate::pkg::is_installed(ctx.driver, "rclone") {
+    if package_manager::is_installed(ctx.platform.driver, "rclone") {
         return Ok(true);
     }
 
     tracing::info!("Attempting rclone install via package manager");
-    if ctx.dry_run {
+    if ctx.options.dry_run {
         tracing::info!("[dry-run] would try package manager install rclone");
         return Ok(true);
     }
 
     // ensure_packages uses the right backend automatically
-    match crate::pkg::ensure_packages(ctx.driver, &["rclone"], false) {
+    match package_manager::ensure_packages(ctx.platform.driver, &["rclone"], false) {
         Ok(()) => {
             tracing::info!("Installed rclone via package manager");
             Ok(true)
@@ -45,19 +45,17 @@ fn try_pkg(ctx: &InstallContext) -> Result<bool> {
 
 fn install_via_script(ctx: &InstallContext) -> Result<()> {
     tracing::info!("Installing rclone via official install script");
-    if ctx.dry_run {
+    if ctx.options.dry_run {
         tracing::info!("[dry-run] would run rclone install script");
         return Ok(());
     }
 
-    let status = Command::new("sh")
+    let mut install_cmd = Command::new("sh");
+    install_cmd
         .arg("-c")
-        .arg("curl -fsSL https://rclone.org/install.sh | sudo bash")
-        .status()
-        .context("running rclone install script")?;
-
-    if !status.success() {
-        tracing::warn!("rclone install script failed; continuing");
+        .arg("curl -fsSL https://rclone.org/install.sh | sudo bash");
+    if let Err(err) = cmd::run(&mut install_cmd).context("running rclone install script") {
+        tracing::warn!("rclone install script failed; continuing ({err})");
     }
     Ok(())
 }

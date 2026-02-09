@@ -9,9 +9,11 @@ repository = "https://github.com/drtweak86/Mash-installer-"
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
+indicatif = "0.18"
 installer-arch = { path = "../installer-arch" }
 installer-debian = { path = "../installer-debian" }
 installer-fedora = { path = "../installer-fedora" }
 installer-core = { path = "../installer-core" }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+which = "4"

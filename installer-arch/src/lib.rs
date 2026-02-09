@@ -1,4 +1,5 @@
-use installer_core::{DistroDriver, PkgBackend, PlatformInfo};
+use installer_core::{cmd, DistroDriver, PkgBackend, PlatformInfo};
+use std::process::Command;
 
 pub struct ArchDriver;
 
@@ -17,6 +18,16 @@ impl DistroDriver for ArchDriver {
 
     fn pkg_backend(&self) -> PkgBackend {
         PkgBackend::Pacman
+    }
+
+    fn is_package_installed(&self, package_name: &str) -> bool {
+        let native = match self.translate_package(package_name) {
+            Some(name) => name,
+            None => return false,
+        };
+        let mut cmd = Command::new("pacman");
+        cmd.args(["-Q", native.as_str()]);
+        cmd::run(&mut cmd).is_ok()
     }
 
     fn translate_package(&self, canonical: &str) -> Option<String> {
@@ -53,4 +64,30 @@ static ARCH_DRIVER: ArchDriver = ArchDriver;
 
 pub fn driver() -> &'static dyn DistroDriver {
     &ARCH_DRIVER
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn builds_translate_to_base_devel() {
+        assert_eq!(
+            driver().translate_package("build-essential"),
+            Some("base-devel".to_string())
+        );
+    }
+
+    #[test]
+    fn docker_package_maps_to_docker() {
+        assert_eq!(
+            driver().translate_package("docker-ce"),
+            Some("docker".to_string())
+        );
+    }
+
+    #[test]
+    fn unsupported_package_returns_none() {
+        assert!(driver().translate_package("apt-transport-https").is_none());
+    }
 }

@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use std::path::Path;
 use std::process::Command;
 
-use crate::{driver::ServiceName, pkg::PkgBackend, systemd, InstallContext};
+use crate::{cmd, driver::ServiceName, package_manager, systemd, InstallContext, PkgBackend};
 
 /// Clone target for the argononed C daemon.
 const ARGONONED_REPO: &str = "https://gitlab.com/DarkElvenAngel/argononed.git";
@@ -19,12 +19,12 @@ const ARGONONED_SRC: &str = "/usr/local/src/argononed";
 /// See: <https://gitlab.com/DarkElvenAngel/argononed>
 pub fn install_phase(ctx: &InstallContext) -> Result<()> {
     // Quick gate: only relevant on Raspberry Pi hardware
-    if ctx.platform.pi_model.is_none() {
+    if ctx.platform.platform.pi_model.is_none() {
         tracing::warn!("Not running on a Raspberry Pi; skipping Argon One");
         return Ok(());
     }
 
-    match ctx.pkg_backend {
+    match ctx.platform.pkg_backend {
         PkgBackend::Pacman => install_argononed(ctx),
         PkgBackend::Apt => install_argon_oem(ctx),
     }
@@ -47,7 +47,7 @@ fn install_argononed(ctx: &InstallContext) -> Result<()> {
     // Ensure build deps: gcc/make already in base-devel, we need dtc
     ensure_argononed_deps(ctx)?;
 
-    if ctx.dry_run {
+    if ctx.options.dry_run {
         tracing::info!("[dry-run] would clone, build, and install argononed");
         return Ok(());
     }
@@ -63,7 +63,7 @@ fn install_argononed(ctx: &InstallContext) -> Result<()> {
 fn ensure_argononed_deps(ctx: &InstallContext) -> Result<()> {
     // dtc = device tree compiler, needed by argononed's build
     // git is already installed from earlier phases
-    crate::pkg::ensure_packages(ctx.driver, &["dtc"], ctx.dry_run)?;
+    package_manager::ensure_packages(ctx.platform.driver, &["dtc"], ctx.options.dry_run)?;
     Ok(())
 }
 
@@ -72,20 +72,15 @@ fn clone_argononed() -> Result<()> {
     if dest.exists() {
         tracing::info!("argononed source already present at {}", dest.display());
         // Pull latest in case of partial previous build
-        let _ = Command::new("sudo")
-            .args(["git", "-C", ARGONONED_SRC, "pull", "--ff-only"])
-            .status();
+        let mut pull_cmd = Command::new("sudo");
+        pull_cmd.args(["git", "-C", ARGONONED_SRC, "pull", "--ff-only"]);
+        let _ = cmd::run(&mut pull_cmd);
         return Ok(());
     }
 
-    let status = Command::new("sudo")
-        .args(["git", "clone", "--depth=1", ARGONONED_REPO, ARGONONED_SRC])
-        .status()
-        .context("cloning argononed")?;
-
-    if !status.success() {
-        anyhow::bail!("Failed to clone argononed from {}", ARGONONED_REPO);
-    }
+    let mut clone_cmd = Command::new("sudo");
+    clone_cmd.args(["git", "clone", "--depth=1", ARGONONED_REPO, ARGONONED_SRC]);
+    cmd::run(&mut clone_cmd).context("cloning argononed")?;
     Ok(())
 }
 
@@ -94,29 +89,18 @@ fn build_argononed() -> Result<()> {
     // We use it because it also installs the systemd unit and dtoverlay.
     tracing::info!("Building and installing argononed (this may take a moment)");
 
-    let status = Command::new("sudo")
+    let mut install_cmd = Command::new("sudo");
+    install_cmd
         .arg("bash")
         .arg("-c")
-        .arg(format!("cd {ARGONONED_SRC} && ./install"))
-        .status()
-        .context("running argononed install script")?;
-
-    if !status.success() {
-        // Fall back to manual configure+make if the convenience script fails
-        tracing::warn!("./install script failed; attempting manual build");
-        let status = Command::new("sudo")
-            .arg("bash")
-            .arg("-c")
-            .arg(format!(
-                "cd {ARGONONED_SRC} && ./configure && make all && make install"
-            ))
-            .status()
-            .context("running argononed manual build")?;
-        if !status.success() {
-            anyhow::bail!(
-                "argononed build failed. Check build deps (base-devel, dtc) and kernel headers."
-            );
-        }
+        .arg(format!("cd {ARGONONED_SRC} && ./install"));
+    if let Err(err) = cmd::run(&mut install_cmd) {
+        tracing::warn!("./install script failed; attempting manual build ({err})");
+        let mut manual_cmd = Command::new("sudo");
+        manual_cmd.arg("bash").arg("-c").arg(format!(
+            "cd {ARGONONED_SRC} && ./configure && make all && make install"
+        ));
+        cmd::run(&mut manual_cmd).context("running argononed manual build")?;
     }
     Ok(())
 }
@@ -126,16 +110,14 @@ fn enable_argononed_service(ctx: &InstallContext) -> Result<()> {
         tracing::warn!("systemd not detected; skipping argononed.service enable");
         return Ok(());
     }
-    let _ = Command::new("sudo")
-        .args(["systemctl", "daemon-reload"])
-        .status();
-    let service = ctx.driver.service_unit(ServiceName::ArgonOne);
-    let status = Command::new("sudo")
-        .args(["systemctl", "enable", service])
-        .status()
-        .context(format!("enabling {service}"))?;
-    if !status.success() {
-        tracing::warn!("Failed to enable {service}; you may need to reboot first");
+    let mut reload_cmd = Command::new("sudo");
+    reload_cmd.args(["systemctl", "daemon-reload"]);
+    let _ = cmd::run(&mut reload_cmd);
+    let service = ctx.platform.driver.service_unit(ServiceName::ArgonOne);
+    let mut enable_cmd = Command::new("sudo");
+    enable_cmd.args(["systemctl", "enable", service]);
+    if let Err(err) = cmd::run(&mut enable_cmd).context(format!("enabling {service}")) {
+        tracing::warn!("Failed to enable {service}; you may need to reboot first ({err})");
     }
     Ok(())
 }
@@ -149,19 +131,16 @@ fn install_argon_oem(ctx: &InstallContext) -> Result<()> {
     }
 
     tracing::info!("Installing Argon One fan control via OEM script (Debian/Ubuntu path)");
-    if ctx.dry_run {
+    if ctx.options.dry_run {
         tracing::info!("[dry-run] would run Argon40 OEM install script");
         return Ok(());
     }
 
-    let status = Command::new("sh")
-        .arg("-c")
-        .arg("curl -fsSL https://download.argon40.com/argon1.sh | bash")
-        .status()
-        .context("running Argon One OEM install script")?;
-
-    if !status.success() {
-        tracing::warn!("Argon One OEM install script failed; this is non-critical");
+    let mut cmd = Command::new("sh");
+    cmd.arg("-c")
+        .arg("curl -fsSL https://download.argon40.com/argon1.sh | bash");
+    if let Err(err) = cmd::run(&mut cmd).context("running Argon One OEM install script") {
+        tracing::warn!("Argon One OEM install script failed; this is non-critical ({err})");
     }
 
     Ok(())

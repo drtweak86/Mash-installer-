@@ -439,16 +439,7 @@ fn prompt_install_menu(
 }
 
 fn ensure_dialog_available(dry_run: bool) -> bool {
-    if which::which("dialog").is_ok() {
-        return true;
-    }
-    if dry_run {
-        return false;
-    }
-    if crate::pkg::ensure_packages(&["dialog"], false).is_ok() {
-        return which::which("dialog").is_ok();
-    }
-    false
+    which::which("dialog").is_ok()
 }
 
 fn dialog_profile_menu(current: ProfileLevel) -> Result<Option<ProfileLevel>> {

@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use crate::InstallContext;
+use crate::{package_manager, InstallContext};
 
 /// Buildroot build dependencies.
 pub fn install_phase(ctx: &InstallContext) -> Result<()> {
@@ -22,6 +22,6 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
         "python3-venv",
     ];
 
-    crate::pkg::ensure_packages(ctx.driver, &pkgs, ctx.dry_run)?;
+    package_manager::ensure_packages(ctx.platform.driver, &pkgs, ctx.options.dry_run)?;
     Ok(())
 }

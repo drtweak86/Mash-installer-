@@ -1,5 +1,13 @@
-/target
+# Rust build artifacts
+/target/
+
+# Common editor/IDE temporary files
 *.swp
 *.swo
 *~
 .DS_Store
+.vscode/
+.idea/
+*.log
+*.tmp
+**/*.rs.bk

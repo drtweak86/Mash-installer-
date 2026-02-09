@@ -175,6 +175,7 @@ pub trait PhaseObserver {
     fn on_phase_failure(&mut self, _index: usize, _label: &'static str, _err: &Error) {}
 }
 
+#[derive(Debug)]
 pub struct PhaseRunResult {
     pub completed_phases: Vec<&'static str>,
 }
@@ -278,5 +279,196 @@ impl FunctionPhase {
             done_msg,
             run,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use anyhow::{anyhow, Error, Result};
+    use std::path::PathBuf;
+
+    struct RecordingObserver {
+        total: Option<usize>,
+        events: Vec<String>,
+    }
+
+    impl RecordingObserver {
+        fn new() -> Self {
+            Self {
+                total: None,
+                events: Vec::new(),
+            }
+        }
+    }
+
+    impl PhaseObserver for RecordingObserver {
+        fn total_phases(&mut self, total: usize) {
+            self.total = Some(total);
+            self.events.push(format!("total:{}", total));
+        }
+
+        fn on_phase_started(&mut self, index: usize, _: usize, label: &'static str) {
+            self.events.push(format!("start:{}:{}", index, label));
+        }
+
+        fn on_phase_success(&mut self, index: usize, done_msg: &'static str) {
+            self.events.push(format!("success:{}:{}", index, done_msg));
+        }
+
+        fn on_phase_failure(&mut self, index: usize, label: &'static str, err: &Error) {
+            self.events.push(format!("failure:{}:{}:{}", index, label, err));
+        }
+    }
+
+    struct TestPhase {
+        label: &'static str,
+        done_msg: &'static str,
+        should_run: bool,
+        run: fn(&InstallContext) -> Result<()>,
+    }
+
+    impl Phase for TestPhase {
+        fn label(&self) -> &'static str {
+            self.label
+        }
+
+        fn done_msg(&self) -> &'static str {
+            self.done_msg
+        }
+
+        fn should_run(&self, _: &OptionsContext) -> bool {
+            self.should_run
+        }
+
+        fn execute(&self, ctx: &InstallContext) -> Result<()> {
+            (self.run)(ctx)
+        }
+    }
+
+    impl TestPhase {
+        fn new(
+            label: &'static str,
+            done_msg: &'static str,
+            should_run: bool,
+            run: fn(&InstallContext) -> Result<()>,
+        ) -> Self {
+            Self {
+                label,
+                done_msg,
+                should_run,
+                run,
+            }
+        }
+    }
+
+    struct DummyDriver;
+
+    impl DistroDriver for DummyDriver {
+        fn name(&self) -> &'static str {
+            "dummy"
+        }
+
+        fn description(&self) -> &'static str {
+            "dummy driver for tests"
+        }
+
+        fn matches(&self, _: &PlatformInfo) -> bool {
+            true
+        }
+
+        fn pkg_backend(&self) -> PkgBackend {
+            PkgBackend::Apt
+        }
+    }
+
+    static TEST_DRIVER: DummyDriver = DummyDriver;
+
+    fn build_test_context() -> Result<InstallContext> {
+        let config_service = ConfigService::load()?;
+        let platform = PlatformInfo {
+            arch: "x86_64".into(),
+            distro: "mash-test".into(),
+            distro_version: "0".into(),
+            distro_codename: "test".into(),
+            distro_family: "debian".into(),
+            pi_model: None,
+        };
+        let driver: &'static dyn DistroDriver = &TEST_DRIVER;
+        let platform_ctx = PlatformContext {
+            config_service,
+            platform,
+            driver_name: "dummy",
+            driver,
+            pkg_backend: PkgBackend::Apt,
+        };
+        let options = OptionsContext {
+            profile: ProfileLevel::Minimal,
+            staging_dir: PathBuf::from("/tmp/mash-test"),
+            dry_run: true,
+            interactive: false,
+            enable_argon: false,
+            enable_p10k: false,
+            docker_data_root: false,
+        };
+
+        Ok(InstallContext {
+            options,
+            platform: platform_ctx,
+        })
+    }
+
+    fn success_phase(_ctx: &InstallContext) -> Result<()> {
+        Ok(())
+    }
+
+    fn failing_phase(_ctx: &InstallContext) -> Result<()> {
+        Err(anyhow!("boom"))
+    }
+
+    #[test]
+    fn phase_runner_notifies_observer_and_records_success() -> Result<()> {
+        let ctx = build_test_context()?;
+        let phases: Vec<Box<dyn Phase>> = vec![
+            Box::new(TestPhase::new("phase-one", "phase one done", true, success_phase)),
+            Box::new(TestPhase::new("phase-skip", "phase skip done", false, success_phase)),
+            Box::new(TestPhase::new("phase-two", "phase two done", true, success_phase)),
+        ];
+        let runner = PhaseRunner::from_phases(phases);
+        let mut observer = RecordingObserver::new();
+        let result = runner.run(&ctx, &mut observer)?;
+
+        assert_eq!(result.completed_phases, vec!["phase-one", "phase-two"]);
+        assert_eq!(observer.total, Some(3));
+        assert!(observer.events.iter().any(|evt| evt.starts_with("start:1:phase-one")));
+        assert!(observer
+            .events
+            .iter()
+            .any(|evt| evt.starts_with("success:3:phase two done")));
+        Ok(())
+    }
+
+    #[test]
+    fn phase_runner_stops_on_error() -> Result<()> {
+        let ctx = build_test_context()?;
+        let phases: Vec<Box<dyn Phase>> = vec![
+            Box::new(TestPhase::new("phase-one", "phase one done", true, success_phase)),
+            Box::new(TestPhase::new("phase-error", "phase error done", true, failing_phase)),
+            Box::new(TestPhase::new("phase-three", "phase three done", true, success_phase)),
+        ];
+        let runner = PhaseRunner::from_phases(phases);
+        let mut observer = RecordingObserver::new();
+
+        let err = runner.run(&ctx, &mut observer).unwrap_err();
+        assert_eq!(err.to_string(), "boom");
+        assert!(observer
+            .events
+            .iter()
+            .any(|evt| evt.starts_with("failure:2:phase-error:boom")));
+        assert!(observer
+            .events
+            .iter()
+            .any(|evt| evt.starts_with("start:1:phase-one")));
+        Ok(())
     }
 }

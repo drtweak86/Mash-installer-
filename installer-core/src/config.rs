@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -73,7 +74,11 @@ fn bool_true() -> bool {
 }
 
 fn home_dir() -> PathBuf {
-    dirs::home_dir().unwrap_or_else(|| PathBuf::from("/root"))
+    if let Some(home) = env::var_os("HOME") {
+        PathBuf::from(home)
+    } else {
+        dirs::home_dir().unwrap_or_else(|| PathBuf::from("/root"))
+    }
 }
 
 fn default_staging_dir() -> PathBuf {

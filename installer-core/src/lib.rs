@@ -19,17 +19,17 @@ mod staging;
 mod systemd;
 mod zsh;
 
-use anyhow::Result;
-use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use anyhow::{Error, Result};
 use std::path::PathBuf;
 use tracing::{error, info};
 
 pub use backend::PkgBackend;
-use context::{OptionsContext, PlatformContext, UiContext};
+use context::{OptionsContext, PlatformContext};
 pub use driver::{AptRepoConfig, DistroDriver, RepoKind, ServiceName};
 pub use platform::{detect as detect_platform, PlatformInfo};
 
 /// Options provided by the CLI that drive `run_with_driver`.
+#[derive(Clone)]
 pub struct InstallOptions {
     pub profile: ProfileLevel,
     pub staging_dir: Option<PathBuf>,
@@ -44,7 +44,6 @@ pub struct InstallOptions {
 pub struct InstallContext {
     pub options: OptionsContext,
     pub platform: PlatformContext,
-    pub ui: UiContext,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -54,48 +53,12 @@ pub enum ProfileLevel {
     Full = 2,
 }
 
-impl InstallContext {
-    /// Create a spinner-style progress bar attached to the MultiProgress.
-    pub fn phase_spinner(&self, msg: &str) -> ProgressBar {
-        let pb = self
-            .ui
-            .mp
-            .insert_before(&self.ui.overall, ProgressBar::new_spinner());
-        pb.set_style(
-            ProgressStyle::with_template("{spinner:.green} [{elapsed_precise}] {msg}")
-                .unwrap()
-                .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏ "),
-        );
-        pb.set_message(msg.to_string());
-        pb.enable_steady_tick(std::time::Duration::from_millis(120));
-        pb
-    }
-
-    /// Finish a spinner with a checkmark and advance the overall bar.
-    pub fn finish_phase(&self, pb: &ProgressBar, msg: &str) {
-        pb.set_style(ProgressStyle::with_template("{prefix} {msg}").unwrap());
-        pb.set_prefix("✓");
-        pb.finish_with_message(msg.to_string());
-        self.ui.overall.inc(1);
-    }
-
-    /// Finish a spinner indicating it was skipped and advance the overall bar.
-    pub fn skip_phase(&self, pb: &ProgressBar, msg: &str) {
-        pb.set_style(ProgressStyle::with_template("{prefix} {msg}").unwrap());
-        pb.set_prefix("–");
-        pb.finish_with_message(msg.to_string());
-        self.ui.overall.inc(1);
-    }
-}
-
 /// Run the installer using the supplied distro driver and CLI options.
-pub fn run_with_driver(driver: &'static dyn DistroDriver, opts: InstallOptions) -> Result<()> {
-    println!();
-    println!("╔══════════════════════════════════════════════╗");
-    println!("║       mash-setup · mega installer            ║");
-    println!("╚══════════════════════════════════════════════╝");
-    println!();
-
+pub fn run_with_driver(
+    driver: &'static dyn DistroDriver,
+    opts: InstallOptions,
+    observer: &mut dyn PhaseObserver,
+) -> Result<RunSummary> {
     let plat = platform::detect()?;
     info!(
         "Platform: {} {} on {}",
@@ -114,11 +77,40 @@ pub fn run_with_driver(driver: &'static dyn DistroDriver, opts: InstallOptions) 
     let staging = staging::resolve(opts.staging_dir.as_deref(), &cfg)?;
     info!("Staging directory: {}", staging.display());
 
-    let profile = opts.profile;
-    let enable_argon = opts.enable_argon;
-    let enable_p10k = opts.enable_p10k;
-    let docker_data_root = opts.docker_data_root;
+    let options = OptionsContext {
+        profile: opts.profile,
+        staging_dir: staging,
+        dry_run: opts.dry_run,
+        interactive: opts.interactive,
+        enable_argon: opts.enable_argon,
+        enable_p10k: opts.enable_p10k,
+        docker_data_root: opts.docker_data_root,
+    };
 
+    let platform_ctx = PlatformContext {
+        config: cfg,
+        platform: plat,
+        driver_name: driver.name(),
+        driver,
+        pkg_backend: driver.pkg_backend(),
+    };
+
+    let ctx = InstallContext {
+        options,
+        platform: platform_ctx,
+    };
+
+    let phases = build_phase_list(&ctx.options);
+    let runner = PhaseRunner::from_phases(phases);
+    let result = runner.run(&ctx, observer)?;
+
+    Ok(RunSummary {
+        completed_phases: result.completed_phases,
+        staging_dir: ctx.options.staging_dir.clone(),
+    })
+}
+
+fn build_phase_list(options: &OptionsContext) -> Vec<Box<dyn Phase>> {
     let mut phases: Vec<Box<dyn Phase>> = vec![
         Box::new(FunctionPhase::new(
             "System packages",
@@ -137,7 +129,7 @@ pub fn run_with_driver(driver: &'static dyn DistroDriver, opts: InstallOptions) 
         )),
     ];
 
-    if profile >= ProfileLevel::Dev {
+    if options.profile >= ProfileLevel::Dev {
         phases.push(Box::new(FunctionPhase::new(
             "Buildroot dependencies",
             "Buildroot dependencies ready",
@@ -165,7 +157,7 @@ pub fn run_with_driver(driver: &'static dyn DistroDriver, opts: InstallOptions) 
         )));
     }
 
-    if enable_argon {
+    if options.enable_argon {
         phases.push(Box::new(FunctionPhase::new(
             "Argon One fan script",
             "Argon One installed",
@@ -173,103 +165,83 @@ pub fn run_with_driver(driver: &'static dyn DistroDriver, opts: InstallOptions) 
         )));
     }
 
-    let total = phases.len() as u64;
+    phases
+}
 
-    let mp = MultiProgress::new();
-    let overall = mp.add(ProgressBar::new(total));
-    overall.set_style(
-        ProgressStyle::with_template(
-            "{spinner:.cyan} [{bar:30.green/dim}] {pos}/{len} phases  {percent}%  ETA {eta}  [{elapsed}]",
-        )
-        .unwrap()
-        .progress_chars("━╸─")
-        .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏ "),
-    );
-    overall.enable_steady_tick(std::time::Duration::from_millis(200));
+pub trait PhaseObserver {
+    fn total_phases(&mut self, _total: usize) {}
+    fn on_phase_started(&mut self, _index: usize, _total: usize, _label: &'static str) {}
+    fn on_phase_success(&mut self, _index: usize, _done_msg: &'static str) {}
+    fn on_phase_failure(&mut self, _index: usize, _label: &'static str, _err: &Error) {}
+}
 
-    let options = OptionsContext {
-        profile,
-        staging_dir: staging,
-        dry_run: opts.dry_run,
-        interactive: opts.interactive,
-        enable_argon,
-        enable_p10k,
-        docker_data_root,
-    };
+pub struct PhaseRunResult {
+    pub completed_phases: Vec<&'static str>,
+}
 
-    let platform_ctx = PlatformContext {
-        config: cfg,
-        platform: plat,
-        driver_name: driver.name(),
-        driver,
-        pkg_backend: driver.pkg_backend(),
-    };
+pub struct PhaseRunner {
+    phases: Vec<Box<dyn Phase>>,
+}
 
-    let ui = UiContext { mp, overall };
+impl PhaseRunner {
+    pub fn from_phases(phases: Vec<Box<dyn Phase>>) -> Self {
+        Self { phases }
+    }
 
-    let ctx = InstallContext {
-        options,
-        platform: platform_ctx,
-        ui,
-    };
+    pub fn run(
+        &self,
+        ctx: &InstallContext,
+        observer: &mut dyn PhaseObserver,
+    ) -> Result<PhaseRunResult> {
+        let total = self.phases.len();
+        observer.total_phases(total);
+        let mut completed = Vec::new();
 
-    let mut completed_phases = Vec::new();
-    for (i, phase) in phases.iter().enumerate() {
-        let label = format!("Phase {}/{} · {}", i + 1, total, phase.label());
-        let pb = ctx.phase_spinner(&label);
-        match phase.execute(&ctx) {
-            Ok(()) => {
-                ctx.finish_phase(&pb, phase.done_msg());
-                completed_phases.push(phase.label());
+        for (i, phase) in self.phases.iter().enumerate() {
+            if !phase.should_run(&ctx.options) {
+                continue;
             }
-            Err(e) => {
-                pb.set_style(ProgressStyle::with_template("{prefix} {msg}").unwrap());
-                pb.set_prefix("✗");
-                pb.finish_with_message(format!("{} FAILED: {e:#}", phase.label()));
-                ctx.ui.overall.inc(1);
-                let completed = if completed_phases.is_empty() {
-                    "none".to_string()
-                } else {
-                    completed_phases.join(", ")
-                };
-                error!(
-                    "Installation aborted during {} (staging dir: {}). Completed phases: {}. \
-                     Rerun `mash-setup doctor` or remove the staging directory before retrying.",
-                    phase.label(),
-                    ctx.options.staging_dir.display(),
-                    completed
-                );
-                return Err(e);
+
+            observer.on_phase_started(i + 1, total, phase.label());
+            match phase.execute(ctx) {
+                Ok(()) => {
+                    observer.on_phase_success(i + 1, phase.done_msg());
+                    completed.push(phase.label());
+                }
+                Err(e) => {
+                    observer.on_phase_failure(i + 1, phase.label(), &e);
+                    let completed_list = if completed.is_empty() {
+                        "none".to_string()
+                    } else {
+                        completed.join(", ")
+                    };
+                    error!(
+                        "Installation aborted during {} (staging dir: {}). Completed phases: {}. \
+                         Rerun `mash-setup doctor` or remove the staging directory before retrying.",
+                        phase.label(),
+                        ctx.options.staging_dir.display(),
+                        completed_list
+                    );
+                    return Err(e);
+                }
             }
         }
+
+        Ok(PhaseRunResult {
+            completed_phases: completed,
+        })
     }
+}
 
-    ctx.ui.overall.finish_and_clear();
-
-    println!();
-    println!("╔══════════════════════════════════════════════╗");
-    println!("║       Installation complete!                  ║");
-    println!("╚══════════════════════════════════════════════╝");
-    println!();
-
-    if ctx.options.dry_run {
-        println!("(dry-run mode – no changes were made)");
-        println!();
-    }
-
-    println!("Post-install notes:");
-    println!("  - Log out and back in for docker group membership to take effect.");
-    println!("  - Run `mash-setup doctor` to verify everything.");
-    println!("  - Config lives at ~/.config/mash-installer/config.toml");
-    println!();
-
-    Ok(())
+pub struct RunSummary {
+    pub completed_phases: Vec<&'static str>,
+    pub staging_dir: PathBuf,
 }
 
 pub trait Phase {
     fn label(&self) -> &'static str;
     fn done_msg(&self) -> &'static str;
-    fn should_run(&self, _: &OptionsContext) -> bool {
+    fn should_run(&self, _opts: &OptionsContext) -> bool {
         true
     }
     fn execute(&self, ctx: &InstallContext) -> Result<()>;

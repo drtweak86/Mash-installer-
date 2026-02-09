@@ -1,8 +1,13 @@
-use anyhow::{Context, Result};
+use anyhow::{Context, Error, Result};
 use clap::Parser;
-use installer_core::{detect_platform, DistroDriver, InstallOptions, PlatformInfo, ProfileLevel};
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use installer_core::{
+    detect_platform, DistroDriver, InstallOptions, PhaseObserver, PlatformInfo, ProfileLevel,
+    RunSummary,
+};
 use std::io::{self, Write};
 use std::path::PathBuf;
+use std::time::Duration;
 use tracing::{info, warn};
 
 #[derive(Parser)]
@@ -75,7 +80,129 @@ fn main() -> Result<()> {
         modules
     );
 
-    installer_core::run_with_driver(driver, options).context("installer failed")
+    print_banner();
+
+    let mut observer = CliPhaseObserver::new();
+    let result = installer_core::run_with_driver(driver, options.clone(), &mut observer);
+    observer.finish();
+
+    match result {
+        Ok(summary) => {
+            print_completion_message(&summary, options.dry_run);
+            Ok(())
+        }
+        Err(err) => Err(err).context("installer failed"),
+    }
+}
+
+fn print_banner() {
+    println!();
+    println!("╔══════════════════════════════════════════════╗");
+    println!("║       mash-setup · mega installer            ║");
+    println!("╚══════════════════════════════════════════════╝");
+    println!();
+}
+
+fn print_completion_message(summary: &RunSummary, dry_run: bool) {
+    println!();
+    println!("╔══════════════════════════════════════════════╗");
+    println!("║       Installation complete!                  ║");
+    println!("╚══════════════════════════════════════════════╝");
+    println!();
+
+    if dry_run {
+        println!("(dry-run mode – no changes were made)");
+        println!();
+    }
+
+    println!("Post-install notes:");
+    println!("  - Log out and back in for docker group membership to take effect.");
+    println!("  - Run `mash-setup doctor` to verify everything.");
+    println!("  - Config lives at ~/.config/mash-installer/config.toml");
+    println!("  - Staging directory: {}", summary.staging_dir.display());
+    println!();
+}
+
+struct CliPhaseObserver {
+    mp: MultiProgress,
+    overall: ProgressBar,
+    spinner: Option<ProgressBar>,
+}
+
+impl CliPhaseObserver {
+    fn new() -> Self {
+        let mp = MultiProgress::new();
+        let overall = mp.add(ProgressBar::new(0));
+        overall.set_style(
+            ProgressStyle::with_template(
+                "{spinner:.cyan} [{bar:30.green/dim}] {pos}/{len} phases  {percent}%  ETA {eta}  [{elapsed}]",
+            )
+            .unwrap()
+            .progress_chars("━╸─")
+            .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏ "),
+        );
+        overall.enable_steady_tick(Duration::from_millis(200));
+
+        Self {
+            mp,
+            overall,
+            spinner: None,
+        }
+    }
+
+    fn finish_spinner(&mut self, prefix: &'static str, msg: &str) {
+        if let Some(pb) = self.spinner.take() {
+            pb.set_style(ProgressStyle::with_template("{prefix} {msg}").unwrap());
+            pb.set_prefix(prefix);
+            pb.finish_with_message(msg.to_string());
+        }
+    }
+
+    fn start_spinner(&mut self, msg: &str) {
+        self.spinner = Some(
+            self.mp
+                .insert_before(&self.overall, ProgressBar::new_spinner()),
+        );
+        if let Some(pb) = &self.spinner {
+            pb.set_style(
+                ProgressStyle::with_template("{spinner:.green} [{elapsed_precise}] {msg}")
+                    .unwrap()
+                    .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏ "),
+            );
+            pb.set_message(msg.to_string());
+            pb.enable_steady_tick(Duration::from_millis(120));
+        }
+    }
+}
+
+impl PhaseObserver for CliPhaseObserver {
+    fn total_phases(&mut self, total: usize) {
+        self.overall.set_length(total as u64);
+    }
+
+    fn on_phase_started(&mut self, index: usize, total: usize, label: &'static str) {
+        self.finish_spinner(" ", "");
+        let display = format!("Phase {}/{} · {}", index, total, label);
+        self.start_spinner(&display);
+    }
+
+    fn on_phase_success(&mut self, _index: usize, done_msg: &'static str) {
+        self.finish_spinner("✓", done_msg);
+        self.overall.inc(1);
+    }
+
+    fn on_phase_failure(&mut self, _index: usize, label: &'static str, err: &Error) {
+        let message = format!("{label} FAILED: {err}");
+        self.finish_spinner("✗", &message);
+        self.overall.inc(1);
+    }
+}
+
+impl CliPhaseObserver {
+    fn finish(&mut self) {
+        self.finish_spinner(" ", "");
+        self.overall.finish_and_clear();
+    }
 }
 
 fn auto_detect_driver(

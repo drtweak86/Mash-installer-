@@ -1,4 +1,3 @@
-use indicatif::{MultiProgress, ProgressBar};
 use std::path::PathBuf;
 
 use crate::backend::PkgBackend;
@@ -23,10 +22,4 @@ pub struct PlatformContext {
     pub driver_name: &'static str,
     pub driver: &'static dyn DistroDriver,
     pub pkg_backend: PkgBackend,
-}
-
-/// UI helpers for progress bars shared between installer entrypoints and callers.
-pub struct UiContext {
-    pub mp: MultiProgress,
-    pub overall: ProgressBar,
 }

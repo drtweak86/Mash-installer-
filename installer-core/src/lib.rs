@@ -2,7 +2,7 @@ mod apt_repo;
 mod argon;
 mod backend;
 mod buildroot;
-mod cmd;
+pub mod cmd;
 mod config;
 mod context;
 mod distro;

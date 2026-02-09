@@ -80,19 +80,8 @@ fn main() -> Result<()> {
         modules
     );
 
-    print_banner();
-
     let mut observer = CliPhaseObserver::new();
-    let result = installer_core::run_with_driver(driver, options.clone(), &mut observer);
-    observer.finish();
-
-    match result {
-        Ok(summary) => {
-            print_completion_message(&summary, options.dry_run);
-            Ok(())
-        }
-        Err(err) => Err(err).context("installer failed"),
-    }
+    run_installer_with_ui(driver, options, &mut observer).context("installer failed")
 }
 
 fn print_banner() {
@@ -121,6 +110,25 @@ fn print_completion_message(summary: &RunSummary, dry_run: bool) {
     println!("  - Config lives at ~/.config/mash-installer/config.toml");
     println!("  - Staging directory: {}", summary.staging_dir.display());
     println!();
+}
+
+fn run_installer_with_ui(
+    driver: &'static dyn DistroDriver,
+    options: InstallOptions,
+    observer: &mut CliPhaseObserver,
+) -> Result<()> {
+    print_banner();
+    let dry_run = options.dry_run;
+    let run_result = installer_core::run_with_driver(driver, options, observer);
+    observer.finish();
+
+    match run_result {
+        Ok(summary) => {
+            print_completion_message(&summary, dry_run);
+            Ok(())
+        }
+        Err(err) => Err(err),
+    }
 }
 
 struct CliPhaseObserver {

@@ -7,7 +7,7 @@ use crate::platform::PlatformInfo;
 use anyhow::Result;
 
 /// CLI-supplied options that guide the installation.
-pub struct OptionsContext {
+pub struct UserOptionsContext {
     pub profile: crate::ProfileLevel,
     pub staging_dir: PathBuf,
     pub dry_run: bool,
@@ -47,4 +47,15 @@ impl PlatformContext {
     pub fn config(&self) -> &config::MashConfig {
         self.config_service.config()
     }
+}
+
+/// UI-related data that may become necessary for rendering progress or logging.
+#[derive(Default)]
+pub struct UIContext;
+
+/// Combined contexts passed to individual phases.
+pub struct PhaseExecutionContext<'a> {
+    pub options: &'a UserOptionsContext,
+    pub platform: &'a PlatformContext,
+    pub ui: &'a UIContext,
 }

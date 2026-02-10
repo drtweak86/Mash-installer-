@@ -3,7 +3,7 @@ use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
-use crate::{cmd, package_manager, InstallContext, PkgBackend};
+use crate::{cmd, package_manager, PhaseExecutionContext, PkgBackend};
 
 fn home_dir() -> PathBuf {
     dirs::home_dir().unwrap_or_else(|| PathBuf::from("/root"))
@@ -16,7 +16,7 @@ const P10K_THEME_FILE: &str = "/usr/share/powerlevel10k/powerlevel10k.zsh-theme"
 const STARSHIP_VERSION: &str = "1.27.0";
 const P10K_TAG: &str = "v1.13.0";
 
-pub fn install_phase(ctx: &InstallContext) -> Result<()> {
+pub fn install_phase(ctx: &PhaseExecutionContext) -> Result<()> {
     install_zsh(ctx)?;
     install_omz(ctx)?;
     install_starship(ctx)?;
@@ -30,12 +30,12 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
     Ok(())
 }
 
-fn install_zsh(ctx: &InstallContext) -> Result<()> {
+fn install_zsh(ctx: &PhaseExecutionContext) -> Result<()> {
     package_manager::ensure_packages(ctx.platform.driver, &["zsh"], ctx.options.dry_run)?;
     Ok(())
 }
 
-fn install_omz(ctx: &InstallContext) -> Result<()> {
+fn install_omz(ctx: &PhaseExecutionContext) -> Result<()> {
     let omz_dir = home_dir().join(".oh-my-zsh");
     if omz_dir.exists() {
         tracing::info!("oh-my-zsh already installed");
@@ -60,7 +60,7 @@ fn install_omz(ctx: &InstallContext) -> Result<()> {
     Ok(())
 }
 
-fn install_starship(ctx: &InstallContext) -> Result<()> {
+fn install_starship(ctx: &PhaseExecutionContext) -> Result<()> {
     if which::which("starship").is_ok() {
         tracing::info!("starship already installed");
         return Ok(());
@@ -100,7 +100,7 @@ fn install_starship(ctx: &InstallContext) -> Result<()> {
 
 // ── Powerlevel10k ───────────────────────────────────────────────
 
-fn install_p10k(ctx: &InstallContext) -> Result<()> {
+fn install_p10k(ctx: &PhaseExecutionContext) -> Result<()> {
     // 1. Try system package manager first (Arch has zsh-theme-powerlevel10k)
     if try_p10k_pkg(ctx)? {
         add_p10k_source_to_zshrc(ctx)?;
@@ -115,7 +115,7 @@ fn install_p10k(ctx: &InstallContext) -> Result<()> {
 
 /// Try installing Powerlevel10k via the system package manager.
 /// Returns true if it succeeded (or was already installed).
-fn try_p10k_pkg(ctx: &InstallContext) -> Result<bool> {
+fn try_p10k_pkg(ctx: &PhaseExecutionContext) -> Result<bool> {
     match ctx.platform.pkg_backend {
         PkgBackend::Pacman => {
             // Manjaro/Arch: available as `zsh-theme-powerlevel10k`
@@ -155,7 +155,7 @@ fn try_p10k_pkg(ctx: &InstallContext) -> Result<bool> {
 }
 
 /// Clone Powerlevel10k into the system-wide directory.
-fn install_p10k_git(ctx: &InstallContext) -> Result<()> {
+fn install_p10k_git(ctx: &PhaseExecutionContext) -> Result<()> {
     let dest = Path::new(P10K_SYSTEM_DIR);
 
     if dest.exists() {
@@ -192,7 +192,7 @@ fn install_p10k_git(ctx: &InstallContext) -> Result<()> {
 
 /// Add a guarded source block to the user's .zshrc if not already present.
 /// Backs up the file before modifying.
-fn add_p10k_source_to_zshrc(ctx: &InstallContext) -> Result<()> {
+fn add_p10k_source_to_zshrc(ctx: &PhaseExecutionContext) -> Result<()> {
     let zshrc = home_dir().join(".zshrc");
 
     // Determine the theme file path.

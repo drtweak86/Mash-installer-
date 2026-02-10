@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use std::path::PathBuf;
 use std::process::Command;
 
-use crate::{cmd, InstallContext};
+use crate::{cmd, PhaseExecutionContext};
 
 /// Check if rustup is installed for the current user.
 fn has_rustup() -> bool {
@@ -23,7 +23,7 @@ fn cargo_bin() -> PathBuf {
     which::which("cargo").unwrap_or_else(|_| cargo_home().join("bin/cargo"))
 }
 
-pub fn install_phase(ctx: &InstallContext) -> Result<()> {
+pub fn install_phase(ctx: &PhaseExecutionContext) -> Result<()> {
     // 1. Install rustup + stable toolchain
     install_rustup(ctx)?;
 
@@ -38,7 +38,7 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
     Ok(())
 }
 
-fn install_rustup(ctx: &InstallContext) -> Result<()> {
+fn install_rustup(ctx: &PhaseExecutionContext) -> Result<()> {
     if has_rustup() {
         tracing::info!("rustup already installed; updating");
         if !ctx.options.dry_run {
@@ -63,7 +63,7 @@ fn install_rustup(ctx: &InstallContext) -> Result<()> {
     Ok(())
 }
 
-fn install_components(ctx: &InstallContext) -> Result<()> {
+fn install_components(ctx: &PhaseExecutionContext) -> Result<()> {
     let components = ["rustfmt", "clippy", "rust-src"];
     for comp in &components {
         tracing::info!("Ensuring component: {comp}");
@@ -79,7 +79,7 @@ fn install_components(ctx: &InstallContext) -> Result<()> {
     Ok(())
 }
 
-fn install_cargo_tools(ctx: &InstallContext) -> Result<()> {
+fn install_cargo_tools(ctx: &PhaseExecutionContext) -> Result<()> {
     let tools: &[(&str, &str)] = &[
         ("cargo-edit", "cargo-add"), // provides `cargo add`
         ("cargo-watch", "cargo-watch"),

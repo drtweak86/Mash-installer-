@@ -25,7 +25,9 @@ use std::path::PathBuf;
 use tracing::{error, info};
 
 pub use backend::PkgBackend;
-use context::{ConfigService, OptionsContext, PlatformContext};
+pub use context::{
+    ConfigService, PhaseExecutionContext, PlatformContext, UIContext, UserOptionsContext,
+};
 pub use driver::{AptRepoConfig, DistroDriver, RepoKind, ServiceName};
 pub use platform::{detect as detect_platform, PlatformInfo};
 
@@ -43,8 +45,19 @@ pub struct InstallOptions {
 
 /// Central context threaded through every install phase.
 pub struct InstallContext {
-    pub options: OptionsContext,
+    pub options: UserOptionsContext,
     pub platform: PlatformContext,
+    pub ui: UIContext,
+}
+
+impl InstallContext {
+    fn phase_context(&self) -> PhaseExecutionContext<'_> {
+        PhaseExecutionContext {
+            options: &self.options,
+            platform: &self.platform,
+            ui: &self.ui,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -78,7 +91,7 @@ pub fn run_with_driver(
     let staging = staging::resolve(opts.staging_dir.as_deref(), config_service.config())?;
     info!("Staging directory: {}", staging.display());
 
-    let options = OptionsContext {
+    let options = UserOptionsContext {
         profile: opts.profile,
         staging_dir: staging,
         dry_run: opts.dry_run,
@@ -99,6 +112,7 @@ pub fn run_with_driver(
     let ctx = InstallContext {
         options,
         platform: platform_ctx,
+        ui: UIContext::default(),
     };
 
     let phases = build_phase_list(&ctx.options);
@@ -111,7 +125,7 @@ pub fn run_with_driver(
     })
 }
 
-fn build_phase_list(options: &OptionsContext) -> Vec<Box<dyn Phase>> {
+fn build_phase_list(options: &UserOptionsContext) -> Vec<Box<dyn Phase>> {
     let mut phases: Vec<Box<dyn Phase>> = vec![
         Box::new(FunctionPhase::new(
             "System packages",
@@ -207,7 +221,8 @@ impl PhaseRunner {
             }
 
             observer.on_phase_started(i + 1, total, phase.label());
-            match phase.execute(ctx) {
+            let phase_ctx = ctx.phase_context();
+            match phase.execute(&phase_ctx) {
                 Ok(()) => {
                     observer.on_phase_success(i + 1, phase.done_msg());
                     completed.push(phase.label());
@@ -245,16 +260,16 @@ pub struct RunSummary {
 pub trait Phase {
     fn label(&self) -> &'static str;
     fn done_msg(&self) -> &'static str;
-    fn should_run(&self, _opts: &OptionsContext) -> bool {
+    fn should_run(&self, _opts: &UserOptionsContext) -> bool {
         true
     }
-    fn execute(&self, ctx: &InstallContext) -> Result<()>;
+    fn execute(&self, ctx: &PhaseExecutionContext) -> Result<()>;
 }
 
 pub struct FunctionPhase {
     label: &'static str,
     done_msg: &'static str,
-    run: fn(&InstallContext) -> Result<()>,
+    run: fn(&PhaseExecutionContext) -> Result<()>,
 }
 
 impl Phase for FunctionPhase {
@@ -266,7 +281,7 @@ impl Phase for FunctionPhase {
         self.done_msg
     }
 
-    fn execute(&self, ctx: &InstallContext) -> Result<()> {
+    fn execute(&self, ctx: &PhaseExecutionContext) -> Result<()> {
         (self.run)(ctx)
     }
 }
@@ -275,7 +290,7 @@ impl FunctionPhase {
     pub fn new(
         label: &'static str,
         done_msg: &'static str,
-        run: fn(&InstallContext) -> Result<()>,
+        run: fn(&PhaseExecutionContext) -> Result<()>,
     ) -> Self {
         Self {
             label,
@@ -333,7 +348,7 @@ mod tests {
         label: &'static str,
         done_msg: &'static str,
         should_run: bool,
-        run: fn(&InstallContext) -> Result<()>,
+        run: fn(&PhaseExecutionContext) -> Result<()>,
     }
 
     impl Phase for TestPhase {
@@ -345,12 +360,12 @@ mod tests {
             self.done_msg
         }
 
-        fn should_run(&self, _: &OptionsContext) -> bool {
+        fn should_run(&self, _: &UserOptionsContext) -> bool {
             self.should_run
         }
 
         fn execute(&self, ctx: &InstallContext) -> Result<()> {
-            (self.run)(ctx)
+            (self.run)(&ctx.phase_context())
         }
     }
 
@@ -359,7 +374,7 @@ mod tests {
             label: &'static str,
             done_msg: &'static str,
             should_run: bool,
-            run: fn(&InstallContext) -> Result<()>,
+            run: fn(&PhaseExecutionContext) -> Result<()>,
         ) -> Self {
             Self {
                 label,
@@ -410,7 +425,7 @@ mod tests {
             driver,
             pkg_backend: PkgBackend::Apt,
         };
-        let options = OptionsContext {
+        let options = UserOptionsContext {
             profile: ProfileLevel::Minimal,
             staging_dir: PathBuf::from("/tmp/mash-test"),
             dry_run: true,
@@ -423,14 +438,15 @@ mod tests {
         Ok(InstallContext {
             options,
             platform: platform_ctx,
+            ui: UIContext::default(),
         })
     }
 
-    fn success_phase(_ctx: &InstallContext) -> Result<()> {
+    fn success_phase(_ctx: &PhaseExecutionContext) -> Result<()> {
         Ok(())
     }
 
-    fn failing_phase(_ctx: &InstallContext) -> Result<()> {
+    fn failing_phase(_ctx: &PhaseExecutionContext) -> Result<()> {
         Err(anyhow!("boom"))
     }
 

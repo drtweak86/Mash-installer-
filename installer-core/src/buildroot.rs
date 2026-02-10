@@ -1,9 +1,9 @@
 use anyhow::Result;
 
-use crate::{package_manager, InstallContext};
+use crate::{package_manager, PhaseExecutionContext};
 
 /// Buildroot build dependencies.
-pub fn install_phase(ctx: &InstallContext) -> Result<()> {
+pub fn install_phase(ctx: &PhaseExecutionContext) -> Result<()> {
     let pkgs = [
         "bison",
         "flex",

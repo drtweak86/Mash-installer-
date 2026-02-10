@@ -4,12 +4,13 @@ use std::process::Command;
 
 use crate::{
     cmd,
+    context::PhaseExecutionContext,
     driver::{AptRepoConfig, RepoKind},
-    package_manager, InstallContext,
+    package_manager,
 };
 
 /// Ensure the named apt repository is configured according to the distro driver.
-pub fn ensure_repo(ctx: &InstallContext, repo: RepoKind) -> Result<()> {
+pub fn ensure_repo(ctx: &PhaseExecutionContext, repo: RepoKind) -> Result<()> {
     let config = match ctx.platform.driver.apt_repo_config(repo) {
         Some(cfg) => cfg,
         None => return Ok(()),
@@ -33,7 +34,7 @@ pub fn ensure_repo(ctx: &InstallContext, repo: RepoKind) -> Result<()> {
     Ok(())
 }
 
-fn add_gpg_key(config: &AptRepoConfig, ctx: &InstallContext) -> Result<()> {
+fn add_gpg_key(config: &AptRepoConfig, ctx: &PhaseExecutionContext) -> Result<()> {
     let key_path = Path::new(config.key_path);
     if key_path.exists() {
         return Ok(());
@@ -57,7 +58,7 @@ fn add_gpg_key(config: &AptRepoConfig, ctx: &InstallContext) -> Result<()> {
     Ok(())
 }
 
-fn add_sources_list(config: &AptRepoConfig, ctx: &InstallContext) -> Result<bool> {
+fn add_sources_list(config: &AptRepoConfig, ctx: &PhaseExecutionContext) -> Result<bool> {
     let sources_path = Path::new(config.sources_path);
     if sources_path.exists() {
         return Ok(false);

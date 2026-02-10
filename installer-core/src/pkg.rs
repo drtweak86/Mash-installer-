@@ -1,9 +1,9 @@
-use crate::{driver::DistroDriver, package_manager, InstallContext};
+use crate::{driver::DistroDriver, package_manager, PhaseExecutionContext};
 use anyhow::Result;
 
 // ── Phase 1: core packages ─────────────────────────────────────
 
-pub fn install_phase(ctx: &InstallContext) -> Result<()> {
+pub fn install_phase(ctx: &PhaseExecutionContext) -> Result<()> {
     package_manager::update(ctx.platform.driver, ctx.options.dry_run)?;
 
     // Always-needed core packages (Debian canonical names)

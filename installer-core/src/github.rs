@@ -1,9 +1,9 @@
 use anyhow::Result;
 use std::process::Command;
 
-use crate::{apt_repo, cmd, driver::RepoKind, package_manager, InstallContext, PkgBackend};
+use crate::{apt_repo, cmd, driver::RepoKind, package_manager, PhaseExecutionContext, PkgBackend};
 
-pub fn install_phase(ctx: &InstallContext) -> Result<()> {
+pub fn install_phase(ctx: &PhaseExecutionContext) -> Result<()> {
     install_git(ctx)?;
     install_gh(ctx)?;
     install_ssh_tools(ctx)?;
@@ -12,7 +12,7 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
     Ok(())
 }
 
-fn install_git(ctx: &InstallContext) -> Result<()> {
+fn install_git(ctx: &PhaseExecutionContext) -> Result<()> {
     package_manager::ensure_packages(
         ctx.platform.driver,
         &["git", "git-lfs"],
@@ -27,7 +27,7 @@ fn install_git(ctx: &InstallContext) -> Result<()> {
     Ok(())
 }
 
-fn install_gh(ctx: &InstallContext) -> Result<()> {
+fn install_gh(ctx: &PhaseExecutionContext) -> Result<()> {
     if which::which("gh").is_ok() {
         tracing::info!("GitHub CLI (gh) already installed");
         return Ok(());
@@ -47,12 +47,12 @@ fn install_gh(ctx: &InstallContext) -> Result<()> {
     Ok(())
 }
 
-fn install_gh_apt(ctx: &InstallContext) -> Result<()> {
+fn install_gh_apt(ctx: &PhaseExecutionContext) -> Result<()> {
     package_manager::ensure_packages(ctx.platform.driver, &["gh"], false)?;
     Ok(())
 }
 
-fn install_ssh_tools(ctx: &InstallContext) -> Result<()> {
+fn install_ssh_tools(ctx: &PhaseExecutionContext) -> Result<()> {
     package_manager::ensure_packages(
         ctx.platform.driver,
         &["openssh-client"],

@@ -2,7 +2,9 @@ use anyhow::{Context, Result};
 use std::path::Path;
 use std::process::Command;
 
-use crate::{cmd, driver::ServiceName, package_manager, systemd, InstallContext, PkgBackend};
+use crate::{
+    cmd, driver::ServiceName, package_manager, systemd, PhaseExecutionContext, PkgBackend,
+};
 
 /// Clone target for the argononed C daemon.
 const ARGONONED_REPO: &str = "https://gitlab.com/DarkElvenAngel/argononed.git";
@@ -17,7 +19,7 @@ const ARGONONED_SRC: &str = "/usr/local/src/argononed";
 ///   community-recommended approach (the OEM script does not support Arch).
 ///
 /// See: <https://gitlab.com/DarkElvenAngel/argononed>
-pub fn install_phase(ctx: &InstallContext) -> Result<()> {
+pub fn install_phase(ctx: &PhaseExecutionContext) -> Result<()> {
     // Quick gate: only relevant on Raspberry Pi hardware
     if ctx.platform.platform.pi_model.is_none() {
         tracing::warn!("Not running on a Raspberry Pi; skipping Argon One");
@@ -32,7 +34,7 @@ pub fn install_phase(ctx: &InstallContext) -> Result<()> {
 
 // ── Arch/Manjaro path: argononed C daemon ───────────────────────
 
-fn install_argononed(ctx: &InstallContext) -> Result<()> {
+fn install_argononed(ctx: &PhaseExecutionContext) -> Result<()> {
     // Already installed?
     if which::which("argononed").is_ok()
         || Path::new("/usr/sbin/argononed").exists()
@@ -60,7 +62,7 @@ fn install_argononed(ctx: &InstallContext) -> Result<()> {
     Ok(())
 }
 
-fn ensure_argononed_deps(ctx: &InstallContext) -> Result<()> {
+fn ensure_argononed_deps(ctx: &PhaseExecutionContext) -> Result<()> {
     // dtc = device tree compiler, needed by argononed's build
     // git is already installed from earlier phases
     package_manager::ensure_packages(ctx.platform.driver, &["dtc"], ctx.options.dry_run)?;
@@ -105,7 +107,7 @@ fn build_argononed() -> Result<()> {
     Ok(())
 }
 
-fn enable_argononed_service(ctx: &InstallContext) -> Result<()> {
+fn enable_argononed_service(ctx: &PhaseExecutionContext) -> Result<()> {
     if !systemd::is_available() {
         tracing::warn!("systemd not detected; skipping argononed.service enable");
         return Ok(());
@@ -124,7 +126,7 @@ fn enable_argononed_service(ctx: &InstallContext) -> Result<()> {
 
 // ── Debian/Ubuntu path: OEM script ──────────────────────────────
 
-fn install_argon_oem(ctx: &InstallContext) -> Result<()> {
+fn install_argon_oem(ctx: &PhaseExecutionContext) -> Result<()> {
     if which::which("argonone-config").is_ok() {
         tracing::info!("Argon One OEM scripts already installed");
         return Ok(());

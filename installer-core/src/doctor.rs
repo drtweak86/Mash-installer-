@@ -1,26 +1,73 @@
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Result};
+use clap::ValueEnum;
 use nix::sys::statvfs;
-use std::fs::OpenOptions;
+use num_cpus;
+use serde::Serialize;
+use serde_json;
+use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 use std::time::Duration;
 
 use crate::{
-    config,
+    cmd, config,
     context::{ConfigOverrides, ConfigService},
     system::{RealSystem, SystemOps},
 };
 
+#[derive(Clone, Copy, Debug, ValueEnum)]
+#[value(rename_all = "lower")]
+pub enum DoctorOutput {
+    Pretty,
+    Json,
+}
+
+impl Default for DoctorOutput {
+    fn default() -> Self {
+        DoctorOutput::Pretty
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+pub enum CheckStatus {
+    Success,
+    Warning,
+    Error,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct PreflightCheck {
+    pub label: String,
+    pub status: CheckStatus,
+    pub detail: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct PreflightReport {
+    pub checks: Vec<PreflightCheck>,
+}
+
+const MIN_MEMORY_BYTES: u64 = 2 * 1024 * 1024 * 1024;
+const WARN_MEMORY_BYTES: u64 = 3 * 1024 * 1024 * 1024;
+const MIN_CPU_CORES: usize = 2;
+
 /// Run diagnostics and print a summary of what is installed / missing.
 #[allow(dead_code)]
-pub fn run_doctor() -> Result<()> {
+pub fn run_doctor(format: DoctorOutput) -> Result<()> {
     println!("mash-setup doctor");
     println!("==================");
     println!();
 
     let system = RealSystem;
-    run_preflight_checks(&system, None)?;
+    let report = collect_preflight_checks(&system, None)?;
+    if matches!(format, DoctorOutput::Json) {
+        println!("{}", serde_json::to_string_pretty(&report)?);
+        return Ok(());
+    }
+    section("Pre-flight checks");
+    display_preflight_checks(&report.checks);
+    println!();
 
     // ── System info ──
     section("System");
@@ -169,102 +216,338 @@ pub fn run_doctor() -> Result<()> {
     Ok(())
 }
 
-const REQUIRED_COMMANDS: &[&str] = &["curl", "git", "tar"];
+const REQUIRED_COMMANDS: &[&str] = &["curl", "git", "tar", "docker"];
 const MIN_ROOT_SPACE_BYTES: u64 = 2 * 1024 * 1024 * 1024;
-const CONNECTIVITY_TARGETS: &[(&str, u16)] = &[("github.com", 443), ("crates.io", 443)];
+const CONNECTIVITY_TARGETS: &[(&str, u16)] = &[
+    ("github.com", 443),
+    ("crates.io", 443),
+    ("registry-1.docker.io", 443),
+];
+const SUPPORTED_PACKAGE_MANAGERS: &[(&str, &str)] = &[
+    ("apt", "APT"),
+    ("apt-get", "APT"),
+    ("pacman", "pacman"),
+    ("dnf", "DNF"),
+    ("yum", "YUM"),
+];
 const CONNECTIVITY_TIMEOUT_SECS: u64 = 5;
 const WRITE_TEST_FILE: &str = ".mash-doctor-write-test";
 
+#[allow(dead_code)]
 pub fn run_preflight_checks(system: &dyn SystemOps, staging_override: Option<&Path>) -> Result<()> {
     section("Pre-flight checks");
-    let mut failures = Vec::new();
+    let report = collect_preflight_checks(system, staging_override)?;
+    let had_errno = display_preflight_checks(&report.checks);
+    println!();
+    if had_errno {
+        Err(anyhow!("pre-flight checks reported critical issues"))
+    } else {
+        println!("  Pre-flight checks passed");
+        println!();
+        Ok(())
+    }
+}
+
+pub fn collect_preflight_checks(
+    system: &dyn SystemOps,
+    staging_override: Option<&Path>,
+) -> Result<PreflightReport> {
+    let mut checks = Vec::new();
 
     for &cmd in REQUIRED_COMMANDS {
-        match which::which(cmd) {
-            Ok(path) => report(format!("  {cmd:<16} {}", path.display()), true),
-            Err(_) => {
-                report(format!("  {cmd:<16} MISSING"), false);
-                failures.push(format!("command '{cmd}' not found in PATH"));
-            }
-        }
+        checks.push(check_required_command(cmd));
     }
 
-    match check_root_space() {
-        Ok(bytes) => report(
-            format!("  Root partition: {} free", format_bytes(bytes)),
-            true,
-        ),
-        Err(err) => {
-            report(format!("  Root partition check failed: {err}"), false);
-            failures.push(err.to_string());
-        }
-    }
+    checks.push(check_root_partition());
+    checks.push(check_memory());
+    checks.push(check_cpu());
+    checks.push(check_package_manager());
 
     for &(host, port) in CONNECTIVITY_TARGETS {
-        match check_connectivity(
-            system,
-            host,
-            port,
-            Duration::from_secs(CONNECTIVITY_TIMEOUT_SECS),
-        ) {
-            Ok(_) => report(format!("  {host}:{port} reachable"), true),
-            Err(err) => {
-                report(format!("  {host}:{port} unreachable ({err})"), false);
-                failures.push(err.to_string());
-            }
-        }
+        checks.push(connectivity_check_entry(system, host, port));
     }
 
-    let home_dir = dirs::home_dir().ok_or_else(|| anyhow!("could not determine home directory"))?;
-    match check_directory_writeable(&home_dir) {
-        Ok(_) => report(
-            format!("  Home directory writeable: {}", home_dir.display()),
-            true,
-        ),
-        Err(err) => {
-            report(
-                format!(
-                    "  Home directory ({}) write check failed: {err}",
-                    home_dir.display()
-                ),
-                false,
-            );
-            failures.push(err.to_string());
-        }
+    if let Some(home_dir) = dirs::home_dir() {
+        checks.push(directory_writeable_check_entry(&home_dir, "Home directory"));
+    } else {
+        checks.push(PreflightCheck {
+            label: "Home directory".into(),
+            status: CheckStatus::Warning,
+            detail: Some("Unable to determine user home directory".into()),
+        });
     }
 
     let overrides = ConfigOverrides {
         staging_dir: staging_override.map(|p| p.to_path_buf()),
     };
     let config_service = ConfigService::load_with_overrides(overrides)?;
-    let staging_dir = config_service
-        .resolve_staging_dir()
-        .context("resolving staging directory")?;
-    match check_directory_writeable(&staging_dir) {
-        Ok(_) => report(
-            format!("  Staging directory writeable: {}", staging_dir.display()),
-            true,
-        ),
-        Err(err) => {
-            report(
-                format!(
-                    "  Staging directory ({}) write check failed: {err}",
-                    staging_dir.display()
-                ),
-                false,
-            );
-            failures.push(err.to_string());
+    match config_service.resolve_staging_dir() {
+        Ok(path) => checks.push(directory_writeable_check_entry(&path, "Staging directory")),
+        Err(err) => checks.push(PreflightCheck {
+            label: "Staging directory".into(),
+            status: CheckStatus::Error,
+            detail: Some(format!("{err}")),
+        }),
+    }
+
+    checks.push(check_sudo());
+    checks.push(check_os_compatibility());
+    checks.push(check_existing_config());
+
+    Ok(PreflightReport { checks })
+}
+
+fn display_preflight_checks(checks: &[PreflightCheck]) -> bool {
+    let mut had_error = false;
+    for check in checks {
+        let mut label = check.label.clone();
+        if let Some(detail) = &check.detail {
+            label = format!("{label}: {detail}");
+        }
+        report(label, check.status);
+        if check.status == CheckStatus::Error {
+            had_error = true;
+        }
+    }
+    had_error
+}
+
+fn check_required_command(cmd: &str) -> PreflightCheck {
+    match which::which(cmd) {
+        Ok(path) => PreflightCheck {
+            label: format!("{cmd} command"),
+            status: CheckStatus::Success,
+            detail: Some(format!("available at {}", path.display())),
+        },
+        Err(_) => PreflightCheck {
+            label: format!("{cmd} command"),
+            status: CheckStatus::Error,
+            detail: Some("not found in PATH".into()),
+        },
+    }
+}
+
+fn check_root_partition() -> PreflightCheck {
+    match check_root_space() {
+        Ok(bytes) => PreflightCheck {
+            label: format!("Root partition has {}", format_bytes(bytes)),
+            status: CheckStatus::Success,
+            detail: None,
+        },
+        Err(err) => PreflightCheck {
+            label: "Root partition".into(),
+            status: CheckStatus::Error,
+            detail: Some(err.to_string()),
+        },
+    }
+}
+
+fn check_memory() -> PreflightCheck {
+    match read_mem_available() {
+        Ok(bytes) => {
+            let status = if bytes < MIN_MEMORY_BYTES {
+                CheckStatus::Error
+            } else if bytes < WARN_MEMORY_BYTES {
+                CheckStatus::Warning
+            } else {
+                CheckStatus::Success
+            };
+            let detail = if status == CheckStatus::Success {
+                None
+            } else {
+                Some(format!("{} available", format_bytes(bytes)))
+            };
+            PreflightCheck {
+                label: "Available memory".into(),
+                status,
+                detail,
+            }
+        }
+        Err(err) => PreflightCheck {
+            label: "Available memory".into(),
+            status: CheckStatus::Warning,
+            detail: Some(format!("unable to read memory info: {err}")),
+        },
+    }
+}
+
+fn check_cpu() -> PreflightCheck {
+    let cores = num_cpus::get();
+    let status = if cores < MIN_CPU_CORES {
+        CheckStatus::Warning
+    } else {
+        CheckStatus::Success
+    };
+    PreflightCheck {
+        label: format!("CPU cores: {cores}"),
+        status,
+        detail: if status == CheckStatus::Success {
+            None
+        } else {
+            Some(format!("minimum {MIN_CPU_CORES} cores recommended"))
+        },
+    }
+}
+
+fn check_package_manager() -> PreflightCheck {
+    for (cmd, label) in SUPPORTED_PACKAGE_MANAGERS {
+        if which::which(cmd).is_ok() {
+            return PreflightCheck {
+                label: format!("{label} package manager"),
+                status: CheckStatus::Success,
+                detail: Some(format!("available via {cmd}")),
+            };
         }
     }
 
-    println!();
-    if failures.is_empty() {
-        println!("  Pre-flight checks passed");
-        println!();
-        Ok(())
-    } else {
-        Err(anyhow!(failures.join("; ")))
+    PreflightCheck {
+        label: "Package manager".into(),
+        status: CheckStatus::Error,
+        detail: Some("No supported package manager available".into()),
     }
+}
+
+fn connectivity_check_entry(system: &dyn SystemOps, host: &str, port: u16) -> PreflightCheck {
+    match check_connectivity(
+        system,
+        host,
+        port,
+        Duration::from_secs(CONNECTIVITY_TIMEOUT_SECS),
+    ) {
+        Ok(_) => PreflightCheck {
+            label: format!("{host}:{port} reachable"),
+            status: CheckStatus::Success,
+            detail: None,
+        },
+        Err(err) => PreflightCheck {
+            label: format!("{host}:{port} connectivity"),
+            status: CheckStatus::Error,
+            detail: Some(err.to_string()),
+        },
+    }
+}
+
+fn directory_writeable_check_entry(path: &Path, label: &str) -> PreflightCheck {
+    match check_directory_writeable(path) {
+        Ok(_) => PreflightCheck {
+            label: format!("{label} writeable: {}", path.display()),
+            status: CheckStatus::Success,
+            detail: None,
+        },
+        Err(err) => PreflightCheck {
+            label: format!("{label} write check"),
+            status: CheckStatus::Error,
+            detail: Some(format!("{} ({err})", path.display())),
+        },
+    }
+}
+
+fn check_sudo() -> PreflightCheck {
+    if which::which("sudo").is_err() {
+        return PreflightCheck {
+            label: "sudo availability".into(),
+            status: CheckStatus::Warning,
+            detail: Some("sudo binary not found".into()),
+        };
+    }
+    let mut command = Command::new("sudo");
+    command.args(["-n", "true"]);
+    match cmd::run(&mut command) {
+        Ok(_) => PreflightCheck {
+            label: "sudo access".into(),
+            status: CheckStatus::Success,
+            detail: None,
+        },
+        Err(err) => PreflightCheck {
+            label: "sudo access".into(),
+            status: CheckStatus::Warning,
+            detail: Some(format!("{err}")),
+        },
+    }
+}
+
+fn check_os_compatibility() -> PreflightCheck {
+    match fs::read_to_string("/etc/os-release") {
+        Ok(contents) => {
+            let ids = parse_os_release_ids(&contents);
+            let supported = ["debian", "ubuntu", "raspbian", "arch", "manjaro", "fedora"];
+            if ids.iter().any(|id| supported.contains(&id.as_str())) {
+                PreflightCheck {
+                    label: format!("Operating system: {}", ids.join(",")),
+                    status: CheckStatus::Success,
+                    detail: None,
+                }
+            } else {
+                PreflightCheck {
+                    label: "Operating system compatibility".into(),
+                    status: CheckStatus::Warning,
+                    detail: Some(format!(
+                        "Detected {} - not explicitly supported yet",
+                        ids.join(", ")
+                    )),
+                }
+            }
+        }
+        Err(err) => PreflightCheck {
+            label: "Operating system".into(),
+            status: CheckStatus::Warning,
+            detail: Some(format!("unable to read /etc/os-release ({err})")),
+        },
+    }
+}
+
+fn check_existing_config() -> PreflightCheck {
+    let path = config::config_path();
+    if path.exists() {
+        PreflightCheck {
+            label: "Mash configuration".into(),
+            status: CheckStatus::Warning,
+            detail: Some(format!(
+                "{} already exists; re-running may override settings",
+                path.display()
+            )),
+        }
+    } else {
+        PreflightCheck {
+            label: "Mash configuration".into(),
+            status: CheckStatus::Success,
+            detail: None,
+        }
+    }
+}
+
+fn read_mem_available() -> Result<u64> {
+    let content = fs::read_to_string("/proc/meminfo")?;
+    for line in content.lines() {
+        if let Some(rest) = line.strip_prefix("MemAvailable:") {
+            let value = rest
+                .trim()
+                .split_whitespace()
+                .next()
+                .ok_or_else(|| anyhow!("MemAvailable entry in /proc/meminfo is malformed"))?;
+            let kb: u64 = value.parse()?;
+            return Ok(kb * 1024);
+        }
+    }
+    Err(anyhow!("MemAvailable entry missing from /proc/meminfo"))
+}
+
+fn parse_os_release_ids(contents: &str) -> Vec<String> {
+    let mut ids = Vec::new();
+    for line in contents.lines() {
+        if let Some(rest) = line.strip_prefix("ID=") {
+            ids.push(rest.trim_matches('"').to_lowercase());
+        }
+        if let Some(rest) = line.strip_prefix("ID_LIKE=") {
+            for id in rest.trim_matches('"').split_whitespace() {
+                ids.push(id.to_lowercase());
+            }
+        }
+    }
+    if ids.is_empty() {
+        ids.push("unknown".into());
+    }
+    ids
 }
 
 fn check_root_space() -> Result<u64> {
@@ -368,11 +651,11 @@ fn check_tool(system: &dyn SystemOps, name: &str, cmd_str: &str) {
     }
 }
 
-fn report(message: impl AsRef<str>, success: bool) {
-    if success {
-        println!("{}", message.as_ref());
-    } else {
-        eprintln!("{}", message.as_ref());
+fn report(message: impl AsRef<str>, status: CheckStatus) {
+    match status {
+        CheckStatus::Success => println!("{}", message.as_ref()),
+        CheckStatus::Warning => eprintln!("Warning: {}", message.as_ref()),
+        CheckStatus::Error => eprintln!("ERROR: {}", message.as_ref()),
     }
 }
 

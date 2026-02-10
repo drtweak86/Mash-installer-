@@ -32,6 +32,7 @@ pub use backend::PkgBackend;
 pub use context::{
     ConfigOverrides, ConfigService, PhaseContext, PlatformContext, UIContext, UserOptionsContext,
 };
+pub use doctor::DoctorOutput;
 pub use driver::{AptRepoConfig, DistroDriver, RepoKind, ServiceName};
 pub use error::{
     DriverInfo, ErrorSeverity, InstallationReport, InstallerError, InstallerRunError,

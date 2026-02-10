@@ -2,6 +2,7 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use installer_core::cmd::CommandExecutionDetails;
+use installer_core::doctor::DoctorOutput;
 use installer_core::{
     detect_platform, DistroDriver, ErrorSeverity, InstallOptions, InstallerError,
     InstallerStateSnapshot, PhaseEvent, PhaseObserver, PlatformInfo, ProfileLevel, RunSummary,

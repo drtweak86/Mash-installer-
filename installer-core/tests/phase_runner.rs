@@ -1,9 +1,9 @@
 use anyhow::{anyhow, Result};
 use installer_core::localization::Localization;
 use installer_core::{
-    ConfigService, DistroDriver, ErrorSeverity, InstallContext, Phase, PhaseContext, PhaseErrorPolicy,
-    PhaseEvent, PhaseObserver, PhaseRunner, PlatformContext, PlatformInfo, ProfileLevel, PkgBackend,
-    UIContext, UserOptionsContext,
+    ConfigService, DistroDriver, ErrorSeverity, InstallContext, Phase, PhaseContext,
+    PhaseErrorPolicy, PhaseEvent, PhaseObserver, PhaseRunner, PkgBackend, PlatformContext,
+    PlatformInfo, ProfileLevel, UIContext, UserOptionsContext,
 };
 use std::path::PathBuf;
 

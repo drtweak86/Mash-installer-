@@ -184,6 +184,7 @@ fn build_phase_list(options: &UserOptionsContext) -> Vec<Box<dyn Phase>> {
 #[derive(Debug)]
 pub struct PhaseRunResult {
     pub completed_phases: Vec<&'static str>,
+    pub events: Vec<PhaseEvent>,
 }
 
 pub struct PhaseRunner {
@@ -201,40 +202,66 @@ impl PhaseRunner {
         observer: &mut dyn PhaseObserver,
     ) -> Result<PhaseRunResult> {
         let total = self.phases.len();
-        observer.on_event(PhaseEvent::Total { total });
+        fn emit_event(
+            observer: &mut dyn PhaseObserver,
+            events: &mut Vec<PhaseEvent>,
+            event: PhaseEvent,
+        ) {
+            observer.on_event(event.clone());
+            events.push(event);
+        }
+
+        let mut events = Vec::new();
+        emit_event(observer, &mut events, PhaseEvent::Total { total });
         let mut completed = Vec::new();
 
         for (i, phase) in self.phases.iter().enumerate() {
             if !phase.should_run(ctx) {
-                observer.on_event(PhaseEvent::Skipped {
-                    index: i + 1,
-                    phase: phase.name(),
-                });
+                emit_event(
+                    observer,
+                    &mut events,
+                    PhaseEvent::Skipped {
+                        index: i + 1,
+                        phase: phase.name(),
+                    },
+                );
                 continue;
             }
 
-            observer.on_event(PhaseEvent::Started {
-                index: i + 1,
-                total,
-                phase: phase.name(),
-            });
+            emit_event(
+                observer,
+                &mut events,
+                PhaseEvent::Started {
+                    index: i + 1,
+                    total,
+                    phase: phase.name(),
+                },
+            );
             let mut phase_ctx = ctx.phase_context();
             match phase.execute(&mut phase_ctx) {
                 Ok(()) => {
-                    observer.on_event(PhaseEvent::Completed {
-                        index: i + 1,
-                        phase: phase.name(),
-                        description: phase.description(),
-                    });
+                    emit_event(
+                        observer,
+                        &mut events,
+                        PhaseEvent::Completed {
+                            index: i + 1,
+                            phase: phase.name(),
+                            description: phase.description(),
+                        },
+                    );
                     completed.push(phase.name());
                 }
                 Err(e) => {
                     let error_message = format!("{e:#}");
-                    observer.on_event(PhaseEvent::Failed {
-                        index: i + 1,
-                        phase: phase.name(),
-                        error: error_message,
-                    });
+                    emit_event(
+                        observer,
+                        &mut events,
+                        PhaseEvent::Failed {
+                            index: i + 1,
+                            phase: phase.name(),
+                            error: error_message.clone(),
+                        },
+                    );
                     let completed_list = if completed.is_empty() {
                         "none".to_string()
                     } else {
@@ -254,6 +281,7 @@ impl PhaseRunner {
 
         Ok(PhaseRunResult {
             completed_phases: completed,
+            events,
         })
     }
 }
@@ -263,6 +291,7 @@ pub struct RunSummary {
     pub staging_dir: PathBuf,
 }
 
+#[derive(Clone, Debug)]
 pub enum PhaseEvent {
     Total {
         total: usize,

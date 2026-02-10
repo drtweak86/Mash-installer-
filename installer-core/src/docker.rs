@@ -117,12 +117,17 @@ fn enable_docker_service(ctx: &mut PhaseContext) -> Result<()> {
 }
 
 fn configure_data_root(ctx: &mut PhaseContext, data_root: &std::path::Path) -> Result<()> {
-    let daemon_json = Path::new("/etc/docker/daemon.json");
+    let daemon_json_path = Path::new("/etc/docker/daemon.json").to_path_buf();
+    let backup_path = daemon_json_path.with_extension("json.bak");
 
-    tracing::info!("Configuring Docker data-root to {}", data_root.display());
-    crate::staging::ensure_space_for_path(data_root)?;
+    let original_daemon = if daemon_json_path.exists() {
+        Some(fs::read_to_string(&daemon_json_path)?)
+    } else {
+        None
+    };
 
-    let mut config = load_daemon_config(daemon_json)?.unwrap_or_else(|| serde_json::json!({}));
+    let mut config =
+        load_daemon_config(daemon_json_path.as_path())?.unwrap_or_else(|| serde_json::json!({}));
     let desired_data_root = data_root.display().to_string();
     if is_data_root_configured(&config, &desired_data_root) {
         tracing::info!("Docker data-root already set to {}", data_root.display());
@@ -130,28 +135,46 @@ fn configure_data_root(ctx: &mut PhaseContext, data_root: &std::path::Path) -> R
     }
 
     if ctx.options.dry_run {
-        tracing::info!("[dry-run] would configure Docker data-root to {}", data_root.display());
+        tracing::info!(
+            "[dry-run] would configure Docker data-root to {}",
+            data_root.display()
+        );
         return Ok(());
     }
+
+    tracing::info!("Configuring Docker data-root to {}", data_root.display());
+    crate::staging::ensure_space_for_path(data_root)?;
+
+    let rollback_contents = original_daemon.clone();
+    let rollback_daemon = daemon_json_path.clone();
+    let rollback_backup = backup_path.clone();
+    ctx.register_rollback_action("restore docker daemon config", move || {
+        if let Some(contents) = &rollback_contents {
+            fs::write(&rollback_daemon, contents)?;
+        } else if rollback_daemon.exists() {
+            fs::remove_file(&rollback_daemon)?;
+        }
+        if rollback_backup.exists() {
+            fs::remove_file(&rollback_backup)?;
+        }
+        Ok(())
+    });
 
     fs::create_dir_all(data_root)?;
 
     config["data-root"] = Value::String(desired_data_root.clone());
     let content = serde_json::to_string_pretty(&config)?;
 
-    if daemon_json.exists() {
-        let backup = daemon_json.with_extension("json.bak");
-        fs::copy(daemon_json, &backup)?;
+    if daemon_json_path.exists() {
+        fs::copy(&daemon_json_path, &backup_path)?;
     }
 
     let mut tee_cmd = Command::new("sh");
-    tee_cmd
-        .arg("-c")
-        .arg(format!(
-            "echo '{}' | sudo tee {} > /dev/null",
-            content,
-            daemon_json.display()
-        ));
+    tee_cmd.arg("-c").arg(format!(
+        "echo '{}' | sudo tee {} > /dev/null",
+        content,
+        daemon_json_path.display()
+    ));
     cmd::run(&mut tee_cmd)?;
 
     let mut restart_cmd = Command::new("sudo");
@@ -210,7 +233,10 @@ mod tests {
         let path = dir.path().join("daemon.json");
         fs::write(&path, r#"{"data-root": "/data"}"#)?;
         let config = load_daemon_config(&path)?.expect("config should exist");
-        assert_eq!(config.get("data-root").and_then(Value::as_str), Some("/data"));
+        assert_eq!(
+            config.get("data-root").and_then(Value::as_str),
+            Some("/data")
+        );
         Ok(())
     }
 

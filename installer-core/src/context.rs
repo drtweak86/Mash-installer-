@@ -5,6 +5,7 @@ use crate::config;
 use crate::driver::DistroDriver;
 use crate::localization::Localization;
 use crate::platform::PlatformInfo;
+use crate::rollback::RollbackManager;
 use crate::staging;
 use anyhow::Result;
 
@@ -124,4 +125,16 @@ pub struct PhaseContext<'a> {
     pub platform: &'a PlatformContext,
     pub ui: &'a UIContext,
     pub localization: &'a Localization,
+    pub rollback: &'a RollbackManager,
+}
+
+impl<'a> PhaseContext<'a> {
+    /// Register a rollback action associated with the provided label.
+    pub fn register_rollback_action(
+        &self,
+        label: impl Into<String>,
+        action: impl Fn() -> Result<()> + 'static,
+    ) {
+        self.rollback.register_action(label, action);
+    }
 }

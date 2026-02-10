@@ -17,6 +17,7 @@ mod package_manager;
 mod pkg;
 mod platform;
 mod rclone;
+mod rollback;
 mod rust;
 mod staging;
 mod system;
@@ -24,6 +25,7 @@ mod systemd;
 mod zsh;
 
 use crate::localization::Localization;
+use crate::rollback::RollbackManager;
 use anyhow::Result;
 use std::{fmt, path::PathBuf};
 use tracing::{error, info};
@@ -75,6 +77,7 @@ pub struct InstallContext {
     pub platform: PlatformContext,
     pub ui: UIContext,
     pub localization: Localization,
+    pub rollback: RollbackManager,
 }
 
 impl InstallContext {
@@ -84,6 +87,7 @@ impl InstallContext {
             platform: &self.platform,
             ui: &self.ui,
             localization: &self.localization,
+            rollback: &self.rollback,
         }
     }
 }
@@ -152,6 +156,7 @@ pub fn run_with_driver(
         platform: platform_ctx,
         ui: UIContext::default(),
         localization,
+        rollback: RollbackManager::new(),
     };
 
     let phases = build_phase_list(&ctx.options, &ctx.localization);
@@ -434,6 +439,12 @@ impl PhaseRunner {
                         events,
                         errors,
                     };
+
+                    if let Err(rb_err) = ctx.rollback.rollback_all() {
+                        error!("rollback encountered errors: {rb_err}");
+                    } else {
+                        info!("rollback completed after failure");
+                    }
 
                     return Err(PhaseRunError {
                         result: run_result,

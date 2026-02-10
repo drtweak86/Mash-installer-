@@ -662,10 +662,14 @@ fn report(message: impl AsRef<str>, status: CheckStatus) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::system::RealSystem;
-    use std::net::TcpListener;
+    use crate::system::{RealSystem, SystemOps};
+    use std::net::{TcpListener, TcpStream};
+    use std::path::Path;
+    use std::process::Command;
+    use std::process::Output;
     use std::thread;
     use std::time::Duration;
+    use tempfile::tempdir;
 
     #[test]
     fn format_bytes_human_readable() {
@@ -695,5 +699,82 @@ mod tests {
         let result = check_connectivity(&system, "127.0.0.1", addr.port(), Duration::from_secs(1));
         let _ = handle.join();
         result
+    }
+
+    struct StubSystem {
+        connect_fn: Box<dyn Fn(&str, u16, Duration) -> Result<TcpStream> + Send + Sync>,
+    }
+
+    impl StubSystem {
+        fn with_connect<F>(connect: F) -> Self
+        where
+            F: Fn(&str, u16, Duration) -> Result<TcpStream> + Send + Sync + 'static,
+        {
+            Self {
+                connect_fn: Box::new(connect),
+            }
+        }
+    }
+
+    impl SystemOps for StubSystem {
+        fn read_to_string(&self, _path: &Path) -> Result<String> {
+            Err(anyhow!("not implemented"))
+        }
+
+        fn command_output(&self, _cmd: &mut Command) -> Result<Output> {
+            Err(anyhow!("not implemented"))
+        }
+
+        fn connect(&self, host: &str, port: u16, timeout: Duration) -> Result<TcpStream> {
+            (self.connect_fn)(host, port, timeout)
+        }
+    }
+
+    #[test]
+    fn connectivity_check_entry_reports_success() -> Result<()> {
+        let listener = TcpListener::bind("127.0.0.1:0")?;
+        let addr = listener.local_addr()?;
+        let handle = thread::spawn(move || {
+            let _ = listener.accept();
+        });
+
+        let system = StubSystem::with_connect(move |_, _, _| Ok(TcpStream::connect(addr)?));
+        let check = connectivity_check_entry(&system, "example.com", 1234);
+        assert_eq!(check.status, CheckStatus::Success);
+        let _ = handle.join();
+        Ok(())
+    }
+
+    #[test]
+    fn connectivity_check_entry_reports_failure() {
+        let system = StubSystem::with_connect(move |_, _, _| Err(anyhow!("network gone")));
+        let check = connectivity_check_entry(&system, "example.com", 1234);
+        assert_eq!(check.status, CheckStatus::Error);
+        assert!(check.detail.unwrap().contains("network gone"));
+    }
+
+    #[test]
+    fn directory_writeable_check_entry_reports_success() -> Result<()> {
+        let base = tempdir()?;
+        let check = directory_writeable_check_entry(base.path(), "Temp");
+        assert_eq!(check.status, CheckStatus::Success);
+        assert!(check.detail.is_none());
+        Ok(())
+    }
+
+    #[test]
+    fn display_preflight_checks_reports_errors() {
+        let success = PreflightCheck {
+            label: "safe".into(),
+            status: CheckStatus::Success,
+            detail: None,
+        };
+        let error_check = PreflightCheck {
+            label: "fail".into(),
+            status: CheckStatus::Error,
+            detail: None,
+        };
+        assert!(!display_preflight_checks(&[success]));
+        assert!(display_preflight_checks(&[error_check]));
     }
 }

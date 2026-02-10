@@ -5,8 +5,8 @@
 **Summary:** This commit introduces `InteractionService` and `InteractionConfig` to centralize user interaction logic, allowing for interactive and non-interactive modes. CLI functions are updated to use this service.
 
 **Findings:**
-1.  **Missing Tests:** No dedicated unit or integration tests were added for the new `interaction.rs` module or for the CLI functions (`run_driver_selection`, `run_module_menu`, `run_profile_menu`) which now use the `InteractionService`. This is a critical omission for a new, central component responsible for user input.
-2.  **Incomplete Configuration Integration:** While `InteractionConfig` is introduced, it is currently instantiated as `InteractionConfig::default()` in `main.rs`. This means user-defined defaults for interaction points are not yet loaded from a configuration file (e.g., via `ConfigService` from WO-007), which was implied by the WO's rationale of "making it easier to script the installer." This is a minor omission in terms of functionality for this WO, but a significant one for overall automation goals.
+1.  **Resolved:** **Missing Tests.** The commit `15d022a` (fix: centralize interaction config) adds a dedicated test file `installer-core/tests/interaction.rs` with comprehensive tests for `InteractionService`, covering interactive/non-interactive modes and config precedence.
+2.  **Resolved:** **Incomplete Configuration Integration.** The commit `15d022a` integrates `InteractionConfig` with `MashConfig` via `ConfigService`, allowing user-defined defaults for interaction points to be loaded from `config.toml`.
 
 ### WO-014 (Commits `f362548` and `4ae8684`): Add Rollback Manager
 
@@ -29,3 +29,9 @@
 
 **Findings:**
 1.  **Missing Tests:** No new, dedicated test file (e.g., `installer-core/tests/doctor.rs`) was added to cover the extensive new functionality in the `doctor` module. Given its criticality and complexity, dedicated tests are essential to verify each check function, the overall `PreflightReport` generation, and the `display_preflight_checks` mechanism.
+
+### WO-011 (Commit `6882d3d`): Enrich Command Diagnostics
+
+**Summary:** This commit successfully enriches command diagnostics by capturing and reporting stdout/stderr and exit codes in error reports.
+
+**Findings:** None.

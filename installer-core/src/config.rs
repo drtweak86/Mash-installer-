@@ -1,9 +1,10 @@
+use crate::interaction::InteractionConfig;
+use crate::logging::LoggingConfig;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
-use crate::interaction::InteractionConfig;
 
 /// Central configuration persisted at ~/.config/mash-installer/config.toml
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -26,6 +27,9 @@ pub struct MashConfig {
 
     #[serde(default)]
     pub interaction: InteractionConfig,
+
+    #[serde(default)]
+    pub logging: LoggingConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -165,6 +169,7 @@ impl Default for MashConfig {
             docker: DockerConfig::default(),
             git: GitConfig::default(),
             interaction: InteractionConfig::default(),
+            logging: LoggingConfig::default(),
         }
     }
 }

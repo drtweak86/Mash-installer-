@@ -14,6 +14,7 @@ mod fonts;
 mod github;
 pub mod interaction;
 pub mod localization;
+mod logging;
 mod package_manager;
 mod pkg;
 mod platform;
@@ -41,8 +42,8 @@ pub use error::{
     InstallerStateSnapshot, RunSummary,
 };
 pub use platform::{detect as detect_platform, PlatformInfo};
-pub use system::{RealSystem, SystemOps};
 pub use rollback::RollbackManager;
+pub use system::{RealSystem, SystemOps};
 
 /// Options provided by the CLI that drive `run_with_driver`.
 #[derive(Clone, Debug)]
@@ -167,6 +168,8 @@ pub fn run_with_driver(
         PhaseErrorPolicy::default()
     };
     let runner = PhaseRunner::with_policy(phases, policy);
+    let install_span = logging::install_span(&ctx);
+    let _install_guard = install_span.enter();
     match runner.run(&ctx, observer) {
         Ok(result) => Ok(InstallationReport {
             summary: RunSummary {
@@ -378,6 +381,8 @@ impl PhaseRunner {
                     phase: phase.name().to_string(),
                 },
             );
+            let phase_span = logging::phase_span(ctx, phase.as_ref());
+            let _phase_guard = phase_span.enter();
             let mut phase_ctx = ctx.phase_context();
             match phase.execute(&mut phase_ctx) {
                 Ok(()) => {

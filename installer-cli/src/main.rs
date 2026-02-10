@@ -3,11 +3,12 @@ use clap::Parser;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use installer_core::cmd::CommandExecutionDetails;
 use installer_core::{
+    config::ConfigService,
+    detect_platform,
     doctor::DoctorOutput,
     interaction::{InteractionConfig, InteractionService},
-    config::ConfigService,
-    detect_platform, DistroDriver, ErrorSeverity, InstallOptions, InstallerError,
-    InstallerStateSnapshot, PhaseEvent, PhaseObserver, PlatformInfo, ProfileLevel, RunSummary,
+    logging, DistroDriver, ErrorSeverity, InstallOptions, InstallerError, InstallerStateSnapshot,
+    PhaseEvent, PhaseObserver, PlatformInfo, ProfileLevel, RunSummary,
 };
 use std::io::{self, Write};
 use std::path::PathBuf;
@@ -39,19 +40,14 @@ struct Cli {
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    let filter = if cli.verbose { "debug" } else { "info" };
-    tracing_subscriber::fmt()
-        .with_env_filter(filter)
-        .without_time()
-        .init();
-
+    let config_service = ConfigService::load()?;
+    logging::init(&config_service.config().logging, cli.verbose)?;
     let platform_info = detect_platform().context("detecting host platform")?;
     let drivers = vec![
         installer_arch::driver(),
         installer_debian::driver(),
         installer_fedora::driver(),
     ];
-    let config_service = ConfigService::load()?;
     let interaction_config = config_service.config().interaction.clone();
     let interaction = InteractionService::new(!cli.non_interactive, interaction_config);
     let driver = if cli.non_interactive {

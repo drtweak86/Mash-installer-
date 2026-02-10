@@ -1,4 +1,6 @@
 use crate::context::UserOptionsContext;
+use crate::InstallOptions;
+use crate::PhaseEvent;
 use crate::ProfileLevel;
 use anyhow::Error;
 use std::fmt;
@@ -148,9 +150,23 @@ impl Default for RunSummary {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct DriverInfo {
+    pub name: String,
+    pub description: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct InstallationReport {
+    pub summary: RunSummary,
+    pub events: Vec<PhaseEvent>,
+    pub options: InstallOptions,
+    pub driver: DriverInfo,
+}
+
 #[derive(Debug)]
 pub struct InstallerRunError {
-    pub summary: RunSummary,
+    pub report: InstallationReport,
     pub source: InstallerError,
 }
 
@@ -178,10 +194,18 @@ impl From<Error> for InstallerRunError {
         );
 
         InstallerRunError {
-            summary: RunSummary {
-                completed_phases: Vec::new(),
-                staging_dir: PathBuf::from("<unknown>"),
-                errors: vec![installer_error.clone()],
+            report: InstallationReport {
+                summary: RunSummary {
+                    completed_phases: Vec::new(),
+                    staging_dir: PathBuf::from("<unknown>"),
+                    errors: vec![installer_error.clone()],
+                },
+                events: Vec::new(),
+                options: InstallOptions::default(),
+                driver: DriverInfo {
+                    name: "<unknown>".to_string(),
+                    description: "unknown driver".to_string(),
+                },
             },
             source: installer_error,
         }

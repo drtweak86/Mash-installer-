@@ -34,13 +34,14 @@ pub use context::{
 };
 pub use driver::{AptRepoConfig, DistroDriver, RepoKind, ServiceName};
 pub use error::{
-    ErrorSeverity, InstallerError, InstallerRunError, InstallerStateSnapshot, RunSummary,
+    DriverInfo, ErrorSeverity, InstallationReport, InstallerError, InstallerRunError,
+    InstallerStateSnapshot, RunSummary,
 };
 pub use platform::{detect as detect_platform, PlatformInfo};
 pub use system::{RealSystem, SystemOps};
 
 /// Options provided by the CLI that drive `run_with_driver`.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct InstallOptions {
     pub profile: ProfileLevel,
     pub staging_dir: Option<PathBuf>,
@@ -50,6 +51,21 @@ pub struct InstallOptions {
     pub enable_p10k: bool,
     pub docker_data_root: bool,
     pub continue_on_error: bool,
+}
+
+impl Default for InstallOptions {
+    fn default() -> Self {
+        Self {
+            profile: ProfileLevel::Minimal,
+            staging_dir: None,
+            dry_run: false,
+            interactive: false,
+            enable_argon: false,
+            enable_p10k: false,
+            docker_data_root: false,
+            continue_on_error: false,
+        }
+    }
 }
 
 /// Central context threaded through every install phase.
@@ -83,7 +99,7 @@ pub fn run_with_driver(
     driver: &'static dyn DistroDriver,
     opts: InstallOptions,
     observer: &mut dyn PhaseObserver,
-) -> Result<RunSummary, InstallerRunError> {
+) -> Result<InstallationReport, InstallerRunError> {
     let plat = platform::detect()?;
     info!(
         "Platform: {} {} on {}",
@@ -99,6 +115,11 @@ pub fn run_with_driver(
     }
 
     let localization = Localization::load()?;
+    let api_options = opts.clone();
+    let driver_info = DriverInfo {
+        name: driver.name().to_string(),
+        description: driver.description().to_string(),
+    };
 
     let overrides = ConfigOverrides {
         staging_dir: opts.staging_dir.clone(),
@@ -140,24 +161,32 @@ pub fn run_with_driver(
     };
     let runner = PhaseRunner::with_policy(phases, policy);
     match runner.run(&ctx, observer) {
-        Ok(result) => Ok(RunSummary {
-            completed_phases: result.completed_phases,
-            staging_dir: ctx.options.staging_dir.clone(),
-            errors: result.errors,
+        Ok(result) => Ok(InstallationReport {
+            summary: RunSummary {
+                completed_phases: result.completed_phases,
+                staging_dir: ctx.options.staging_dir.clone(),
+                errors: result.errors,
+            },
+            events: result.events,
+            options: api_options.clone(),
+            driver: driver_info.clone(),
         }),
         Err(err) => {
             let PhaseRunError {
                 result: run_result,
                 source,
             } = err;
-            Err(InstallerRunError {
+            let report = InstallationReport {
                 summary: RunSummary {
                     completed_phases: run_result.completed_phases,
                     staging_dir: ctx.options.staging_dir.clone(),
                     errors: run_result.errors,
                 },
-                source,
-            })
+                events: run_result.events,
+                options: api_options,
+                driver: driver_info,
+            };
+            Err(InstallerRunError { report, source })
         }
     }
 }

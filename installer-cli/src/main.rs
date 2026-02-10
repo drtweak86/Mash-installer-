@@ -209,12 +209,12 @@ fn run_installer_with_ui(
     observer.finish();
 
     match run_result {
-        Ok(summary) => {
-            print_completion_message(&summary, dry_run);
+        Ok(report) => {
+            print_completion_message(&report.summary, dry_run);
             Ok(())
         }
         Err(err) => {
-            print_error_report(&err.summary);
+            print_error_report(&err.report.summary);
             Err(err.into())
         }
     }

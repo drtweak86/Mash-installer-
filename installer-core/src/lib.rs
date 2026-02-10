@@ -17,7 +17,11 @@ mod package_manager;
 mod pkg;
 mod platform;
 mod rclone;
-mod rollback;
+<<<<<<< HEAD
+pub mod rollback;
+=======
+pub mod rollback;
+>>>>>>> 3a58860 (wo-014: add rollback manager)
 mod rust;
 mod staging;
 mod system;
@@ -693,6 +697,7 @@ mod tests {
             platform: platform_ctx,
             ui: UIContext::default(),
             localization,
+            rollback: RollbackManager::new(),
         })
     }
 

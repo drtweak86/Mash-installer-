@@ -5,6 +5,7 @@ use installer_core::{
     PhaseErrorPolicy, PhaseEvent, PhaseObserver, PhaseRunner, PkgBackend, PlatformContext,
     PlatformInfo, ProfileLevel, UIContext, UserOptionsContext,
 };
+use installer_core::rollback::RollbackManager;
 use std::path::PathBuf;
 
 struct DummyDriver;
@@ -133,6 +134,7 @@ fn build_install_context() -> Result<InstallContext> {
         platform: platform_ctx,
         ui: UIContext::default(),
         localization,
+        rollback: RollbackManager::new(),
     })
 }
 

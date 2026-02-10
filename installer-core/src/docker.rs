@@ -229,6 +229,7 @@ mod tests {
     use super::*;
     use serde_json::json;
     use std::fs;
+    use std::path::Path;
     use tempfile::tempdir;
 
     #[test]
@@ -257,5 +258,24 @@ mod tests {
         let config = json!({"data-root": "/var/lib/docker"});
         assert!(is_data_root_configured(&config, "/var/lib/docker"));
         assert!(!is_data_root_configured(&config, "/tmp/docker"));
+    }
+
+    #[test]
+    fn update_data_root_config_skips_when_target_present() {
+        let config = json!({"data-root": "/mnt/docker"});
+        assert!(update_data_root_config(config, Path::new("/mnt/docker")).is_none());
+    }
+
+    #[test]
+    fn update_data_root_config_applies_when_missing() {
+        let config = json!({});
+        let updated = update_data_root_config(config, Path::new("/data"));
+        assert_eq!(
+            updated
+                .unwrap()
+                .get("data-root")
+                .and_then(Value::as_str),
+            Some("/data")
+        );
     }
 }

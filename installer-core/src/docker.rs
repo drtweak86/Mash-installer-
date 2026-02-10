@@ -251,10 +251,128 @@ fn update_data_root_config(mut config: Value, data_root: &Path) -> Option<Value>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{
+        backend::PkgBackend, driver::DistroDriver, dry_run::DryRunLog, ConfigService, Localization,
+        PhaseContext, PlatformContext, PlatformInfo, ProfileLevel, RollbackManager, UIContext,
+        UserOptionsContext,
+    };
+    use anyhow::Result;
     use serde_json::json;
     use std::fs;
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
     use tempfile::tempdir;
+
+    struct TestDriver;
+
+    impl DistroDriver for TestDriver {
+        fn name(&self) -> &'static str {
+            "test-docker-driver"
+        }
+
+        fn description(&self) -> &'static str {
+            "driver used for docker dry run tests"
+        }
+
+        fn matches(&self, _: &PlatformInfo) -> bool {
+            true
+        }
+
+        fn pkg_backend(&self) -> PkgBackend {
+            PkgBackend::Apt
+        }
+    }
+
+    static TEST_DRIVER: TestDriver = TestDriver;
+
+    struct TestPhaseEnv {
+        options: UserOptionsContext,
+        platform: PlatformContext,
+        ui: UIContext,
+        localization: Localization,
+        rollback: RollbackManager,
+        dry_run_log: DryRunLog,
+    }
+
+    impl TestPhaseEnv {
+        fn new(dry_run: bool) -> Result<Self> {
+            let config_service = ConfigService::load()?;
+            let platform = PlatformInfo {
+                arch: "x86_64".into(),
+                distro: "mash-test".into(),
+                distro_version: "0".into(),
+                distro_codename: "test".into(),
+                distro_family: "debian".into(),
+                pi_model: None,
+            };
+            let platform_ctx = PlatformContext {
+                config_service,
+                platform,
+                driver_name: TEST_DRIVER.name(),
+                driver: &TEST_DRIVER,
+                pkg_backend: PkgBackend::Apt,
+            };
+            let options = UserOptionsContext {
+                profile: ProfileLevel::Minimal,
+                staging_dir: PathBuf::from("/tmp/mash-dry-run"),
+                dry_run,
+                interactive: false,
+                enable_argon: false,
+                enable_p10k: false,
+                docker_data_root: false,
+            };
+            let localization = Localization::load_default()?;
+
+            Ok(Self {
+                options,
+                platform: platform_ctx,
+                ui: UIContext::default(),
+                localization,
+                rollback: RollbackManager::new(),
+                dry_run_log: DryRunLog::new(),
+            })
+        }
+
+        fn phase_context(&mut self) -> PhaseContext<'_> {
+            PhaseContext {
+                options: &self.options,
+                platform: &self.platform,
+                ui: &self.ui,
+                localization: &self.localization,
+                rollback: &self.rollback,
+                dry_run_log: &self.dry_run_log,
+            }
+        }
+    }
+
+    #[test]
+    fn docker_dry_run_helpers_log_actions() -> Result<()> {
+        let mut env = TestPhaseEnv::new(true)?;
+        std::env::set_var("USER", "nobody");
+        {
+            let mut phase_ctx = env.phase_context();
+            add_user_to_docker_group(&mut phase_ctx)?;
+        }
+        {
+            let mut phase_ctx = env.phase_context();
+            enable_docker_service(&mut phase_ctx)?;
+        }
+        std::env::remove_var("USER");
+
+        let entries = env.dry_run_log.entries();
+        assert!(
+            entries
+                .iter()
+                .any(|entry| entry.action == "Would add user to docker group"),
+            "expected dry-run log to include user management entry"
+        );
+        assert!(
+            entries
+                .iter()
+                .any(|entry| entry.action == "Would enable docker service"),
+            "expected dry-run log to include service enable entry"
+        );
+        Ok(())
+    }
 
     #[test]
     fn load_daemon_config_returns_none_when_missing() -> Result<()> {
@@ -293,9 +411,10 @@ mod tests {
     #[test]
     fn update_data_root_config_applies_when_missing() {
         let config = json!({});
-        let updated = update_data_root_config(config, Path::new("/data"));
+        let updated =
+            update_data_root_config(config, Path::new("/data")).expect("should update config");
         assert_eq!(
-            updated.unwrap().get("data-root").and_then(Value::as_str),
+            updated.get("data-root").and_then(Value::as_str),
             Some("/data")
         );
     }

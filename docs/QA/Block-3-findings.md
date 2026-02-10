@@ -8,13 +8,13 @@
 1.  **Resolved:** **Missing Tests.** The commit `15d022a` (fix: centralize interaction config) adds a dedicated test file `installer-core/tests/interaction.rs` with comprehensive tests for `InteractionService`, covering interactive/non-interactive modes and config precedence.
 2.  **Resolved:** **Incomplete Configuration Integration.** The commit `15d022a` integrates `InteractionConfig` with `MashConfig` via `ConfigService`, allowing user-defined defaults for interaction points to be loaded from `config.toml`.
 
-### WO-014 (Commits `f362548` and `4ae8684`): Add Rollback Manager
+### WO-014 (Commits `f362548`, `4ae8684`, and `6f30453`): Add Rollback Manager
 
 **Summary:** These commits introduce `RollbackManager` and integrate it into the `InstallContext`. The `RollbackManager` itself provides mechanisms for registering and executing rollback actions.
 
 **Findings:**
-1.  **Missing Tests for Rollback Functionality:** This remains a critical finding. There are no dedicated tests for `RollbackManager` to ensure `register_action` and `rollback_all` work correctly, especially error aggregation. More importantly, there are no tests for how `RollbackManager` integrates with `PhaseRunner` to actually *trigger* rollbacks on phase failure.
-2.  **Missing Integration in `PhaseRunner` to Trigger Rollback:** While `RollbackManager` is available in `InstallContext` (via `PhaseContext`), there is no visible integration within `PhaseRunner::run` (or elsewhere in `lib.rs` that calls it) that explicitly calls `ctx.rollback.rollback_all()` when an installation phase fails. Without this integration, the `RollbackManager` is merely a data structure; it does not actively provide transactional capabilities as intended by the WO.
+1.  **Resolved:** **Missing Tests for Rollback Functionality.** The commit `6f30453` (`wo-014: add rollback manager tests`) adds a comprehensive test suite in `installer-core/tests/rollback.rs` that verifies `RollbackManager`'s order of execution and error aggregation.
+2.  **Outstanding:** **Missing Integration in `PhaseRunner` to Trigger Rollback.** While `RollbackManager` is available in `InstallContext` (via `PhaseContext`), there is no visible integration within `PhaseRunner::run` (or elsewhere in `lib.rs` that calls it) that explicitly calls `ctx.rollback.rollback_all()` when an installation phase fails. Without this integration, the `RollbackManager` is merely a data structure; it does not actively provide transactional capabilities as intended by the WO.
 
 ### WO-013 (Commit `3662986`): Make Docker Data-Root Idempotent
 

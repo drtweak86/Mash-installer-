@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
+use crate::interaction::InteractionConfig;
 
 /// Central configuration persisted at ~/.config/mash-installer/config.toml
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -22,6 +23,9 @@ pub struct MashConfig {
 
     #[serde(default)]
     pub git: GitConfig,
+
+    #[serde(default)]
+    pub interaction: InteractionConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -160,6 +164,7 @@ impl Default for MashConfig {
             cache: CacheDirs::default(),
             docker: DockerConfig::default(),
             git: GitConfig::default(),
+            interaction: InteractionConfig::default(),
         }
     }
 }

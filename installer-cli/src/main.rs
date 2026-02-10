@@ -2,10 +2,10 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use installer_core::cmd::CommandExecutionDetails;
-use installer_core::doctor::DoctorOutput;
-use installer_core::interaction::InteractionConfig;
-use installer_core::interaction::InteractionService;
 use installer_core::{
+    doctor::DoctorOutput,
+    interaction::{InteractionConfig, InteractionService},
+    config::ConfigService,
     detect_platform, DistroDriver, ErrorSeverity, InstallOptions, InstallerError,
     InstallerStateSnapshot, PhaseEvent, PhaseObserver, PlatformInfo, ProfileLevel, RunSummary,
 };
@@ -51,7 +51,9 @@ fn main() -> Result<()> {
         installer_debian::driver(),
         installer_fedora::driver(),
     ];
-    let interaction = InteractionService::new(!cli.non_interactive, InteractionConfig::default());
+    let config_service = ConfigService::load()?;
+    let interaction_config = config_service.config().interaction.clone();
+    let interaction = InteractionService::new(!cli.non_interactive, interaction_config);
     let driver = if cli.non_interactive {
         auto_detect_driver(&drivers, &platform_info).unwrap_or_else(|| drivers[0])
     } else {

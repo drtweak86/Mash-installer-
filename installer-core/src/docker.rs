@@ -1,5 +1,7 @@
 use anyhow::{Context, Result};
+use serde_json::Value;
 use std::fs;
+use std::path::Path;
 use std::process::Command;
 
 use crate::{
@@ -115,41 +117,26 @@ fn enable_docker_service(ctx: &mut PhaseContext) -> Result<()> {
 }
 
 fn configure_data_root(ctx: &mut PhaseContext, data_root: &std::path::Path) -> Result<()> {
-    let daemon_json = std::path::Path::new("/etc/docker/daemon.json");
+    let daemon_json = Path::new("/etc/docker/daemon.json");
 
     tracing::info!("Configuring Docker data-root to {}", data_root.display());
     crate::staging::ensure_space_for_path(data_root)?;
+
+    let mut config = load_daemon_config(daemon_json)?.unwrap_or_else(|| serde_json::json!({}));
+    let desired_data_root = data_root.display().to_string();
+    if is_data_root_configured(&config, &desired_data_root) {
+        tracing::info!("Docker data-root already set to {}", data_root.display());
+        return Ok(());
+    }
+
     if ctx.options.dry_run {
+        tracing::info!("[dry-run] would configure Docker data-root to {}", data_root.display());
         return Ok(());
     }
 
     fs::create_dir_all(data_root)?;
 
-    let mut config: serde_json::Value = if daemon_json.exists() {
-        let text = fs::read_to_string(daemon_json)?;
-        match serde_json::from_str::<serde_json::Value>(&text) {
-            Ok(obj) => match obj {
-                serde_json::Value::Object(_) => obj,
-                _ => {
-                    anyhow::bail!(
-                        "{} must be a JSON object; please fix or remove it before rerunning.",
-                        daemon_json.display()
-                    )
-                }
-            },
-            Err(err) => {
-                anyhow::bail!(
-                    "Failed to parse {}: {err}. Please repair the file (comments are not allowed) before rerunning.",
-                    daemon_json.display()
-                )
-            }
-        }
-    } else {
-        serde_json::json!({})
-    };
-
-    config["data-root"] = serde_json::Value::String(data_root.display().to_string());
-
+    config["data-root"] = Value::String(desired_data_root.clone());
     let content = serde_json::to_string_pretty(&config)?;
 
     if daemon_json.exists() {
@@ -158,11 +145,13 @@ fn configure_data_root(ctx: &mut PhaseContext, data_root: &std::path::Path) -> R
     }
 
     let mut tee_cmd = Command::new("sh");
-    tee_cmd.arg("-c").arg(format!(
-        "echo '{}' | sudo tee {} > /dev/null",
-        content,
-        daemon_json.display()
-    ));
+    tee_cmd
+        .arg("-c")
+        .arg(format!(
+            "echo '{}' | sudo tee {} > /dev/null",
+            content,
+            daemon_json.display()
+        ));
     cmd::run(&mut tee_cmd)?;
 
     let mut restart_cmd = Command::new("sudo");
@@ -170,4 +159,65 @@ fn configure_data_root(ctx: &mut PhaseContext, data_root: &std::path::Path) -> R
     let _ = cmd::run(&mut restart_cmd);
 
     Ok(())
+}
+
+fn load_daemon_config(path: &Path) -> Result<Option<Value>> {
+    if !path.exists() {
+        return Ok(None);
+    }
+
+    let text = fs::read_to_string(path)?;
+    match serde_json::from_str::<Value>(&text) {
+        Ok(value) => match value {
+            Value::Object(_) => Ok(Some(value)),
+            _ => anyhow::bail!(
+                "{} must be a JSON object; please fix or remove it before rerunning.",
+                path.display()
+            ),
+        },
+        Err(err) => anyhow::bail!(
+            "Failed to parse {}: {err}. Please repair the file (comments are not allowed) before rerunning.",
+            path.display()
+        ),
+    }
+}
+
+fn is_data_root_configured(config: &Value, desired: &str) -> bool {
+    match config.get("data-root") {
+        Some(Value::String(existing)) => existing == desired,
+        _ => false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    use std::fs;
+    use tempfile::tempdir;
+
+    #[test]
+    fn load_daemon_config_returns_none_when_missing() -> Result<()> {
+        let dir = tempdir()?;
+        let missing_path = dir.path().join("daemon.json");
+        assert!(load_daemon_config(&missing_path)?.is_none());
+        Ok(())
+    }
+
+    #[test]
+    fn load_daemon_config_parses_json_object() -> Result<()> {
+        let dir = tempdir()?;
+        let path = dir.path().join("daemon.json");
+        fs::write(&path, r#"{"data-root": "/data"}"#)?;
+        let config = load_daemon_config(&path)?.expect("config should exist");
+        assert_eq!(config.get("data-root").and_then(Value::as_str), Some("/data"));
+        Ok(())
+    }
+
+    #[test]
+    fn is_data_root_configured_detects_matching_values() {
+        let config = json!({"data-root": "/var/lib/docker"});
+        assert!(is_data_root_configured(&config, "/var/lib/docker"));
+        assert!(!is_data_root_configured(&config, "/tmp/docker"));
+    }
 }

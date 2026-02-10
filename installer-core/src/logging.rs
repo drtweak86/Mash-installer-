@@ -14,7 +14,7 @@ use tracing_subscriber::{
 
 use crate::{InstallContext, Phase};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum LogFormat {
     Human,
@@ -66,6 +66,15 @@ impl LoggingConfig {
 }
 
 pub fn init(config: &LoggingConfig, verbose: bool) -> Result<()> {
+    let writer = make_writer(config.file.as_ref())?;
+    let subscriber = build_subscriber(config, verbose, writer);
+
+    tracing::subscriber::set_global_default(subscriber)
+        .context("initializing global logging subscriber")?;
+    Ok(())
+}
+
+fn build_env_filter(config: &LoggingConfig, verbose: bool) -> EnvFilter {
     let base_level = if verbose {
         LevelFilter::DEBUG
     } else {
@@ -73,14 +82,20 @@ pub fn init(config: &LoggingConfig, verbose: bool) -> Result<()> {
     };
 
     let level_directive = base_level.to_string().to_lowercase();
-    let env_filter = if let Ok(filter) = EnvFilter::try_from_default_env() {
+    if let Ok(filter) = EnvFilter::try_from_default_env() {
         filter
     } else {
         EnvFilter::new(level_directive)
-    };
+    }
+}
 
-    let writer = make_writer(config.file.as_ref())?;
-    let subscriber: Box<dyn Subscriber + Send + Sync> = match config.format {
+fn build_subscriber(
+    config: &LoggingConfig,
+    verbose: bool,
+    writer: BoxMakeWriter,
+) -> Box<dyn Subscriber + Send + Sync> {
+    let env_filter = build_env_filter(config, verbose);
+    match config.format {
         LogFormat::Json => Box::new(
             tracing_subscriber::registry()
                 .with(env_filter.clone())
@@ -101,11 +116,7 @@ pub fn init(config: &LoggingConfig, verbose: bool) -> Result<()> {
                         .with_span_events(FmtSpan::FULL),
                 ),
         ),
-    };
-
-    tracing::subscriber::set_global_default(subscriber)
-        .context("initializing global logging subscriber")?;
-    Ok(())
+    }
 }
 
 fn make_writer(path: Option<&PathBuf>) -> Result<BoxMakeWriter, io::Error> {
@@ -160,4 +171,63 @@ pub fn phase_span(ctx: &InstallContext, phase: &dyn Phase) -> Span {
         arch = %ctx.platform.platform.arch,
         staging = %ctx.options.staging_dir.display()
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use anyhow::Result;
+    use std::fs;
+    use tempfile::tempdir;
+    use tracing::{dispatcher, info, warn};
+
+    #[test]
+    fn json_format_records_structured_entries() -> Result<()> {
+        let dir = tempdir()?;
+        let log_path = dir.path().join("json-log.log");
+        let config = LoggingConfig {
+            level: "info".into(),
+            format: LogFormat::Json,
+            file: Some(log_path.clone()),
+        };
+
+        let writer = make_writer(config.file.as_ref())?;
+        let subscriber = build_subscriber(&config, false, writer);
+        let dispatch = dispatcher::Dispatch::new(subscriber);
+        dispatcher::with_default(&dispatch, || info!("structured event"));
+
+        drop(dispatch);
+
+        let contents = fs::read_to_string(log_path)?;
+        assert!(contents.contains("\"level\":\"INFO\""));
+        assert!(contents.contains("\"message\":\"structured event\""));
+        Ok(())
+    }
+
+    #[test]
+    fn level_filter_filters_lower_levels() -> Result<()> {
+        let dir = tempdir()?;
+        let log_path = dir.path().join("level.log");
+        let config = LoggingConfig {
+            level: "warn".into(),
+            format: LogFormat::Human,
+            file: Some(log_path.clone()),
+        };
+
+        let writer = make_writer(config.file.as_ref())?;
+        let subscriber = build_subscriber(&config, false, writer);
+        let dispatch = dispatcher::Dispatch::new(subscriber);
+        dispatcher::with_default(&dispatch, || {
+            info!("filtered info");
+            warn!("visible warn");
+        });
+
+        drop(dispatch);
+
+        let contents = fs::read_to_string(log_path)?;
+        assert!(contents.contains("warn"));
+        assert!(contents.contains("visible warn"));
+        assert!(!contents.contains("filtered info"));
+        Ok(())
+    }
 }

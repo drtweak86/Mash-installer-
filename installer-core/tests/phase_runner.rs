@@ -7,6 +7,7 @@ use installer_core::{
     PlatformInfo, ProfileLevel, UIContext, UserOptionsContext,
 };
 use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 
 struct DummyDriver;
 
@@ -214,5 +215,31 @@ fn phase_runner_aggregates_errors_and_events() -> Result<()> {
         event,
         PhaseEvent::Failed { phase, .. } if phase == "phase-error"
     )));
+    Ok(())
+}
+
+#[test]
+fn phase_runner_triggers_rollback_on_failure() -> Result<()> {
+    let ctx = build_install_context()?;
+    let executed = Arc::new(Mutex::new(Vec::new()));
+    let marker = executed.clone();
+    ctx.rollback.register_action("cleanup", move || {
+        marker.lock().unwrap().push("cleanup".to_string());
+        Ok(())
+    });
+
+    let phases: Vec<Box<dyn Phase>> = vec![Box::new(TestPhase::new(
+        "phase-error",
+        "phase error",
+        true,
+        ErrorSeverity::Fatal,
+        failing_phase,
+    ))];
+    let runner = PhaseRunner::from_phases(phases);
+    let mut observer = RecordingObserver::new();
+    assert!(runner.run(&ctx, &mut observer).is_err());
+
+    let history = executed.lock().unwrap();
+    assert_eq!(history.as_slice(), ["cleanup"]);
     Ok(())
 }

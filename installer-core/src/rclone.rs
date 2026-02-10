@@ -1,9 +1,9 @@
 use anyhow::{Context, Result};
 use std::process::Command;
 
-use crate::{cmd, package_manager, PhaseExecutionContext};
+use crate::{cmd, package_manager, PhaseContext};
 
-pub fn install_phase(ctx: &PhaseExecutionContext) -> Result<()> {
+pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
     if which::which("rclone").is_ok() {
         tracing::info!("rclone already installed");
         return Ok(());
@@ -19,7 +19,7 @@ pub fn install_phase(ctx: &PhaseExecutionContext) -> Result<()> {
     Ok(())
 }
 
-fn try_pkg(ctx: &PhaseExecutionContext) -> Result<bool> {
+fn try_pkg(ctx: &mut PhaseContext) -> Result<bool> {
     if package_manager::is_installed(ctx.platform.driver, "rclone") {
         return Ok(true);
     }
@@ -43,7 +43,7 @@ fn try_pkg(ctx: &PhaseExecutionContext) -> Result<bool> {
     }
 }
 
-fn install_via_script(ctx: &PhaseExecutionContext) -> Result<()> {
+fn install_via_script(ctx: &mut PhaseContext) -> Result<()> {
     tracing::info!("Installing rclone via official install script");
     if ctx.options.dry_run {
         tracing::info!("[dry-run] would run rclone install script");

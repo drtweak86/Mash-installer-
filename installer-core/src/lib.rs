@@ -25,9 +25,7 @@ use std::path::PathBuf;
 use tracing::{error, info};
 
 pub use backend::PkgBackend;
-pub use context::{
-    ConfigService, PhaseExecutionContext, PlatformContext, UIContext, UserOptionsContext,
-};
+pub use context::{ConfigService, PhaseContext, PlatformContext, UIContext, UserOptionsContext};
 pub use driver::{AptRepoConfig, DistroDriver, RepoKind, ServiceName};
 pub use platform::{detect as detect_platform, PlatformInfo};
 
@@ -51,8 +49,8 @@ pub struct InstallContext {
 }
 
 impl InstallContext {
-    fn phase_context(&self) -> PhaseExecutionContext<'_> {
-        PhaseExecutionContext {
+    fn phase_context(&self) -> PhaseContext<'_> {
+        PhaseContext {
             options: &self.options,
             platform: &self.platform,
             ui: &self.ui,
@@ -215,20 +213,20 @@ impl PhaseRunner {
         let mut completed = Vec::new();
 
         for (i, phase) in self.phases.iter().enumerate() {
-            if !phase.should_run(&ctx.options) {
-                observer.on_phase_skipped(i + 1, phase.label());
+            if !phase.should_run(ctx) {
+                observer.on_phase_skipped(i + 1, phase.name());
                 continue;
             }
 
-            observer.on_phase_started(i + 1, total, phase.label());
-            let phase_ctx = ctx.phase_context();
-            match phase.execute(&phase_ctx) {
+            observer.on_phase_started(i + 1, total, phase.name());
+            let mut phase_ctx = ctx.phase_context();
+            match phase.execute(&mut phase_ctx) {
                 Ok(()) => {
-                    observer.on_phase_success(i + 1, phase.done_msg());
-                    completed.push(phase.label());
+                    observer.on_phase_success(i + 1, phase.description());
+                    completed.push(phase.name());
                 }
                 Err(e) => {
-                    observer.on_phase_failure(i + 1, phase.label(), &e);
+                    observer.on_phase_failure(i + 1, phase.name(), &e);
                     let completed_list = if completed.is_empty() {
                         "none".to_string()
                     } else {
@@ -237,7 +235,7 @@ impl PhaseRunner {
                     error!(
                         "Installation aborted during {} (staging dir: {}). Completed phases: {}. \
                          Rerun `mash-setup doctor` or remove the staging directory before retrying.",
-                        phase.label(),
+                    phase.name(),
                         ctx.options.staging_dir.display(),
                         completed_list
                     );
@@ -258,43 +256,43 @@ pub struct RunSummary {
 }
 
 pub trait Phase {
-    fn label(&self) -> &'static str;
-    fn done_msg(&self) -> &'static str;
-    fn should_run(&self, _opts: &UserOptionsContext) -> bool {
+    fn name(&self) -> &'static str;
+    fn description(&self) -> &'static str;
+    fn should_run(&self, _ctx: &InstallContext) -> bool {
         true
     }
-    fn execute(&self, ctx: &PhaseExecutionContext) -> Result<()>;
+    fn execute(&self, ctx: &mut PhaseContext) -> Result<()>;
 }
 
 pub struct FunctionPhase {
-    label: &'static str,
-    done_msg: &'static str,
-    run: fn(&PhaseExecutionContext) -> Result<()>,
+    name: &'static str,
+    description: &'static str,
+    run: fn(&mut PhaseContext) -> Result<()>,
 }
 
 impl Phase for FunctionPhase {
-    fn label(&self) -> &'static str {
-        self.label
+    fn name(&self) -> &'static str {
+        self.name
     }
 
-    fn done_msg(&self) -> &'static str {
-        self.done_msg
+    fn description(&self) -> &'static str {
+        self.description
     }
 
-    fn execute(&self, ctx: &PhaseExecutionContext) -> Result<()> {
+    fn execute(&self, ctx: &mut PhaseContext) -> Result<()> {
         (self.run)(ctx)
     }
 }
 
 impl FunctionPhase {
     pub fn new(
-        label: &'static str,
-        done_msg: &'static str,
-        run: fn(&PhaseExecutionContext) -> Result<()>,
+        name: &'static str,
+        description: &'static str,
+        run: fn(&mut PhaseContext) -> Result<()>,
     ) -> Self {
         Self {
-            label,
-            done_msg,
+            name,
+            description,
             run,
         }
     }
@@ -345,40 +343,40 @@ mod tests {
     }
 
     struct TestPhase {
-        label: &'static str,
-        done_msg: &'static str,
+        name: &'static str,
+        description: &'static str,
         should_run: bool,
-        run: fn(&PhaseExecutionContext) -> Result<()>,
+        run: fn(&mut PhaseContext) -> Result<()>,
     }
 
     impl Phase for TestPhase {
-        fn label(&self) -> &'static str {
-            self.label
+        fn name(&self) -> &'static str {
+            self.name
         }
 
-        fn done_msg(&self) -> &'static str {
-            self.done_msg
+        fn description(&self) -> &'static str {
+            self.description
         }
 
-        fn should_run(&self, _: &UserOptionsContext) -> bool {
+        fn should_run(&self, _: &InstallContext) -> bool {
             self.should_run
         }
 
-        fn execute(&self, ctx: &InstallContext) -> Result<()> {
-            (self.run)(&ctx.phase_context())
+        fn execute(&self, ctx: &mut PhaseContext) -> Result<()> {
+            (self.run)(ctx)
         }
     }
 
     impl TestPhase {
         fn new(
-            label: &'static str,
-            done_msg: &'static str,
+            name: &'static str,
+            description: &'static str,
             should_run: bool,
-            run: fn(&PhaseExecutionContext) -> Result<()>,
+            run: fn(&mut PhaseContext) -> Result<()>,
         ) -> Self {
             Self {
-                label,
-                done_msg,
+                name,
+                description,
                 should_run,
                 run,
             }
@@ -442,11 +440,11 @@ mod tests {
         })
     }
 
-    fn success_phase(_ctx: &PhaseExecutionContext) -> Result<()> {
+    fn success_phase(_ctx: &mut PhaseContext) -> Result<()> {
         Ok(())
     }
 
-    fn failing_phase(_ctx: &PhaseExecutionContext) -> Result<()> {
+    fn failing_phase(_ctx: &mut PhaseContext) -> Result<()> {
         Err(anyhow!("boom"))
     }
 

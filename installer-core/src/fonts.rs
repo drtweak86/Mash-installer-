@@ -1,8 +1,8 @@
 use anyhow::Result;
 
-use crate::{package_manager, PhaseExecutionContext};
+use crate::{package_manager, PhaseContext};
 
-pub fn install_phase(ctx: &PhaseExecutionContext) -> Result<()> {
+pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
     // Canonical (Debian) names – pkg.rs translates for Arch automatically
     let pkgs = [
         "fonts-terminus",

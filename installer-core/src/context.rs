@@ -54,7 +54,7 @@ impl PlatformContext {
 pub struct UIContext;
 
 /// Combined contexts passed to individual phases.
-pub struct PhaseExecutionContext<'a> {
+pub struct PhaseContext<'a> {
     pub options: &'a UserOptionsContext,
     pub platform: &'a PlatformContext,
     pub ui: &'a UIContext,

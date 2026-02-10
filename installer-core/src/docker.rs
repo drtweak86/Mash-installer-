@@ -5,10 +5,10 @@ use std::process::Command;
 use crate::{
     apt_repo, cmd,
     driver::{RepoKind, ServiceName},
-    package_manager, systemd, PhaseExecutionContext, PkgBackend,
+    package_manager, systemd, PhaseContext, PkgBackend,
 };
 
-pub fn install_phase(ctx: &PhaseExecutionContext) -> Result<()> {
+pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
     let backend = ctx.platform.pkg_backend;
 
     let already = match backend {
@@ -45,7 +45,7 @@ pub fn install_phase(ctx: &PhaseExecutionContext) -> Result<()> {
     Ok(())
 }
 
-fn install_docker_apt(ctx: &PhaseExecutionContext) -> Result<()> {
+fn install_docker_apt(ctx: &mut PhaseContext) -> Result<()> {
     let pkgs = [
         "docker-ce",
         "docker-ce-cli",
@@ -58,7 +58,7 @@ fn install_docker_apt(ctx: &PhaseExecutionContext) -> Result<()> {
 
 // ── Pacman path ─────────────────────────────────────────────────
 
-fn install_docker_pacman(ctx: &PhaseExecutionContext) -> Result<()> {
+fn install_docker_pacman(ctx: &mut PhaseContext) -> Result<()> {
     // On Arch/Manjaro, Docker is in the community repo
     let pkgs = ["docker", "docker-buildx", "docker-compose"];
     package_manager::ensure_packages(ctx.platform.driver, &pkgs, ctx.options.dry_run)
@@ -66,7 +66,7 @@ fn install_docker_pacman(ctx: &PhaseExecutionContext) -> Result<()> {
 
 // ── Common ──────────────────────────────────────────────────────
 
-fn add_user_to_docker_group(ctx: &PhaseExecutionContext) -> Result<()> {
+fn add_user_to_docker_group(ctx: &mut PhaseContext) -> Result<()> {
     let user = std::env::var("SUDO_USER")
         .or_else(|_| std::env::var("USER"))
         .unwrap_or_else(|_| "root".into());
@@ -97,7 +97,7 @@ fn add_user_to_docker_group(ctx: &PhaseExecutionContext) -> Result<()> {
     Ok(())
 }
 
-fn enable_docker_service(ctx: &PhaseExecutionContext) -> Result<()> {
+fn enable_docker_service(ctx: &mut PhaseContext) -> Result<()> {
     if ctx.options.dry_run {
         let service = ctx.platform.driver.service_unit(ServiceName::Docker);
         tracing::info!("[dry-run] would enable {service}");
@@ -114,7 +114,7 @@ fn enable_docker_service(ctx: &PhaseExecutionContext) -> Result<()> {
     Ok(())
 }
 
-fn configure_data_root(ctx: &PhaseExecutionContext, data_root: &std::path::Path) -> Result<()> {
+fn configure_data_root(ctx: &mut PhaseContext, data_root: &std::path::Path) -> Result<()> {
     let daemon_json = std::path::Path::new("/etc/docker/daemon.json");
 
     tracing::info!("Configuring Docker data-root to {}", data_root.display());

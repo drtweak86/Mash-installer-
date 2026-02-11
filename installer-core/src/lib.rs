@@ -1,6 +1,7 @@
 mod apt_repo;
 mod argon;
 mod backend;
+pub mod catalog;
 mod buildroot;
 pub mod cmd;
 mod config;

@@ -1,17 +1,19 @@
-#[derive(Clone, Debug)]
+use serde::Serialize;
+
+#[derive(Clone, Debug, Serialize)]
 pub struct ProgramOption {
     pub name: &'static str,
     pub description: &'static str,
     pub default: bool,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Category {
     pub name: &'static str,
     pub options: Vec<ProgramOption>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Catalog {
     pub categories: Vec<Category>,
 }

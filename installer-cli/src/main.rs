@@ -1,19 +1,29 @@
 use anyhow::{Context, Result};
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use installer_core::cmd::CommandExecutionDetails;
 use installer_core::{
-    config::ConfigService,
+    ConfigService,
+    PhaseEvent,
+    PhaseObserver,
+    PlatformInfo,
+    ProfileLevel,
+    RunSummary,
     detect_platform,
-    doctor::DoctorOutput,
-    interaction::{InteractionConfig, InteractionService},
-    logging, DistroDriver, ErrorSeverity, InstallOptions, InstallerError, InstallerStateSnapshot,
-    PhaseEvent, PhaseObserver, PlatformInfo, ProfileLevel, RunSummary,
+    init_logging,
+    DistroDriver,
+    ErrorSeverity,
+    InstallOptions,
+    InstallerError,
+    InstallerStateSnapshot,
+    interaction::InteractionService,
 };
 use std::io::{self, Write};
 use std::path::PathBuf;
 use std::time::Duration;
 use tracing::{info, warn};
+
+mod catalog;
 
 #[derive(Parser)]
 #[command(
@@ -21,6 +31,9 @@ use tracing::{info, warn};
     about = "Workspace-aware mash installer entrypoint"
 )]
 struct Cli {
+    #[command(subcommand)]
+    command: Option<CliCommand>,
+
     #[arg(long)]
     staging_dir: Option<PathBuf>,
 
@@ -37,11 +50,24 @@ struct Cli {
     continue_on_error: bool,
 }
 
+#[derive(Subcommand)]
+enum CliCommand {
+    Catalog {
+        #[arg(long)]
+        json: bool,
+    },
+}
+
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
+    if let Some(CliCommand::Catalog { json }) = cli.command {
+        let catalog = installer_core::catalog::curated_catalog();
+        return catalog::print_catalog(&catalog, json);
+    }
+
     let config_service = ConfigService::load()?;
-    logging::init(&config_service.config().logging, cli.verbose)?;
+    init_logging(&config_service.config().logging, cli.verbose)?;
     let platform_info = detect_platform().context("detecting host platform")?;
     let drivers = vec![
         installer_arch::driver(),

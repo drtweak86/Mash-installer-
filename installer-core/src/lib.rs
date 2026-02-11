@@ -39,6 +39,7 @@ pub use context::{
 };
 pub use doctor::DoctorOutput;
 pub use driver::{AptRepoConfig, DistroDriver, RepoKind, ServiceName};
+pub use logging::init as init_logging;
 pub use error::{
     DriverInfo, ErrorSeverity, InstallationReport, InstallerError, InstallerRunError,
     InstallerStateSnapshot, RunSummary,

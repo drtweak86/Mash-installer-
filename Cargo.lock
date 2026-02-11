@@ -352,6 +352,7 @@ dependencies = [
  "installer-core",
  "installer-debian",
  "installer-fedora",
+ "serde_json",
  "tracing",
  "tracing-subscriber",
  "which 4.4.2",

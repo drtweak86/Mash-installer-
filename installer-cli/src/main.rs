@@ -48,6 +48,10 @@ struct Cli {
 
     #[arg(long)]
     continue_on_error: bool,
+
+    /// Profile to install: minimal, dev, full  (skips the profile menu)
+    #[arg(long, value_name = "LEVEL")]
+    profile: Option<String>,
 }
 
 #[derive(Subcommand)]
@@ -88,7 +92,9 @@ fn main() -> Result<()> {
         run_module_menu(driver.name(), &interaction)?
     };
 
-    let profile = if cli.non_interactive {
+    let profile = if let Some(ref p) = cli.profile {
+        parse_profile_level(p)?
+    } else if cli.non_interactive {
         ProfileLevel::Dev
     } else {
         run_profile_menu(&interaction)?
@@ -115,6 +121,17 @@ fn main() -> Result<()> {
 
     let mut observer = CliPhaseObserver::new();
     run_installer_with_ui(driver, options, &mut observer).context("installer failed")
+}
+
+fn parse_profile_level(s: &str) -> Result<ProfileLevel> {
+    match s.to_lowercase().as_str() {
+        "minimal" | "min" => Ok(ProfileLevel::Minimal),
+        "dev" => Ok(ProfileLevel::Dev),
+        "full" => Ok(ProfileLevel::Full),
+        other => anyhow::bail!(
+            "unknown profile '{other}'; valid values: minimal, dev, full"
+        ),
+    }
 }
 
 fn print_banner() {

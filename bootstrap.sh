@@ -22,7 +22,7 @@ BINARY_PREFIX="mash-setup"
 INSTALL_DIR="/usr/local/bin"
 
 # ── colours (if tty) ─────────────────────────────────────────────
-if [ -t 1 ]; then
+if [ -t 2 ]; then
     RED='\033[0;31m'
     GREEN='\033[0;32m'
     YELLOW='\033[0;33m'
@@ -32,8 +32,8 @@ else
     RED='' GREEN='' YELLOW='' BOLD='' RESET=''
 fi
 
-info()  { echo -e "${GREEN}[info]${RESET}  $*"; }
-warn()  { echo -e "${YELLOW}[warn]${RESET}  $*"; }
+info()  { echo -e "${GREEN}[info]${RESET}  $*" >&2; }
+warn()  { echo -e "${YELLOW}[warn]${RESET}  $*" >&2; }
 error() { echo -e "${RED}[error]${RESET} $*" >&2; }
 die()   { error "$@"; exit 1; }
 
@@ -138,7 +138,7 @@ download_binary() {
         die "Checksum file ${sha_file} missing for ${asset_name}"
     fi
     info "Verifying SHA-256 checksum …"
-    (cd "$tmp_dir" && sha256sum -c "$sha_file") \
+    (cd "$tmp_dir" && sha256sum -c "$sha_file" >&2) \
         || die "Checksum verification failed!"
     info "Checksum OK"
 
@@ -188,13 +188,13 @@ main() {
     # Clean up temp
     rm -rf "$(dirname "$binary_path")"
 
-    # Run the installer, passing through any arguments
-    info "Running: ${BINARY_PREFIX} install $*"
+    # Run the installer non-interactively, passing through any arguments
+    info "Running: ${BINARY_PREFIX} --non-interactive $*"
     echo ""
-    "${INSTALL_DIR}/${BINARY_PREFIX}" install "$@"
+    "${INSTALL_DIR}/${BINARY_PREFIX}" --non-interactive "$@"
 }
 
-# If no explicit profile was given, default to --profile dev
+# Default to dev profile; pass --profile <level> to override
 if [[ $# -eq 0 ]]; then
     main --profile dev
 else

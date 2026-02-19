@@ -1,14 +1,22 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────
-#  mash installer – pure-bash Ubuntu/Debian one-shot installer
+#  mash installer – Rust-based TUI installer with ratatui
+#
+#  Supports: Arch Linux (aarch64), Debian, Fedora
 #
 #  Usage:
 #    curl -fsSL https://raw.githubusercontent.com/drtweak86/Mash-installer-/main/bootstrap.sh | bash
 #    bash bootstrap.sh [--profile minimal|dev|full] [--dry-run]
 #
+#  Features:
+#    • Beautiful TUI interface with ratatui
+#    • Kitty terminal included
+#    • Powerlevel10k (starship removed)
+#    • Profile-based installations
+#
 #  Profiles:
 #    minimal  – system packages + Rust + GitHub CLI
-#    dev      – minimal + Docker + Buildroot deps + Zsh + Fonts + rclone  (default)
+#    dev      – minimal + Docker + Buildroot deps + Zsh + kitty + P10K (default)
 #    full     – dev + Node.js/npm
 # ─────────────────────────────────────────────────────────────────
 set -euo pipefail

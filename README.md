@@ -1,10 +1,16 @@
 # mash-installer
 
-Idempotent mega-installer for Raspberry Pi 4 and Linux dev machines.
+Idempotent mega-installer for Raspberry Pi 4 and Linux dev machines with a beautiful TUI.
+
+**Features:**
+- 🎨 Beautiful terminal UI built with ratatui
+- 🐈 Kitty terminal included
+- ⚡ Powerlevel10k prompt (starship removed)
+- 📦 Modular installation profiles
 
 **Supported distros:**
 - Ubuntu 22.04+ / Debian (apt)
-- Manjaro / Arch Linux / EndeavourOS (pacman)
+- Manjaro / Arch Linux (aarch64) / EndeavourOS (pacman)
 - amd64 and arm64 architectures
 
 ## Overview
@@ -13,7 +19,7 @@ A two-layer installer:
 
 1. **`bootstrap.sh`** – tiny bash script that installs minimal prerequisites,
    downloads the prebuilt `mash-setup` binary from GitHub Releases, and runs it.
-2. **`mash-setup`** – Rust binary that performs the full idempotent installation.
+2. **`mash-setup`** – Rust binary with ratatui TUI that performs the full idempotent installation.
 
 The installer auto-detects your package manager (`apt` or `pacman`) and
 translates package names automatically.
@@ -70,7 +76,7 @@ mash-setup config show
 | Profile   | What it installs |
 |-----------|-----------------|
 | `minimal` | Core build tools, git, Rust toolchain |
-| `dev`     | Everything in minimal + buildroot deps, Docker, zsh/starship, fonts, rclone, AI/scripting tools |
+| `dev`     | Everything in minimal + buildroot deps, Docker, zsh/kitty/powerlevel10k, fonts, rclone, AI/scripting tools |
 | `full`    | Everything in dev + Node.js/npm, flamegraph, optional extras |
 
 ## What gets installed

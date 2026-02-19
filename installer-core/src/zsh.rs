@@ -13,13 +13,11 @@ fn home_dir() -> PathBuf {
 const P10K_SYSTEM_DIR: &str = "/usr/share/powerlevel10k";
 /// The theme file that gets sourced in .zshrc.
 const P10K_THEME_FILE: &str = "/usr/share/powerlevel10k/powerlevel10k.zsh-theme";
-const STARSHIP_VERSION: &str = "1.27.0";
 const P10K_TAG: &str = "v1.13.0";
 
 pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
     install_zsh(ctx)?;
     install_omz(ctx)?;
-    install_starship(ctx)?;
 
     if ctx.options.enable_p10k {
         install_p10k(ctx)?;
@@ -57,44 +55,6 @@ fn install_omz(ctx: &mut PhaseContext) -> Result<()> {
     {
         tracing::warn!("oh-my-zsh installation returned non-zero; continuing ({err})");
     }
-    Ok(())
-}
-
-fn install_starship(ctx: &mut PhaseContext) -> Result<()> {
-    if which::which("starship").is_ok() {
-        tracing::info!("starship already installed");
-        return Ok(());
-    }
-
-    tracing::info!("Installing starship prompt");
-    if ctx.options.dry_run {
-        tracing::info!("[dry-run] would install starship");
-        return Ok(());
-    }
-
-    if let Err(err) = cmd::Command::new("sh")
-        .arg("-c")
-        .arg(format!(
-            "STARSHIP_VERSION={} curl -sS https://starship.rs/install.sh | sh -s -- -y",
-            STARSHIP_VERSION
-        ))
-        .execute()
-    {
-        tracing::warn!("starship installation failed; continuing ({err})");
-    }
-
-    // Add starship init to .zshrc if not already there
-    let zshrc = home_dir().join(".zshrc");
-    if zshrc.exists() {
-        let content = std::fs::read_to_string(&zshrc).unwrap_or_default();
-        if !content.contains("starship init zsh") {
-            let addition = "\n# Starship prompt\neval \"$(starship init zsh)\"\n";
-            backup_file(&zshrc)?;
-            std::fs::write(&zshrc, format!("{content}{addition}"))?;
-            tracing::info!("Added starship init to .zshrc");
-        }
-    }
-
     Ok(())
 }
 

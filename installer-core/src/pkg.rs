@@ -56,6 +56,7 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
             "htop",
             "ncdu",
             "neovim",
+            "kitty",
         ]);
     }
 

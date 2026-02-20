@@ -17,12 +17,12 @@
 ### 1. CI Lockdown (next session — 30 min)
 > *No forge should produce blades without a quality gate. Lock the gate first.*
 
-- [ ] Delete `.github/workflows/rust.yml` (legacy duplicate)
-- [ ] Add `--all-features` to clippy and test steps in `ci.yml`
-- [ ] Add `cargo audit` step for dependency vulnerability scanning
-- [ ] Pin Rust toolchain via `rust-toolchain.toml` (deterministic builds across local + CI)
-- [ ] Set branch protection on `main` (require CI pass, no direct push)
-- [ ] Verify: PR from `work` → `main` triggers full pipeline
+- [x] Delete `.github/workflows/rust.yml` (legacy duplicate)
+- [x] Add `--all-features` to clippy and test steps in `ci.yml`
+- [x] Add `cargo audit` step for dependency vulnerability scanning
+- [x] Pin Rust toolchain via `rust-toolchain.toml` (deterministic builds across local + CI)
+- [ ] Set branch protection on `main` (require CI pass, no direct push) ← GitHub UI
+- [ ] Verify: PR from `work` → `main` triggers full pipeline ← after push
 
 **Why first:** Every change after this gets automatic fmt/clippy/test/audit gates.
 Without it, regressions sneak in unnoticed. 10 minutes of config saves hours of

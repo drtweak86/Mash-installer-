@@ -27,3 +27,24 @@ addressed across 5 blocks of surgical fixes.
 - cargo fmt: clean
 - cargo clippy --all-targets --all-features -- -D warnings: clean
 - cargo test: all passing
+
+---
+
+## Session: 2026-02-20 – Step 1: CI Lockdown
+
+### Summary
+Locked down the CI pipeline with proper flags, dependency auditing, toolchain
+pinning, and cleanup of legacy workflow duplication.
+
+### Deliverables
+- [x] Deleted `.github/workflows/rust.yml` (legacy duplicate of ci.yml)
+- [x] Added `--all-features` to clippy and test steps in `ci.yml`
+- [x] Added `cargo audit` job for dependency vulnerability scanning
+- [x] Pinned Rust 1.93.1 via `rust-toolchain.toml` (deterministic local + CI builds)
+- [ ] Set branch protection on `main` (GitHub UI — requires manual action)
+- [ ] Verify: PR from `work` → `main` triggers full pipeline
+
+### Build Status
+- cargo fmt: clean
+- cargo clippy --all-targets --all-features -- -D warnings: clean
+- cargo test: 68 tests passing

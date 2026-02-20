@@ -1,6 +1,17 @@
 # Mining Projects – Explored Maps
 > Archive of completed work, closed at the end of each session.
 
+## Session: 2026-02-20 – Ratatui Forge (Current)
+
+### Summary
+The TUI campaign is complete: `mash-setup --tui` now spins up the Ratatui cockpit instead of `indicatif`, the log tail is fed by the `PhaseEvent` stream, module/profile selection happens inside `run_module_profile_menu`, and a neon telemetry panel (emoji signal %, fake telegraph chatter, log counts) shares the row beside the phase list while errors still exit with the neon epilog so the miner reads the advice before the screen clears.
+
+### Deliverables
+- [x] Replace the indicatif spinner fleet with the TuiPhaseObserver stage.
+- [x] Plumb `run_module_profile_menu` and software tiers into the new UI so menus live in one terminal ritual.
+- [x] Emit the neon error epilog once the Ratatui loop has the log tail and context wiring in place.
+- [x] Documented the tiny `install.sh` shortcut so even first-bin dwarves only need one curl to reach the forge.
+
 ## Session: 2026-02-20 – Packaging Sprint & Ledger Update
 
 ### Summary

@@ -72,3 +72,19 @@ The shell guild now auto-deploys Starship, Kitty, and the Goblin eza aliases str
 
 **Margin scribble:**
 > “Shell or sword? The guide now hands you the best blades with one click, or lets you dance through the tiered hall and pick your own.” 🧭🔥
+
+---
+
+## Chronicle VIII – The Ratatui Ritual
+When the neon forge learned it could paint menus as well as progress, `mash-setup --tui` became the gateway: the old `indicatif` bars are replaced with the Ratatui cockpit, the `PhaseEvent` stream fills the gauge and log tail, a cyberpunk telemetry panel hums beside the phase list (emoji status, signal %, fake chatter and log counts), module/profile selection now happens inside `run_module_profile_menu`, and every failure ends in a neon error epilog that highlights phase context, advice, and the staging directory before the alternate screen drops.
+
+**Margin scribble:**
+> “The log tail now hums in neon, the TUI only opens when you ask for it, and the final epilog spells out the advice so the next dwarf knows which rune to touch.”
+
+---
+
+## Chronicle IX – The Beginner Bridge
+The newest page glows a brighter orange, because the bard realized the Forge should be as idiot-proof as a tavern door. `install.sh` now lives at the root as a tiny emissary: it sniffs `uname -m`, resolves `x86_64` or `aarch64`, grabs the matching release binary, and execs it—no tarballs, no cursed paths, no manual `chmod`s. The README now points the weary miner to the single curl command that streams this helper, so even the cloud-obsessed mage can copy/paste once and instantly join the neon forge.
+
+**Margin scribble:**
+> “The apprentice’s spellbook is down to one line, so the dwarves and the dragons alike can brew the forge with a single chant.”

@@ -10,6 +10,18 @@
 - [x] Block 5: Confirmed green build (fmt + clippy + test) and documented
 - [x] Shaft A: Strategic reconnaissance report filed and fully explored
 
+## Session: 2026-02-20 – Ratatui Forge (Current)
+
+### Summary
+`mash-setup --tui` now summons a Ratatui-driven cockpit: the old `indicatif` bars have melted away, every `PhaseEvent` fuels the loop, the log tail stays visible inside the alternate screen, and the module/profile pair is picked from `run_module_profile_menu` before the install begins. A new neon telemetry pane (emoji status, signal %, fake network chatter, log counts) shares the row beside the phase list so the cockpit truly feels like a cyberpunk console, and failures still exit via a neon error epilog that highlights the phase context, advice, and staging directory so the miner always knows which rune to touch next.
+
+### Deliverables
+- [x] Replace the indicatif progress ensemble with the ratatui stage.
+- [x] Feed phase events and live log tailing into the new TuiPhaseObserver.
+- [x] Drive module/profile selection through `run_module_profile_menu` so the interactive state stays inside the TUI.
+- [x] Surface error context/advice as part of the terminal epilog after a failure so the neon glow guides the miner.
+- [x] Added the beginner-friendly `install.sh` helper and documented the torrent-one-liner so the forge can be summoned with one curl.
+
 ## Session: 2026-02-20 – Audit & Sync (Current)
 
 ### Summary

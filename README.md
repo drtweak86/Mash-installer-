@@ -9,9 +9,10 @@
 ### The One-Liner (For When You're Raging at 3 AM)
 
 ```bash
-# I had to format because I borked something and need my dev station back NOW
-curl -sSfL https://github.com/drtweak86/Mash-installer-/releases/latest/download/mash-setup-$(uname -m)-unknown-linux-gnu | tar zx && ./mash-setup
+curl -fsSL https://raw.githubusercontent.com/drtweak86/Mash-installer/work/install.sh | bash
 ```
+
+`install.sh` in this repo does the heavy lifting: it detects your architecture, grabs the matching release binary (no tarballs, no firmware guesswork), and immediately executes it. Copy, paste, and you vault into the neon forge without thinking twice.
 
 ### What You Get
 

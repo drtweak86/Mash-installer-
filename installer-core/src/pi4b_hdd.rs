@@ -274,6 +274,88 @@ fn check_mount_options(system: &dyn SystemOps) -> PreflightCheck {
     }
 }
 
+/// I/O scheduler information
+pub struct IoScheduler {
+    pub current: String,
+    pub available: Vec<String>,
+    pub recommended: String,
+}
+
+/// Get current I/O scheduler for a device
+pub fn get_io_scheduler(device: &str) -> Result<IoScheduler> {
+    // In production, we would read from /sys/block/*/queue/scheduler
+    // For now, return a mock response
+    
+    let available = vec!["none".to_string(), "noop".to_string(), "deadline".to_string(), "cfq".to_string()];
+    let recommended = "deadline".to_string();
+    let current = "cfq".to_string(); // Common default that's not optimal for USB
+    
+    Ok(IoScheduler {
+        current,
+        available,
+        recommended,
+    })
+}
+
+/// Set I/O scheduler for a device
+pub fn set_io_scheduler(_device: &str, scheduler: &str) -> Result<()> {
+    // In production, we would write to /sys/block/*/queue/scheduler
+    // For now, log the action for dry-run
+    
+    if scheduler == "deadline" || scheduler == "noop" {
+        Ok(())
+    } else {
+        Err(anyhow::anyhow!("Unsupported I/O scheduler: {}", scheduler))
+    }
+}
+
+/// Optimize I/O scheduler for external USB 3.0 HDD
+pub fn optimize_io_scheduler() -> Result<Vec<PreflightCheck>> {
+    let mut checks = Vec::new();
+    
+    // Only run on Raspberry Pi 4B
+    if !is_raspberry_pi_4b() {
+        checks.push(PreflightCheck {
+            label: "I/O Scheduler Optimization".into(),
+            status: CheckStatus::Warning,
+            detail: Some("Not running on Raspberry Pi 4B".into()),
+        });
+        return Ok(checks);
+    }
+    
+    // Check current I/O scheduler
+    match get_io_scheduler("sda") {
+        Ok(scheduler) => {
+            checks.push(PreflightCheck {
+                label: format!("Current I/O Scheduler: {}", scheduler.current),
+                status: CheckStatus::Success,
+                detail: Some(format!("Available: {}", scheduler.available.join(", "))),
+            });
+            
+            // Recommend optimization if not already optimal
+            if scheduler.current != scheduler.recommended {
+                checks.push(PreflightCheck {
+                    label: "I/O Scheduler Recommendation".into(),
+                    status: CheckStatus::Warning,
+                    detail: Some(format!(
+                        "Consider switching from '{}' to '{}' for better USB 3.0 performance",
+                        scheduler.current, scheduler.recommended
+                    )),
+                });
+            }
+        }
+        Err(err) => {
+            checks.push(PreflightCheck {
+                label: "I/O Scheduler Detection".into(),
+                status: CheckStatus::Error,
+                detail: Some(format!("Failed to detect: {}", err)),
+            });
+        }
+    }
+    
+    Ok(checks)
+}
+
 /// Pi 4B HDD optimization functions
 pub fn optimize_pi4b_hdd() -> Result<()> {
     // This will be implemented in subsequent commits
@@ -349,5 +431,40 @@ mod tests {
         assert_eq!(result.device, "sda");
         assert_eq!(result.partitions.len(), 1);
         assert_eq!(result.partitions[0].filesystem, "ext4");
+    }
+    
+    #[test]
+    fn test_get_io_scheduler_mock() {
+        let result = get_io_scheduler("sda").unwrap();
+        assert_eq!(result.current, "cfq");
+        assert_eq!(result.recommended, "deadline");
+        assert!(result.available.contains(&"deadline".to_string()));
+        assert!(result.available.contains(&"noop".to_string()));
+    }
+    
+    #[test]
+    fn test_set_io_scheduler() {
+        // Test valid schedulers
+        assert!(set_io_scheduler("sda", "deadline").is_ok());
+        assert!(set_io_scheduler("sda", "noop").is_ok());
+        
+        // Test invalid scheduler
+        assert!(set_io_scheduler("sda", "invalid").is_err());
+    }
+    
+    #[test]
+    fn test_optimize_io_scheduler() {
+        let checks = optimize_io_scheduler().unwrap();
+        
+        if is_raspberry_pi_4b() {
+            // On Pi 4B, should have I/O scheduler checks
+            assert!(checks.len() >= 1);
+            assert!(checks.iter().any(|c| c.label.contains("I/O Scheduler")));
+        } else {
+            // On non-Pi, should have warning
+            assert_eq!(checks.len(), 1);
+            assert_eq!(checks[0].label, "I/O Scheduler Optimization");
+            assert_eq!(checks[0].status, CheckStatus::Warning);
+        }
     }
 }

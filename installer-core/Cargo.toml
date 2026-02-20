@@ -22,3 +22,6 @@ num_cpus = "1"
 
 [dev-dependencies]
 tempfile = "3"
+installer-arch = { path = "../installer-arch" }
+installer-debian = { path = "../installer-debian" }
+installer-fedora = { path = "../installer-fedora" }

@@ -30,7 +30,16 @@ mod zsh;
 
 use crate::{dry_run::DryRunLog, localization::Localization};
 use anyhow::Result;
-use std::{fmt, path::PathBuf};
+use std::{
+    fmt, path::PathBuf,
+    process::Command,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    thread,
+    time::Duration,
+};
 use tracing::{error, info};
 
 pub use backend::PkgBackend;
@@ -106,12 +115,74 @@ pub enum ProfileLevel {
     Full = 2,
 }
 
+/// Handle for sudo keep-alive background thread.
+/// When dropped, signals the background thread to stop.
+struct SudoKeepalive {
+    stop_flag: Arc<AtomicBool>,
+}
+
+impl Drop for SudoKeepalive {
+    fn drop(&mut self) {
+        self.stop_flag.store(true, Ordering::SeqCst);
+    }
+}
+
+/// Start a background thread to keep sudo alive during long operations.
+/// Returns a handle that stops the keep-alive when dropped.
+fn start_sudo_keepalive() -> SudoKeepalive {
+    let stop_flag = Arc::new(AtomicBool::new(false));
+    let flag_clone = stop_flag.clone();
+
+    thread::spawn(move || {
+        // First, try to refresh sudo once to see if it works
+        let mut test_cmd = Command::new("sudo");
+        test_cmd.args(["-v"]);
+        if cmd::run(&mut test_cmd).is_err() {
+            // User doesn't have sudo or it's not configured, exit quietly
+            tracing::debug!("sudo -v failed, not starting keep-alive");
+            return;
+        }
+
+        tracing::debug!("Starting sudo keep-alive (refreshes every 60s)");
+
+        loop {
+            // Check if we should stop
+            if flag_clone.load(Ordering::SeqCst) {
+                tracing::debug!("Stopping sudo keep-alive");
+                break;
+            }
+
+            // Sleep for 60 seconds
+            thread::sleep(Duration::from_secs(60));
+
+            // Check again before refreshing (in case we were signaled during sleep)
+            if flag_clone.load(Ordering::SeqCst) {
+                break;
+            }
+
+            // Refresh sudo timestamp
+            let mut cmd = Command::new("sudo");
+            cmd.args(["-v"]);
+            if let Err(e) = cmd::run(&mut cmd) {
+                tracing::warn!("sudo keep-alive refresh failed: {}", e);
+                break;
+            }
+        }
+    });
+
+    SudoKeepalive { stop_flag }
+}
+
 /// Run the installer using the supplied distro driver and CLI options.
 pub fn run_with_driver(
     driver: &'static dyn DistroDriver,
     opts: InstallOptions,
     observer: &mut dyn PhaseObserver,
 ) -> Result<InstallationReport, InstallerRunError> {
+    // Start sudo keep-alive to prevent timeout during long operations
+    // Keep the handle in scope - when dropped at end of function, it stops the background thread
+    let _sudo_keepalive = start_sudo_keepalive();
+
     let plat = platform::detect()?;
     info!(
         "Platform: {} {} on {}",

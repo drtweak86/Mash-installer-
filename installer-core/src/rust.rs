@@ -89,7 +89,43 @@ fn install_components(ctx: &mut PhaseContext) -> Result<()> {
     Ok(())
 }
 
+fn ensure_cargo_binstall(ctx: &mut PhaseContext) -> Result<()> {
+    if which::which("cargo-binstall").is_ok()
+        || cargo_home().join("bin/cargo-binstall").exists()
+    {
+        tracing::info!("cargo-binstall already installed");
+        return Ok(());
+    }
+
+    tracing::info!("Installing cargo-binstall (enables fast binary installs)");
+    if ctx.options.dry_run {
+        ctx.record_dry_run(
+            "rust_toolchain",
+            "Would install cargo-binstall",
+            None,
+        );
+        return Ok(());
+    }
+
+    // Install cargo-binstall using the official installer script
+    let mut install_cmd = Command::new("sh");
+    install_cmd.arg("-c").arg(
+        "curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash"
+    );
+
+    if let Err(err) = cmd::run(&mut install_cmd) {
+        tracing::warn!("Failed to install cargo-binstall; will use slower cargo install: {err}");
+        return Ok(()); // Not fatal, just slower
+    }
+
+    tracing::info!("cargo-binstall installed successfully!");
+    Ok(())
+}
+
 fn install_cargo_tools(ctx: &mut PhaseContext) -> Result<()> {
+    // First, try to install cargo-binstall for MUCH faster installs (uses pre-compiled binaries)
+    ensure_cargo_binstall(ctx)?;
+
     let tools: &[(&str, &str)] = &[
         ("cargo-edit", "cargo-add"), // provides `cargo add`
         ("cargo-watch", "cargo-watch"),
@@ -99,13 +135,22 @@ fn install_cargo_tools(ctx: &mut PhaseContext) -> Result<()> {
         ("sccache", "sccache"),
     ];
 
+    let use_binstall = which::which("cargo-binstall").is_ok()
+        || cargo_home().join("bin/cargo-binstall").exists();
+
+    if use_binstall {
+        tracing::info!("Using cargo-binstall for fast binary installation! 🚀");
+    } else {
+        tracing::warn!("cargo-binstall not available; falling back to slow cargo install (this will take a while...)");
+    }
+
     for (crate_name, bin_name) in tools {
         let bin_path = cargo_home().join("bin").join(bin_name);
         if bin_path.exists() || which::which(bin_name).is_ok() {
             tracing::info!("{bin_name} already installed");
             continue;
         }
-        tracing::info!("Installing {crate_name} via cargo install");
+
         if ctx.options.dry_run {
             ctx.record_dry_run(
                 "rust_toolchain",
@@ -114,12 +159,29 @@ fn install_cargo_tools(ctx: &mut PhaseContext) -> Result<()> {
             );
             continue;
         }
-        let mut install_cmd = Command::new(cargo_bin());
-        install_cmd.args(["install", crate_name]);
-        if let Err(err) = cmd::run(&mut install_cmd) {
-            tracing::warn!("Failed to install {crate_name}; continuing ({err})");
+
+        if use_binstall {
+            // Use cargo-binstall (downloads pre-compiled binaries - MUCH faster!)
+            tracing::info!("Installing {crate_name} via cargo-binstall (fast!)");
+            let mut install_cmd = Command::new(cargo_bin());
+            install_cmd.args(["binstall", "--no-confirm", crate_name]);
+            if let Err(err) = cmd::run(&mut install_cmd) {
+                tracing::warn!("cargo-binstall failed for {crate_name}, trying cargo install: {err}");
+                // Fallback to cargo install
+                let mut fallback_cmd = Command::new(cargo_bin());
+                fallback_cmd.args(["install", crate_name]);
+                if let Err(err2) = cmd::run(&mut fallback_cmd) {
+                    tracing::warn!("Failed to install {crate_name}; continuing ({err2})");
+                }
+            }
         } else {
-            tracing::info!("Installed {crate_name}");
+            // Fallback to cargo install (slow - compiles from source)
+            tracing::info!("Installing {crate_name} via cargo install (this may take several minutes...)");
+            let mut install_cmd = Command::new(cargo_bin());
+            install_cmd.args(["install", crate_name]);
+            if let Err(err) = cmd::run(&mut install_cmd) {
+                tracing::warn!("Failed to install {crate_name}; continuing ({err})");
+            }
         }
     }
 

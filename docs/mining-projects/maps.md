@@ -21,7 +21,7 @@
 - [x] Add `--all-features` to clippy and test steps in `ci.yml`
 - [x] Add `cargo audit` step for dependency vulnerability scanning
 - [x] Pin Rust toolchain via `rust-toolchain.toml` (deterministic builds across local + CI)
-- [ ] Set branch protection on `main` (require CI pass, no direct push) ← GitHub UI
+- [x] Set branch protection on `main` (require CI pass, no direct push)
 - [ ] Verify: PR from `work` → `main` triggers full pipeline ← after push
 
 **Why first:** Every change after this gets automatic fmt/clippy/test/audit gates.

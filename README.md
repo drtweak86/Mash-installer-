@@ -8,4 +8,4 @@ This script is highly optimized for the **Raspberry Pi 4B (8GB)** running off a 
 Don't read, just execute. Run this in your terminal to begin the whimsy:
 
 ```bash
-curl -fsSL [https://raw.githubusercontent.com/drtweak86/Mash-installer-/main/bootstrap.sh](https://raw.githubusercontent.com/drtweak86/Mash-installer-/main/bootstrap.sh) | bash
+curl -fsSL https://raw.githubusercontent.com/drtweak86/Mash-installer-/main/bootstrap.sh | bash

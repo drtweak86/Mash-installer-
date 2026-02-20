@@ -30,6 +30,24 @@ The courier lanes were refitted so `package-deb` and `package-rpm` now trail the
 
 ---
 
+## Session: 2026-02-20 – Shell Polish & Software Tiers
+
+### Summary
+Starship, Kitty, and the goblin eza alias palette now land with guarded rc blocks from `resources/shell`. The interactive “software tiers” menu ships a dozen categories with five curated S/A choices each, so the miner can either let the installer pick the S-tier champions or select their own build. The new plan is logged into `InstallOptions`, and the tier doc mirrors the menu.
+
+### Deliverables
+- [x] Added Starship + Kitty + eza config deployment to the shell phase with backups and guarded blocks.
+- [x] Implemented `SoftwareTierPlan`, wired it through `InstallOptions`, and introduced the CLI menu that surfaces the 12-category, five-option list.
+- [x] Updated `docs/incoming-files/software_tiers.md` to document the curated tiers.
+- [x] fmt/clippy/test trilogy stayed green while wiring up the new UX.
+
+### Build Status
+- cargo fmt: clean
+- cargo clippy --all-targets --all-features -- -D warnings: clean
+- cargo test: clean
+
+---
+
 ## Session: 2026-02-20 – Phase 4: Hardening Complete
 
 ### Summary

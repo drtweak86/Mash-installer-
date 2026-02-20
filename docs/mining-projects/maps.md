@@ -41,6 +41,19 @@ The switchboard clinks with the new release workflow: package-deb and package-rp
 
 ---
 
+## Session: 2026-02-20 – Shell Polish & Software Tiers (Current)
+
+### Summary
+The shell & UX phase now deploys the incoming Starship + Kitty + eza gloss, with guarded rc snippets and config files staged from `resources/shell`. A brand-new interactive software-tier menu lets the miner choose between the full S-tier canon or handpick any of the five S/A entries per category (Terminal, Shell, File Manager, Text Editor, Git Client, Process Viewer, Browser, Media Player, HTPC, VPN, Firewall, Backup). The glossary file `docs/incoming-files/software_tiers.md` now mirrors that menu.
+
+### Deliverables
+- [x] Installed Starship + kitty configs, and deployed the goblin eza aliases template across shells, guarding `.zshrc` / `.bashrc`.
+- [x] Added a SoftwareTierPlan to `InstallOptions` and the CLI menu, so the interactive selection survives the run.
+- [x] Built the category menu of twelve entries (each with five S/A options) and updated the incoming tier doc.
+- [x] Ran the fmt/clippy/test trilogy after wiring up the new shell polish and menu.
+
+---
+
 ## Execution Order
 
 ### 1. CI Lockdown (Complete)

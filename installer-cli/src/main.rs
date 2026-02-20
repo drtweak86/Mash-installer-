@@ -3,7 +3,7 @@ use clap::{Parser, Subcommand};
 use installer_core::cmd::CommandExecutionDetails;
 use installer_core::{
     detect_platform, init_logging, interaction::InteractionService, ConfigService, DistroDriver,
-    InstallOptions, InstallationReport, ProfileLevel,
+    InstallOptions, InstallationReport, ProfileLevel, SoftwareTierPlan,
 };
 use std::io::{self, Write};
 use std::path::PathBuf;
@@ -11,6 +11,7 @@ use tracing::info;
 
 mod catalog;
 mod menu;
+mod software_tiers;
 mod ui;
 
 #[derive(Parser)]
@@ -91,6 +92,12 @@ fn main() -> Result<()> {
         menu::run_module_menu(driver.name(), &interaction)?
     };
 
+    let software_plan = if cli.non_interactive {
+        SoftwareTierPlan::default()
+    } else {
+        software_tiers::run_software_tier_menu(&interaction)?
+    };
+
     let profile = if let Some(ref p) = cli.profile {
         parse_profile_level(p)?
     } else if cli.non_interactive {
@@ -108,6 +115,7 @@ fn main() -> Result<()> {
         enable_p10k: modules.enable_p10k,
         docker_data_root: modules.docker_data_root,
         continue_on_error: cli.continue_on_error,
+        software_plan,
     };
 
     info!(

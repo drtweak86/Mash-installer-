@@ -64,3 +64,11 @@ The release workflow now breathes two new couriers: `package-deb` and `package-r
 
 **Margin scribble:**
 > “Two new couriers, a vault that knows their names, and a bard who still spies warnings before bed. The list is logged; the games keep their rules; the forge is humming with stories to ink.”
+
+---
+
+## Chronicle VII – The Shell Guild & Tiered Council
+The shell guild now auto-deploys Starship, Kitty, and the Goblin eza aliases straight from the `resources/shell` stash. `.zshrc` and `.bashrc` each gain guarded blocks so the prompt and aliases source themselves without double-dipping, and the Kitty + Starship toml bundles live in `~/.config`. At the same time the council of software tiers rose: the CLI now pauses to ask if you want the full S-tier stack or to pick from five S/A choices across twelve categories (Terminal through Backup). Every choice is recorded in `SoftwareTierPlan`, the `docs/incoming-files/software_tiers.md` ledger now mirrors that menu, and the installer keeps the plan with the run context so future phases can honor it.
+
+**Margin scribble:**
+> “Shell or sword? The guide now hands you the best blades with one click, or lets you dance through the tiered hall and pick your own.” 🧭🔥

@@ -34,6 +34,7 @@ mod rollback;
 mod runner;
 mod rust;
 mod signal;
+mod software_tiers;
 mod staging;
 mod sudo;
 mod system;
@@ -72,6 +73,7 @@ pub use runner::{
     Phase, PhaseErrorPolicy, PhaseEvent, PhaseObserver, PhaseOutput, PhaseRunError, PhaseRunResult,
     PhaseRunner,
 };
+pub use software_tiers::SoftwareTierPlan;
 pub use system::SystemOps;
 
 /// Central context threaded through every install phase.

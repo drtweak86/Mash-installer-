@@ -1,4 +1,6 @@
 # Testing Infrastructure
+> **Neon Chronicle (Technical polish)**: testing-infrastructure keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ## Overview
 The `mash-installer` tests are grouped by the environments they require. This document formalizes the available test categories and provides a lightweight orchestration helper that can detect the available tooling and run the right suite automatically. The same script can be used in CI, local development, and specialized validation labs.

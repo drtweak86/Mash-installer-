@@ -1,4 +1,6 @@
 # WO-009-externalize-ui-strings
+> **Neon Chronicle (Technical polish)**: WO-009-externalize-ui-strings keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ## Objective
 Externalize all user-facing strings (e.g., phase labels, descriptive messages, error prompts) from the Rust source code into a separate, centralized configuration or resource file.

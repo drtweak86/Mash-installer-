@@ -1,9 +1,12 @@
 use crate::interaction::InteractionConfig;
 use crate::logging::LoggingConfig;
-use anyhow::{Context, Result};
+use anyhow::Result as AnyResult;
 use serde::{Deserialize, Serialize};
 use std::env;
+use std::error::Error as StdError;
+use std::fmt;
 use std::fs;
+use std::io;
 use std::path::{Path, PathBuf};
 
 /// Central configuration persisted at ~/.config/mash-installer/config.toml
@@ -177,16 +180,73 @@ impl Default for MashConfig {
 // ── public API ──────────────────────────────────────────────────
 
 pub fn config_path() -> PathBuf {
-    home_dir().join(".config/mash-installer/config.toml")
+    if let Some(path) = env::var_os("MASH_CONFIG_PATH") {
+        PathBuf::from(path)
+    } else {
+        home_dir().join(".config/mash-installer/config.toml")
+    }
+}
+
+/// Errors that can occur when loading Mash configuration files.
+#[derive(Debug)]
+pub enum ConfigError {
+    /// Unable to read the config file (permissions, missing directories, etc.).
+    Read { path: PathBuf, source: io::Error },
+    /// Unable to parse the config file as TOML.
+    Parse {
+        path: PathBuf,
+        source: toml::de::Error,
+    },
+}
+
+impl ConfigError {
+    pub fn path(&self) -> &Path {
+        match self {
+            ConfigError::Read { path, .. } => path,
+            ConfigError::Parse { path, .. } => path,
+        }
+    }
+}
+
+impl fmt::Display for ConfigError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ConfigError::Read { path, source } => {
+                write!(f, "failed to read config at {}: {}", path.display(), source)
+            }
+            ConfigError::Parse { path, source } => {
+                write!(
+                    f,
+                    "failed to parse config at {}: {}",
+                    path.display(),
+                    source
+                )
+            }
+        }
+    }
+}
+
+impl StdError for ConfigError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        match self {
+            ConfigError::Read { source, .. } => Some(source),
+            ConfigError::Parse { source, .. } => Some(source),
+        }
+    }
 }
 
 /// Load config from disk, falling back to compiled defaults.
-pub fn load_or_default() -> Result<MashConfig> {
+pub fn load_or_default() -> std::result::Result<MashConfig, ConfigError> {
     let path = config_path();
     if path.exists() {
-        let text = fs::read_to_string(&path)
-            .with_context(|| format!("reading config from {}", path.display()))?;
-        let cfg: MashConfig = toml::from_str(&text).with_context(|| "parsing config.toml")?;
+        let text = fs::read_to_string(&path).map_err(|source| ConfigError::Read {
+            path: path.clone(),
+            source,
+        })?;
+        let cfg = toml::from_str(&text).map_err(|source| ConfigError::Parse {
+            path: path.clone(),
+            source,
+        })?;
         Ok(cfg)
     } else {
         Ok(MashConfig::default())
@@ -195,7 +255,7 @@ pub fn load_or_default() -> Result<MashConfig> {
 
 /// Write the default config to disk (config init).
 #[allow(dead_code)]
-pub fn init_config() -> Result<()> {
+pub fn init_config(out: &mut dyn io::Write) -> AnyResult<()> {
     let path = config_path();
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
@@ -204,28 +264,28 @@ pub fn init_config() -> Result<()> {
     if path.exists() {
         let backup = path.with_extension("toml.bak");
         fs::copy(&path, &backup)?;
-        println!("Backed up existing config to {}", backup.display());
+        writeln!(out, "Backed up existing config to {}", backup.display())?;
     }
 
     let cfg = MashConfig::default();
     let text = toml::to_string_pretty(&cfg)?;
     fs::write(&path, &text)?;
-    println!("Wrote default config to {}", path.display());
+    writeln!(out, "Wrote default config to {}", path.display())?;
     Ok(())
 }
 
-/// Print the current config (config show).
+/// Show the current config (config show).
 #[allow(dead_code)]
-pub fn show_config() -> Result<()> {
+pub fn show_config(out: &mut dyn io::Write) -> AnyResult<()> {
     let cfg = load_or_default()?;
     let text = toml::to_string_pretty(&cfg)?;
     let path = config_path();
     if path.exists() {
-        println!("# {}", path.display());
+        writeln!(out, "# {}", path.display())?;
     } else {
-        println!("# (no config file found; showing defaults)");
+        writeln!(out, "# (no config file found; showing defaults)")?;
     }
-    println!("{text}");
+    writeln!(out, "{text}")?;
     Ok(())
 }
 
@@ -234,33 +294,44 @@ mod tests {
     use super::*;
     use std::env;
     use std::ffi::OsString;
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
+    use std::sync::{Mutex, MutexGuard, OnceLock};
     use tempfile::tempdir;
 
-    struct HomeGuard(Option<OsString>);
+    static CONFIG_PATH_ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 
-    impl HomeGuard {
+    struct ConfigPathGuard {
+        previous: Option<OsString>,
+        _lock: MutexGuard<'static, ()>,
+    }
+
+    impl ConfigPathGuard {
         fn set(path: impl AsRef<Path>) -> Self {
-            let previous = env::var_os("HOME");
-            env::set_var("HOME", path.as_ref());
-            HomeGuard(previous)
+            let mutex = CONFIG_PATH_ENV_LOCK.get_or_init(|| Mutex::new(()));
+            let lock = mutex.lock().expect("config path mutex poisoned");
+            let previous = env::var_os("MASH_CONFIG_PATH");
+            env::set_var("MASH_CONFIG_PATH", path.as_ref());
+            ConfigPathGuard {
+                previous,
+                _lock: lock,
+            }
         }
     }
 
-    impl Drop for HomeGuard {
+    impl Drop for ConfigPathGuard {
         fn drop(&mut self) {
-            if let Some(prev) = &self.0 {
-                env::set_var("HOME", prev);
+            if let Some(previous) = &self.previous {
+                env::set_var("MASH_CONFIG_PATH", previous);
             } else {
-                env::remove_var("HOME");
+                env::remove_var("MASH_CONFIG_PATH");
             }
         }
     }
 
     #[test]
-    fn test_load_or_default_creates_default() -> Result<()> {
+    fn test_load_or_default_creates_default() -> AnyResult<()> {
         let tmp = tempdir()?;
-        let _home_guard = HomeGuard::set(tmp.path());
+        let _path_guard = ConfigPathGuard::set(tmp.path().join("config.toml"));
 
         let cfg = load_or_default()?;
         assert_eq!(cfg, MashConfig::default());
@@ -268,9 +339,9 @@ mod tests {
     }
 
     #[test]
-    fn test_load_or_default_loads_existing() -> Result<()> {
+    fn test_load_or_default_loads_existing() -> AnyResult<()> {
         let tmp = tempdir()?;
-        let _home_guard = HomeGuard::set(tmp.path());
+        let _path_guard = ConfigPathGuard::set(tmp.path().join("config.toml"));
 
         let expected = MashConfig {
             staging_dir: PathBuf::from("/tmp/custom-staging"),

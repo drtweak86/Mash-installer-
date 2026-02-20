@@ -65,7 +65,11 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
     }
 
     // Enable and start PipeWire services
-    let services = ["pipewire.service", "pipewire-pulse.service", "wireplumber.service"];
+    let services = [
+        "pipewire.service",
+        "pipewire-pulse.service",
+        "wireplumber.service",
+    ];
 
     for service in &services {
         if ctx.options.dry_run {
@@ -80,7 +84,9 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
         }
     }
 
-    tracing::info!("✓ Hyprland audio configured! You may need to log out and back in for audio to work.");
+    tracing::info!(
+        "✓ Hyprland audio configured! You may need to log out and back in for audio to work."
+    );
 
     Ok(())
 }
@@ -111,7 +117,11 @@ fn enable_user_service(service: &str) -> Result<()> {
     let mut start_cmd = Command::new("systemctl");
     start_cmd.args(["--user", "start", service]);
     if let Err(err) = cmd::run(&mut start_cmd) {
-        tracing::warn!("Failed to start {} (will start on next login): {}", service, err);
+        tracing::warn!(
+            "Failed to start {} (will start on next login): {}",
+            service,
+            err
+        );
     }
 
     Ok(())

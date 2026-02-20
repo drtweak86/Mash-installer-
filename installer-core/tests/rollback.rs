@@ -57,7 +57,9 @@ fn rollback_manager_reports_errors_and_runs_all_actions() -> Result<()> {
         }
     });
 
-    let err = manager.rollback_all().expect_err("expected rollback to fail");
+    let err = manager
+        .rollback_all()
+        .expect_err("expected rollback to fail");
     let history = executed.lock().unwrap();
     assert_eq!(history.as_slice(), ["failing", "success"]);
     let message = err.to_string();

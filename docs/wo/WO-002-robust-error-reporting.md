@@ -1,4 +1,6 @@
 
+> **Neon Chronicle (Technical polish)**: WO-002-robust-error-reporting keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 # Title
 WO-002: Add Robust External Command Error Reporting
 

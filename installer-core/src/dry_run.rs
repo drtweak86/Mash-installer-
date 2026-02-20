@@ -37,23 +37,10 @@ impl DryRunLog {
     }
 }
 
-pub fn print_summary(log: &DryRunLog) {
-    let entries = log.entries();
-    println!();
-    println!("──── Dry-run summary ────────────────────────────");
-    if entries.is_empty() {
-        println!("  No dry-run actions were recorded.");
-    } else {
-        for (idx, entry) in entries.iter().enumerate() {
-            println!("  {}. [{}] {}", idx + 1, entry.phase, entry.action);
-            if let Some(detail) = &entry.detail {
-                println!("     {}", detail);
-            }
-        }
+impl Default for DryRunLog {
+    fn default() -> Self {
+        Self::new()
     }
-    println!("  No resources were modified during dry run.");
-    println!("───────────────────────────────────────────────");
-    println!();
 }
 
 #[cfg(test)]

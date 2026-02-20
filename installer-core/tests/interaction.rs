@@ -54,15 +54,10 @@ fn get_text_input_returns_error_when_noninteractive_without_default() {
 #[test]
 fn get_text_input_uses_default_when_noninteractive() -> Result<()> {
     let svc = InteractionService::new(false, InteractionConfig::default());
-    let answer = svc.get_text_input(
-        "value",
-        "Enter value",
-        false,
-        Some("override"),
-        |_p, _s| {
+    let answer =
+        svc.get_text_input("value", "Enter value", false, Some("override"), |_p, _s| {
             panic!("should not prompt");
-        },
-    )?;
+        })?;
     assert_eq!(answer, "override");
     Ok(())
 }

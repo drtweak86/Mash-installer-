@@ -1,4 +1,6 @@
 
+> **Neon Chronicle (Technical polish)**: WO-003-ensure-idempotency keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 # Title
 WO-003: Ensure Idempotency for Package Installation
 

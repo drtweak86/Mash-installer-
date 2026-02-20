@@ -1,0 +1,29 @@
+# Mining Projects – Completed Maps
+> Archive of completed work, closed at the end of each session.
+
+## Session: 2026-02-20 – Phase 2 Completion Audit (Hardening)
+
+### Summary
+Full audit of installer-core for unwraps, panics, implicit assumptions, leaky
+abstractions, stringly-typed errors, and silent fallthrough logic. All findings
+addressed across 5 blocks of surgical fixes.
+
+### Deliverables
+- logging.rs: Replaced mutex `.unwrap()` with `io::Error::other()`
+- zsh.rs: Replaced `writeln!().unwrap()` with `?` propagation
+- dry_run.rs: Deleted `print_summary()`, moved rendering to CLI
+- orchestrator.rs: Removed all eprintln/stdin, routed through PhaseObserver
+- doctor.rs: All output routed through `&mut dyn Write`
+- config.rs: `init_config()` and `show_config()` accept `&mut dyn Write`
+- phase_runner.rs: Added `PhaseEvent::Warning`, `PhaseObserver::confirm()`, `warnings` on `PhaseOutput`
+- context.rs: Added `PhaseContext::record_warning()`, `warnings` on `PhaseMetadata`
+- docker.rs, rust.rs, zsh.rs, github.rs: Replaced error swallowing with `record_warning()`
+- error.rs: Added `dry_run_log` to `InstallationReport`
+- lib.rs: Removed `RealSystem` from public exports
+- ui.rs (CLI): Implemented `confirm()` and `Warning` event handling
+- main.rs (CLI): Added `print_dry_run_summary()` for report-based dry-run output
+
+### Build Status
+- cargo fmt: clean
+- cargo clippy --all-targets --all-features -- -D warnings: clean
+- cargo test: all passing

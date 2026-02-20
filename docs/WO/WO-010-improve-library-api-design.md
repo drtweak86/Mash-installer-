@@ -1,4 +1,6 @@
 # WO-010-improve-library-api-design
+> **Neon Chronicle (Technical polish)**: WO-010-improve-library-api-design keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ## Objective
 Redesign the public API of `installer-core` to be more programmatic and library-centric, ensuring it returns structured results and events rather than directly interacting with the console.

@@ -1,0 +1,17 @@
+# Mining Projects – Active Maps
+> Current session work and upcoming tasks the bard is tracking.
+
+## Current Session: Phase 2 Completion Audit (Hardening)
+
+### Completed This Session
+- [x] Block 1: Eliminated panics in production paths (logging.rs, zsh.rs)
+- [x] Block 2: Purified core of direct I/O (orchestrator, dry_run, doctor, config)
+- [x] Block 3: Surfaced swallowed errors as warnings (docker, rust, zsh, github)
+- [x] Block 4: Tightened public API (removed RealSystem from exports)
+- [x] Block 5: Confirmed green build (fmt + clippy + test) and documented
+
+### Upcoming (Not Yet Started)
+- [ ] Phase 3: Pi 4B HDD tuning (preflight, USB 3.0, HDD optimization)
+- [ ] Phase 4: Hardening (TLS, rollback rituals, lockfiles, signal forensics)
+- [ ] CI lockdown: GitHub Actions pipeline for fmt/clippy/test on every PR
+- [ ] Driver test harness: exercise each distro driver against new surfaces

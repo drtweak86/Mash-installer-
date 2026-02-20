@@ -1,4 +1,6 @@
 # WO-007-centralize-configuration-management
+> **Neon Chronicle (Technical polish)**: WO-007-centralize-configuration-management keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ## Objective
 Centralize the management of configuration within `mash-installer` by introducing a dedicated configuration service, thereby improving consistency, maintainability, and extensibility.

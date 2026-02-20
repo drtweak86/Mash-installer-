@@ -53,7 +53,7 @@ fn install_rustup(ctx: &mut PhaseContext) -> Result<()> {
             let mut update_cmd = Command::new(rustup_bin());
             update_cmd.arg("update");
             if let Err(err) = cmd::run(&mut update_cmd) {
-                tracing::warn!("rustup update failed; continuing ({err})");
+                ctx.record_warning(format!("rustup update failed; continuing ({err})"));
             }
         }
         return Ok(());
@@ -94,27 +94,23 @@ fn install_components(ctx: &mut PhaseContext) -> Result<()> {
         let mut comp_cmd = Command::new(rustup_bin());
         comp_cmd.args(["component", "add", comp]);
         if let Err(err) = cmd::run(&mut comp_cmd) {
-            tracing::warn!("Failed to add component {comp}; continuing ({err})");
+            ctx.record_warning(format!(
+                "Failed to add component {comp}; continuing ({err})"
+            ));
         }
     }
     Ok(())
 }
 
 fn ensure_cargo_binstall(ctx: &mut PhaseContext) -> Result<()> {
-    if which::which("cargo-binstall").is_ok()
-        || cargo_home().join("bin/cargo-binstall").exists()
-    {
+    if which::which("cargo-binstall").is_ok() || cargo_home().join("bin/cargo-binstall").exists() {
         tracing::info!("cargo-binstall already installed");
         return Ok(());
     }
 
     tracing::info!("Installing cargo-binstall (enables fast binary installs)");
     if ctx.options.dry_run {
-        ctx.record_dry_run(
-            "rust_toolchain",
-            "Would install cargo-binstall",
-            None,
-        );
+        ctx.record_dry_run("rust_toolchain", "Would install cargo-binstall", None);
         return Ok(());
     }
 
@@ -125,7 +121,9 @@ fn ensure_cargo_binstall(ctx: &mut PhaseContext) -> Result<()> {
     );
 
     if let Err(err) = cmd::run(&mut install_cmd) {
-        tracing::warn!("Failed to install cargo-binstall; will use slower cargo install: {err}");
+        ctx.record_warning(format!(
+            "Failed to install cargo-binstall; will use slower cargo install: {err}"
+        ));
         return Ok(()); // Not fatal, just slower
     }
 
@@ -146,8 +144,8 @@ fn install_cargo_tools(ctx: &mut PhaseContext) -> Result<()> {
         ("sccache", "sccache"),
     ];
 
-    let use_binstall = which::which("cargo-binstall").is_ok()
-        || cargo_home().join("bin/cargo-binstall").exists();
+    let use_binstall =
+        which::which("cargo-binstall").is_ok() || cargo_home().join("bin/cargo-binstall").exists();
 
     if use_binstall {
         tracing::info!("Using cargo-binstall for fast parallel installation! 🚀");
@@ -200,14 +198,16 @@ fn install_cargo_tools(ctx: &mut PhaseContext) -> Result<()> {
         }
 
         if let Err(err) = cmd::run(&mut install_cmd) {
-            tracing::warn!("Batch cargo-binstall failed, trying one-by-one: {err}");
+            ctx.record_warning(format!(
+                "Batch cargo-binstall failed, trying one-by-one: {err}"
+            ));
             // Fallback: install one by one
             for crate_name in &missing_tools {
                 tracing::info!("Installing {crate_name} individually...");
                 let mut retry_cmd = Command::new(cargo_bin());
                 retry_cmd.args(["binstall", "--no-confirm", crate_name]);
                 if let Err(err2) = cmd::run(&mut retry_cmd) {
-                    tracing::warn!("Failed to install {crate_name}; continuing ({err2})");
+                    ctx.record_warning(format!("Failed to install {crate_name} ({err2})"));
                 }
             }
         } else {
@@ -215,7 +215,10 @@ fn install_cargo_tools(ctx: &mut PhaseContext) -> Result<()> {
         }
     } else {
         // Fallback to cargo install (slow - compiles from source)
-        tracing::warn!("Installing {} tools one-by-one (this will take 10-30 minutes...)", missing_tools.len());
+        tracing::warn!(
+            "Installing {} tools one-by-one (this will take 10-30 minutes...)",
+            missing_tools.len()
+        );
         for crate_name in &missing_tools {
             tracing::info!("Installing {crate_name} via cargo install...");
             let mut install_cmd = Command::new(cargo_bin());
@@ -223,7 +226,7 @@ fn install_cargo_tools(ctx: &mut PhaseContext) -> Result<()> {
                 .args(["install", crate_name])
                 .env("CARGO_BUILD_JOBS", "4"); // Use all 4 cores on Pi 4B
             if let Err(err) = cmd::run(&mut install_cmd) {
-                tracing::warn!("Failed to install {crate_name}; continuing ({err})");
+                ctx.record_warning(format!("Failed to install {crate_name} ({err})"));
             }
         }
     }
@@ -237,7 +240,7 @@ fn install_cargo_tools(ctx: &mut PhaseContext) -> Result<()> {
                 let mut flame_cmd = Command::new(cargo_bin());
                 flame_cmd.args(["install", "flamegraph"]);
                 if let Err(err) = cmd::run(&mut flame_cmd) {
-                    tracing::warn!("Failed to install flamegraph; continuing ({err})");
+                    ctx.record_warning(format!("Failed to install flamegraph ({err})"));
                 }
             } else {
                 ctx.record_dry_run("rust_toolchain", "Would install flamegraph", None);

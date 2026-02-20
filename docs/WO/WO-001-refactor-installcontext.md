@@ -1,4 +1,6 @@
 # WO-001-refactor-installcontext
+> **Neon Chronicle (Technical polish)**: WO-001-refactor-installcontext keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ## Objective
 Refactor the `InstallContext` god object in `installer-core` to improve modularity, testability, and maintainability.

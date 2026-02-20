@@ -1,4 +1,6 @@
 # WO-012-enhance-doctor-preflight-validation
+> **Neon Chronicle (Technical polish)**: WO-012-enhance-doctor-preflight-validation keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ## Objective
 Significantly enhance the `mash-setup doctor` module to perform a comprehensive suite of pre-installation validation checks, proactively identifying and reporting potential issues before the main installation process begins.

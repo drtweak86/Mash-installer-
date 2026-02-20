@@ -1,4 +1,6 @@
 
+> **Neon Chronicle (Technical polish)**: WO-001-enhance-doctor-checks keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 # Title
 WO-001: Enhance `doctor` Pre-flight Checks
 

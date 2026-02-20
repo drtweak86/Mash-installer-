@@ -1,4 +1,6 @@
 
+> **Neon Chronicle (Technical polish)**: WO-006-create-initial-test-suite keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 # Title
 WO-006: Create Initial Test Suite for `config` module
 

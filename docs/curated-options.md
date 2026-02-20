@@ -1,4 +1,6 @@
 # Curated Program Options
+> **Neon Chronicle (Whimsical polish)**: curated-options invites the bored bard to braid cyberpunk sigils with Tolkien smoke, so the instructions sing with neon and dice. 🌌🎲
+
 
 This menu recommends one default plus four alternatives per category so you can pick the stack that fits your Pi/SBC workflows.
 

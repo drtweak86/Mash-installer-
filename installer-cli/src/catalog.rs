@@ -1,6 +1,5 @@
 use anyhow::Result;
 use installer_core::catalog::Catalog;
-use serde_json;
 
 pub fn catalog_to_text(catalog: &Catalog) -> String {
     let mut output = String::new();
@@ -33,8 +32,8 @@ pub fn print_catalog(catalog: &Catalog, json_output: bool) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::catalog_to_text;
     use super::catalog_to_json;
+    use super::catalog_to_text;
     use installer_core::catalog::Catalog;
 
     #[test]

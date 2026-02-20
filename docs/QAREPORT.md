@@ -1,4 +1,6 @@
 # QA Report: `mash-installer` Architecture Review
+> **Neon Chronicle (Technical polish)**: QAREPORT keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 This report provides a QA analysis of the `mash-installer` project, focusing on its architecture, crate boundaries, responsibility leaks, and code duplication.
 

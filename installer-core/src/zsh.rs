@@ -53,7 +53,7 @@ fn install_omz(ctx: &mut PhaseContext) -> Result<()> {
         )
         .execute()
     {
-        tracing::warn!("oh-my-zsh installation returned non-zero; continuing ({err})");
+        ctx.record_warning(format!("oh-my-zsh installation returned non-zero ({err})"));
     }
     Ok(())
 }
@@ -171,17 +171,16 @@ fn add_p10k_source_to_zshrc(ctx: &mut PhaseContext) -> Result<()> {
 
     // Build a guarded source block that checks both possible locations
     let mut block = String::new();
-    writeln!(block).unwrap();
+    writeln!(block)?;
     writeln!(
         block,
         "# Powerlevel10k prompt theme (added by mash-installer)"
-    )
-    .unwrap();
-    writeln!(block, "if [ -f {pacman_theme} ]; then").unwrap();
-    writeln!(block, "  source {pacman_theme}").unwrap();
-    writeln!(block, "elif [ -f {P10K_THEME_FILE} ]; then").unwrap();
-    writeln!(block, "  source {P10K_THEME_FILE}").unwrap();
-    writeln!(block, "fi").unwrap();
+    )?;
+    writeln!(block, "if [ -f {pacman_theme} ]; then")?;
+    writeln!(block, "  source {pacman_theme}")?;
+    writeln!(block, "elif [ -f {P10K_THEME_FILE} ]; then")?;
+    writeln!(block, "  source {P10K_THEME_FILE}")?;
+    writeln!(block, "fi")?;
 
     if ctx.options.dry_run {
         tracing::info!("[dry-run] would append Powerlevel10k source block to .zshrc");

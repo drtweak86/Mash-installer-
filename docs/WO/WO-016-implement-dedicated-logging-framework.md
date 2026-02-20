@@ -1,4 +1,6 @@
 # WO-016-implement-dedicated-logging-framework
+> **Neon Chronicle (Technical polish)**: WO-016-implement-dedicated-logging-framework keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ## Objective
 Integrate a dedicated and robust logging framework into `mash-installer` to provide detailed, structured, and configurable logs for every installation run, significantly aiding in debugging, support, and post-mortem analysis.

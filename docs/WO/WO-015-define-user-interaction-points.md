@@ -1,4 +1,6 @@
 # WO-015-define-user-interaction-points
+> **Neon Chronicle (Technical polish)**: WO-015-define-user-interaction-points keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ## Objective
 Explicitly define and centralize the handling of all user interaction points within `mash-installer`, ensuring consistency, clarity, and graceful management across interactive and non-interactive modes.

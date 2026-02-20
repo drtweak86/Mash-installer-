@@ -355,11 +355,9 @@ mod tests {
         for category in &catalog.categories {
             let default_count = category.options.iter().filter(|opt| opt.default).count();
             assert_eq!(
-                default_count,
-                1,
+                default_count, 1,
                 "{} has {} defaults",
-                category.name,
-                default_count
+                category.name, default_count
             );
         }
     }

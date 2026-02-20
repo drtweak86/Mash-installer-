@@ -1,9 +1,7 @@
 //! Interactive menu system for driver, module, and profile selection
 
 use anyhow::Result;
-use installer_core::{
-    interaction::InteractionService, DistroDriver, PlatformInfo, ProfileLevel,
-};
+use installer_core::{interaction::InteractionService, DistroDriver, PlatformInfo, ProfileLevel};
 use std::io::{self, Write};
 use tracing::warn;
 

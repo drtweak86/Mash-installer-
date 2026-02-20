@@ -2,6 +2,7 @@
 
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use installer_core::{PhaseEvent, PhaseObserver};
+use std::io::{self, Write};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
@@ -126,7 +127,27 @@ impl PhaseObserver for CliPhaseObserver {
                 self.finish_spinner("–", &phase);
                 self.overall.inc(1);
             }
+            PhaseEvent::Warning { message } => {
+                self.mp.suspend(|| {
+                    eprintln!();
+                    eprintln!("WARNING: {message}");
+                    eprintln!();
+                });
+            }
         }
+    }
+
+    fn confirm(&mut self, prompt: &str) -> bool {
+        self.mp.suspend(|| {
+            eprint!("{prompt} ");
+            let _ = io::stderr().flush();
+            let mut response = String::new();
+            if io::stdin().read_line(&mut response).is_err() {
+                return false;
+            }
+            let response = response.trim().to_lowercase();
+            response == "y" || response == "yes"
+        })
     }
 }
 
@@ -145,7 +166,10 @@ fn get_funny_messages(msg: &str) -> Option<Vec<String>> {
 
     if lower.contains("rust") && lower.contains("toolchain") {
         Some(vec![
-            format!("{} · compiling the compiler that compiles compilers 🦀", base),
+            format!(
+                "{} · compiling the compiler that compiles compilers 🦀",
+                base
+            ),
             format!("{} · teaching crabs to code 🦀", base),
             format!("{} · still faster than npm install ⚡", base),
             format!("{} · rustup is doing rust things 🔧", base),
@@ -158,7 +182,10 @@ fn get_funny_messages(msg: &str) -> Option<Vec<String>> {
             format!("{} · docker-ception in progress 🐋", base),
             format!("{} · installing whale technology 🐳", base),
             format!("{} · because it works on my container 🎯", base),
-            format!("{} · downloading the entire internet (jk, just docker) 🌐", base),
+            format!(
+                "{} · downloading the entire internet (jk, just docker) 🌐",
+                base
+            ),
         ])
     } else if lower.contains("buildroot") {
         Some(vec![

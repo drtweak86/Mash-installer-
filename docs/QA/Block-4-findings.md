@@ -1,4 +1,6 @@
 ## Block 4 Findings (WO-016 to WO-019)
+> **Neon Chronicle (Technical polish)**: Block-4-findings keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ### WO-019 (Commit `9d9eb3f`): Formalize Release Process
 

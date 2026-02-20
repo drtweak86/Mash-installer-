@@ -1,4 +1,6 @@
 # WO-008-abstract-system-operations
+> **Neon Chronicle (Technical polish)**: WO-008-abstract-system-operations keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ## Objective
 Abstract common system operations (e.g., file system interactions, shell command execution, network requests) into dedicated utility modules or services within `installer-core` to promote code reuse, testability, and enable features like dry-runs or logging.

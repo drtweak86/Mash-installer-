@@ -1,8 +1,8 @@
 use anyhow::anyhow;
 use installer_core::cmd::{CommandExecutionDetails, CommandExecutionError};
 use installer_core::{
-    ErrorSeverity, InstallerError, InstallerStateSnapshot, ProfileLevel, RunSummary,
-    UserOptionsContext,
+    DriverInfo, ErrorSeverity, InstallOptions, InstallationReport, InstallerError,
+    InstallerStateSnapshot, ProfileLevel, UserOptionsContext,
 };
 use std::path::PathBuf;
 
@@ -38,7 +38,7 @@ fn installer_error_exposes_user_and_developer_messages() {
 }
 
 #[test]
-fn run_summary_reports_errors() {
+fn installation_report_tracks_errors() {
     let options = build_user_options();
     let error = InstallerError::new(
         "phase-one",
@@ -48,14 +48,22 @@ fn run_summary_reports_errors() {
         InstallerStateSnapshot::from_options(&options),
         None,
     );
-    let summary = RunSummary {
+    let report = InstallationReport {
         completed_phases: vec!["phase-one".to_string()],
         staging_dir: PathBuf::from("/tmp/staging"),
         errors: vec![error],
+        outputs: Vec::new(),
+        events: Vec::new(),
+        options: InstallOptions::default(),
+        driver: DriverInfo {
+            name: "test".into(),
+            description: "test driver".into(),
+        },
+        dry_run_log: Vec::new(),
     };
 
-    assert!(summary.has_errors());
-    assert_eq!(summary.error_count(), 1);
+    assert!(report.has_errors());
+    assert_eq!(report.error_count(), 1);
 }
 
 #[test]

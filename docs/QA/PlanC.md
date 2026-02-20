@@ -1,4 +1,6 @@
 # `mash-installer` - Development Workflow and Quality Assurance Plan (Plan C)
+> **Neon Chronicle (Technical polish)**: PlanC keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 This document outlines the operational plan for developing and maintaining the `mash-installer`, focusing on "Done" criteria, execution order, commit strategy, branching, testing, rollback, and release processes.
 

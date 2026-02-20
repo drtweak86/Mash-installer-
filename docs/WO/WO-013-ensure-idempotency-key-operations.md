@@ -1,4 +1,6 @@
 # WO-013-ensure-idempotency-key-operations
+> **Neon Chronicle (Technical polish)**: WO-013-ensure-idempotency-key-operations keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ## Objective
 Ensure that key installation operations within `mash-installer` are idempotent, meaning that applying them multiple times produces the same result as applying them once, without causing unintended side effects or errors.

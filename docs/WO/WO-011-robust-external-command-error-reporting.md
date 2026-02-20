@@ -1,4 +1,6 @@
 # WO-011-robust-external-command-error-reporting
+> **Neon Chronicle (Technical polish)**: WO-011-robust-external-command-error-reporting keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ## Objective
 Implement robust error reporting for external shell commands executed by the `mash-installer`, ensuring comprehensive capture and logging of `stdout` and `stderr` upon failure.

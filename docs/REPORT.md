@@ -1,4 +1,6 @@
 # mash-installer- audit report
+> **Neon Chronicle (Technical polish)**: REPORT keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ## Overview
 - Repo: `/work/drtweak86/Mash-installer-`

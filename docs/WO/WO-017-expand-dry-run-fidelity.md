@@ -1,4 +1,6 @@
 # WO-017-expand-dry-run-fidelity
+> **Neon Chronicle (Technical polish)**: WO-017-expand-dry-run-fidelity keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ## Objective
 Significantly enhance the `dry_run` mode of `mash-installer` to provide a more accurate, comprehensive, and detailed simulation of the full installation process without performing any actual system modifications.

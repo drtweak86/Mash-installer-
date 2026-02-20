@@ -22,7 +22,9 @@ fn install_git(ctx: &mut PhaseContext) -> Result<()> {
     if !ctx.options.dry_run {
         let mut git_lfs = Command::new("git");
         git_lfs.args(["lfs", "install"]);
-        let _ = cmd::run(&mut git_lfs);
+        if let Err(err) = cmd::run(&mut git_lfs) {
+            ctx.record_warning(format!("git-lfs install failed ({err})"));
+        }
     }
     Ok(())
 }

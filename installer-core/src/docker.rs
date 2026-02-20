@@ -110,7 +110,7 @@ fn add_user_to_docker_group(ctx: &mut PhaseContext) -> Result<()> {
     let mut usermod = Command::new("sudo");
     usermod.args(["usermod", "-aG", "docker", &user]);
     if let Err(err) = cmd::run(&mut usermod).context("adding user to docker group") {
-        tracing::warn!("Failed to add user to docker group ({err})");
+        ctx.record_warning(format!("Failed to add user to docker group ({err})"));
     }
     Ok(())
 }
@@ -133,7 +133,9 @@ fn enable_docker_service(ctx: &mut PhaseContext) -> Result<()> {
     let service = ctx.platform.driver.service_unit(ServiceName::Docker);
     let mut enable_cmd = Command::new("sudo");
     enable_cmd.args(["systemctl", "enable", "--now", service]);
-    let _ = cmd::run(&mut enable_cmd);
+    if let Err(err) = cmd::run(&mut enable_cmd) {
+        ctx.record_warning(format!("Failed to enable docker service ({err})"));
+    }
     Ok(())
 }
 
@@ -171,6 +173,10 @@ fn configure_data_root(ctx: &mut PhaseContext, data_root: &std::path::Path) -> R
 
         tracing::info!("Configuring Docker data-root to {}", data_root.display());
         crate::staging::ensure_space_for_path(data_root)?;
+        ctx.record_action(format!(
+            "Configured Docker data-root to {}",
+            data_root.display()
+        ));
 
         let rollback_contents = original_daemon.clone();
         let rollback_daemon = daemon_json_path.clone();
@@ -204,7 +210,11 @@ fn configure_data_root(ctx: &mut PhaseContext, data_root: &std::path::Path) -> R
 
         let mut restart_cmd = Command::new("sudo");
         restart_cmd.args(["systemctl", "restart", "docker"]);
-        let _ = cmd::run(&mut restart_cmd);
+        if let Err(err) = cmd::run(&mut restart_cmd) {
+            ctx.record_warning(format!(
+                "Failed to restart docker after data-root change ({err})"
+            ));
+        }
 
         Ok(())
     } else {
@@ -327,7 +337,7 @@ mod tests {
             Ok(Self {
                 options,
                 platform: platform_ctx,
-                ui: UIContext::default(),
+                ui: UIContext,
                 localization,
                 rollback: RollbackManager::new(),
                 dry_run_log: DryRunLog::new(),
@@ -335,14 +345,14 @@ mod tests {
         }
 
         fn phase_context(&mut self) -> PhaseContext<'_> {
-            PhaseContext {
-                options: &self.options,
-                platform: &self.platform,
-                ui: &self.ui,
-                localization: &self.localization,
-                rollback: &self.rollback,
-                dry_run_log: &self.dry_run_log,
-            }
+            PhaseContext::new(
+                &self.options,
+                &self.platform,
+                &self.ui,
+                &self.localization,
+                &self.rollback,
+                &self.dry_run_log,
+            )
         }
     }
 

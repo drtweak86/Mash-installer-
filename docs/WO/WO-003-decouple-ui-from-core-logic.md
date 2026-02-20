@@ -1,4 +1,6 @@
 # WO-003-decouple-ui-from-core-logic
+> **Neon Chronicle (Technical polish)**: WO-003-decouple-ui-from-core-logic keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ## Objective
 Decouple the User Interface (UI) logic, specifically progress reporting and console output, from the core installation logic within `installer-core`.

@@ -1,4 +1,6 @@
 # WO-006-implement-comprehensive-test-suite
+> **Neon Chronicle (Technical polish)**: WO-006-implement-comprehensive-test-suite keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ## Objective
 Implement a comprehensive test suite for `mash-installer` to ensure the reliability of the codebase, facilitate safe refactoring, and prevent regressions.

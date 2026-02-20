@@ -1,4 +1,6 @@
 # Canonical Module Inventory
+> **Neon Chronicle (Whimsical polish)**: modules invites the bored bard to braid cyberpunk sigils with Tolkien smoke, so the instructions sing with neon and dice. 🌌🎲
+
 
 This document is a straight extraction of what `mash-setup install` currently does. Every installed package, script, and feature below is enumerated with its purpose, the distros that the distro drivers push it to, and whether it is implicit (profile/phase driven) or surfaced via a modal toggle. No behavior is changed yet; the goal is documentation-only inventory.
 
@@ -114,3 +116,10 @@ This document is a straight extraction of what `mash-setup install` currently do
 
 ## Interactive module toggles
 - **Module aliases A/P/D** – the interactive “Select modules” menu explains `A` for Argon One, `P` for Powerlevel10k, and `D` for Docker data-root management. Non-interactive installs default to `ModuleSelection::default()` (all toggles off) while the “full install” choice flips all of them on. The CLI flags `--enable-argon`, `--enable-p10k`, and `--docker-data-root` expose the same toggles in scripts. Distros: affects whichever distro driver is selected; Visibility: user-facing toggles.  
+
+## Core helpers & runners
+
+- `PhaseContext` is the single context fed to phases; it exposes `run_or_record()` (R-03 entry point), `record_action()`, and `register_rollback_action()` so helpers can log metadata, simulate dry runs, and enqueue rollbacks without touching `PhaseRunner` internals.  
+- `PlatformContext` wraps `ConfigService`, `PlatformInfo`, and drive-specific helpers. The newly added `is_pi`, `pi_generation`, `is_pi_4b`, and `supports_usb3` helpers keep Raspberry Pi detection consistent across Argon One, Hyprland, and other Pi-sensitive phases (R-07).  
+- `runner` module (a wrapper around `PhaseRunner` and related types) centralizes the execution loop and emits `PhaseOutput` (metadata that records `actions_taken`, `rollback_actions`, `dry_run`, and `status`).  
+- `registry` module hosts the metadata-driven `PhaseRegistry` and PhaseEntry definitions, providing localized labels, `PhaseGate`, and platform-aware gating so the runner can build precise phase lists (R-04).  

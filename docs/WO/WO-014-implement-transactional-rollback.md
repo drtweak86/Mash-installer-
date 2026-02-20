@@ -1,4 +1,6 @@
 # WO-014-implement-transactional-rollback
+> **Neon Chronicle (Technical polish)**: WO-014-implement-transactional-rollback keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ## Objective
 Implement transactional and rollback capabilities for critical installation steps within `mash-installer` to prevent leaving the system in a broken or inconsistent state in case of failure.

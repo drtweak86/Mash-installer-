@@ -1,11 +1,13 @@
 ## Block 2 Findings (WO-006 to WO-010)
+> **Neon Chronicle (Technical polish)**: Block-2-findings keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ### WO-006 (Commit `edcd3e1`): Add Phase List Coverage
 
-**Summary:** This commit adds unit tests for the `build_phase_list` function, ensuring correct phase inclusion based on profile and options.
+**Summary:** This commit adds unit tests for `PhaseRegistry::build_phases`, ensuring metadata-driven phase inclusion honors profile and module toggles.
 
 **Findings:**
-1.  **Missing Error Handling Tests:** The tests for `InstallerError` and `RunSummary` (previously located in `installer-core/src/error.rs`) were removed in this commit. These tests cover the core error reporting objects and their removal represents a regression in test coverage for critical components. They need to be reinstated, ideally in a dedicated test file or the main `lib.rs` test module.
+1.  **Missing Error Handling Tests:** The tests for `InstallerError` and the aggregated reporting structure (previously located in `installer-core/src/error.rs`) were removed in this commit. These tests cover the core error reporting objects and their removal represents a regression in test coverage for critical components. They need to be reinstated, ideally in a dedicated test file or the main `lib.rs` test module.
 2.  **Incomplete `PhaseRunner` Test Coverage:** While there are tests that implicitly touch upon `PhaseRunner` (e.g., observer tests), there are no explicit, comprehensive unit or integration tests specifically for the `PhaseRunner`'s core logic (e.g., how it handles phase execution flow, `should_run` checks, error propagation based on policy, and result aggregation). WO-006 calls for comprehensive testing, and the `PhaseRunner` is a central orchestrator.
 
 ### WO-007 (Commit `8e2f3b0`): Centralize Configuration Service
@@ -28,6 +30,6 @@
 
 ### WO-010 (Commit `ba53783`): Make Installer-Core API Report Rich
 
-**Summary:** The commit refactors `installer-core`'s API to return a rich `InstallationReport` on success or failure, consolidating `RunSummary`, `PhaseEvent`s, `InstallOptions`, and `DriverInfo`. This significantly improves the programmatic utility of the API.
+**Summary:** The commit refactors `installer-core`'s API to return a rich `InstallationReport` on success or failure, consolidating completed-phase histories, `PhaseEvent`s, `InstallOptions`, and `DriverInfo`. This significantly improves the programmatic utility of the API.
 
 **Findings:** None.

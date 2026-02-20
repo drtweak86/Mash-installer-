@@ -1,4 +1,6 @@
-use crate::{driver::DistroDriver, package_manager, PhaseContext};
+use crate::{
+    driver::DistroDriver, package_manager, PackageIntent, PackageSpec, PhaseContext, ProfileLevel,
+};
 use anyhow::Result;
 
 // ── Phase 1: core packages ─────────────────────────────────────
@@ -13,69 +15,22 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
     }
     package_manager::update(ctx.platform.driver, ctx.options.dry_run)?;
 
-    // Always-needed core packages (Debian canonical names)
-    let mut pkgs: Vec<&str> = vec![
-        "ca-certificates",
-        "curl",
-        "wget",
-        "xz-utils",
-        "tar",
-        "coreutils",
-        "jq",
-        "git",
-        "software-properties-common",
-        "gnupg",
-        "lsb-release",
-        "apt-transport-https",
-    ];
-
-    // Build essentials (all profiles)
-    pkgs.extend_from_slice(&[
-        "build-essential",
-        "pkg-config",
-        "clang",
-        "lld",
-        "cmake",
-        "ninja-build",
-        "gcc",
-        "g++",
-        "gdb",
-        "make",
-    ]);
-
-    // Dev+ packages
-    if ctx.options.profile >= crate::ProfileLevel::Dev {
-        pkgs.extend_from_slice(&[
-            "python3",
-            "python3-pip",
-            "python3-venv",
-            "ripgrep",
-            "fd-find",
-            "fzf",
-            "tmux",
-            "htop",
-            "ncdu",
-            "neovim",
-            "kitty",
-        ]);
-    }
-
-    // Full profile extras
-    if ctx.options.profile >= crate::ProfileLevel::Full {
-        pkgs.extend_from_slice(&["nodejs", "npm"]);
-    }
-
-    // Optional packages – may not exist in every distro version
-    let optional = ["btop", "eza", "yq", "lldb", "bat"];
-
-    // Split required vs optional
-    let required: Vec<&str> = pkgs
+    let specs = system_package_specs();
+    let applicable_specs: Vec<_> = specs
         .iter()
-        .copied()
-        .filter(|p| !optional.contains(p))
+        .filter(|spec| spec.is_applicable(ctx.options.profile))
         .collect();
 
-    let missing_required = missing_packages(ctx.platform.driver, &required);
+    let required_specs: Vec<_> = applicable_specs
+        .iter()
+        .cloned()
+        .filter(|spec| spec.intent() == PackageIntent::Required)
+        .collect();
+
+    let missing_required = missing_packages(
+        ctx.platform.driver,
+        required_specs.iter().map(|spec| spec.canonical()),
+    );
     if missing_required.is_empty() {
         tracing::info!("System packages already installed");
     } else {
@@ -93,37 +48,85 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
         )?;
     }
 
-    // Always attempt lldb
-    if ctx.options.dry_run {
-        ctx.record_dry_run(
-            "system_packages",
-            "Would attempt optional package",
-            Some("lldb".into()),
-        );
-    }
-    package_manager::try_optional(ctx.platform.driver, "lldb", ctx.options.dry_run);
-
-    // Dev+ optional packages
-    if ctx.options.profile >= crate::ProfileLevel::Dev {
-        for pkg in &["btop", "bat", "eza", "yq"] {
-            if ctx.options.dry_run {
-                ctx.record_dry_run(
-                    "system_packages",
-                    "Would attempt optional package",
-                    Some(pkg.to_string()),
-                );
-            }
-            package_manager::try_optional(ctx.platform.driver, pkg, ctx.options.dry_run);
+    for spec in applicable_specs
+        .iter()
+        .filter(|spec| spec.intent() == PackageIntent::Optional)
+    {
+        if ctx.options.dry_run {
+            ctx.record_dry_run(
+                "system_packages",
+                "Would attempt optional package",
+                Some(spec.canonical().to_string()),
+            );
         }
+        package_manager::try_optional(ctx.platform.driver, spec.canonical(), ctx.options.dry_run);
     }
 
     Ok(())
 }
 
-fn missing_packages<'a>(driver: &dyn DistroDriver, packages: &'a [&'a str]) -> Vec<&'a str> {
+fn system_package_specs() -> Vec<PackageSpec<'static>> {
+    let mut specs = vec![
+        PackageSpec::required("ca-certificates"),
+        PackageSpec::required("curl"),
+        PackageSpec::required("wget"),
+        PackageSpec::required("xz-utils"),
+        PackageSpec::required("tar"),
+        PackageSpec::required("coreutils"),
+        PackageSpec::required("jq"),
+        PackageSpec::required("git"),
+        PackageSpec::required("software-properties-common"),
+        PackageSpec::required("gnupg"),
+        PackageSpec::required("lsb-release"),
+        PackageSpec::required("apt-transport-https"),
+        PackageSpec::required("build-essential"),
+        PackageSpec::required("pkg-config"),
+        PackageSpec::required("clang"),
+        PackageSpec::required("lld"),
+        PackageSpec::required("cmake"),
+        PackageSpec::required("ninja-build"),
+        PackageSpec::required("gcc"),
+        PackageSpec::required("g++"),
+        PackageSpec::required("gdb"),
+        PackageSpec::required("make"),
+    ];
+
+    specs.extend_from_slice(&[
+        PackageSpec::required_for("python3", ProfileLevel::Dev),
+        PackageSpec::required_for("python3-pip", ProfileLevel::Dev),
+        PackageSpec::required_for("python3-venv", ProfileLevel::Dev),
+        PackageSpec::required_for("ripgrep", ProfileLevel::Dev),
+        PackageSpec::required_for("fd-find", ProfileLevel::Dev),
+        PackageSpec::required_for("fzf", ProfileLevel::Dev),
+        PackageSpec::required_for("tmux", ProfileLevel::Dev),
+        PackageSpec::required_for("htop", ProfileLevel::Dev),
+        PackageSpec::required_for("ncdu", ProfileLevel::Dev),
+        PackageSpec::required_for("neovim", ProfileLevel::Dev),
+        PackageSpec::required_for("kitty", ProfileLevel::Dev),
+    ]);
+
+    specs.extend_from_slice(&[
+        PackageSpec::required_for("nodejs", ProfileLevel::Full),
+        PackageSpec::required_for("npm", ProfileLevel::Full),
+    ]);
+
+    specs.extend_from_slice(&[
+        PackageSpec::optional("lldb"),
+        PackageSpec::optional("btop"),
+        PackageSpec::optional("bat"),
+        PackageSpec::optional("eza"),
+        PackageSpec::optional("yq"),
+    ]);
+
+    specs
+}
+
+fn missing_packages<'a, I>(driver: &dyn DistroDriver, packages: I) -> Vec<&'a str>
+where
+    I: IntoIterator<Item = &'a str>,
+{
     packages
-        .iter()
-        .copied()
+        .into_iter()
         .filter(|pkg| !driver.is_package_installed(pkg))
         .collect()
 }
@@ -220,6 +223,9 @@ mod tests {
     fn missing_packages_filters_installed_items() {
         let driver = InstalledDriver;
         let pkgs = ["curl", "git", "tar"];
-        assert_eq!(super::missing_packages(&driver, &pkgs), vec!["tar"]);
+        assert_eq!(
+            super::missing_packages(&driver, pkgs.iter().copied()),
+            vec!["tar"]
+        );
     }
 }

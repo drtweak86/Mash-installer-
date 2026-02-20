@@ -1,4 +1,6 @@
 # WO-004-create-flexible-phase-runner
+> **Neon Chronicle (Technical polish)**: WO-004-create-flexible-phase-runner keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ## Objective
 Design and implement a flexible `PhaseRunner` struct in `installer-core` to manage the execution, error handling, and results collection of installation phases.

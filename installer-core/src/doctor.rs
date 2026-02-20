@@ -1,9 +1,7 @@
 use anyhow::{anyhow, Result};
 use clap::ValueEnum;
 use nix::sys::statvfs;
-use num_cpus;
 use serde::Serialize;
-use serde_json;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::Path;
@@ -16,17 +14,12 @@ use crate::{
     system::{RealSystem, SystemOps},
 };
 
-#[derive(Clone, Copy, Debug, ValueEnum)]
+#[derive(Clone, Copy, Debug, ValueEnum, Default)]
 #[value(rename_all = "lower")]
 pub enum DoctorOutput {
+    #[default]
     Pretty,
     Json,
-}
-
-impl Default for DoctorOutput {
-    fn default() -> Self {
-        DoctorOutput::Pretty
-    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -52,54 +45,55 @@ const MIN_MEMORY_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 const WARN_MEMORY_BYTES: u64 = 3 * 1024 * 1024 * 1024;
 const MIN_CPU_CORES: usize = 2;
 
-/// Run diagnostics and print a summary of what is installed / missing.
+/// Run diagnostics and write a summary of what is installed / missing.
 #[allow(dead_code)]
-pub fn run_doctor(format: DoctorOutput) -> Result<()> {
-    println!("mash-setup doctor");
-    println!("==================");
-    println!();
+pub fn run_doctor(format: DoctorOutput, out: &mut dyn Write) -> Result<()> {
+    writeln!(out, "mash-setup doctor")?;
+    writeln!(out, "==================")?;
+    writeln!(out)?;
 
     let system = RealSystem;
     let report = collect_preflight_checks(&system, None)?;
     if matches!(format, DoctorOutput::Json) {
-        println!("{}", serde_json::to_string_pretty(&report)?);
+        writeln!(out, "{}", serde_json::to_string_pretty(&report)?)?;
         return Ok(());
     }
-    section("Pre-flight checks");
-    display_preflight_checks(&report.checks);
-    println!();
+    write_section(out, "Pre-flight checks")?;
+    display_preflight_checks(&report.checks, out)?;
+    writeln!(out)?;
 
     // ── System info ──
-    section("System");
+    write_section(out, "System")?;
     show_file(
         &system,
+        out,
         Path::new("/etc/os-release"),
         &["PRETTY_NAME", "VERSION_ID"],
-    );
-    show_cmd(&system, "Architecture", "uname", &["-m"]);
-    show_cmd(&system, "Kernel", "uname", &["-r"]);
+    )?;
+    show_cmd(&system, out, "Architecture", "uname", &["-m"])?;
+    show_cmd(&system, out, "Kernel", "uname", &["-r"])?;
 
     // Pi model
     if let Ok(model) = system.read_to_string(Path::new("/proc/device-tree/model")) {
         let model = model.trim_end_matches('\0').trim();
-        println!("  Pi model:      {model}");
+        writeln!(out, "  Pi model:      {model}")?;
     }
 
-    println!();
+    writeln!(out)?;
 
     // ── Package manager ──
-    section("Package manager");
+    write_section(out, "Package manager")?;
     if which::which("pacman").is_ok() {
-        println!("  Backend:       pacman (Arch-based)");
+        writeln!(out, "  Backend:       pacman (Arch-based)")?;
     } else {
-        println!("  Backend:       apt (Debian-based)");
+        writeln!(out, "  Backend:       apt (Debian-based)")?;
     }
 
-    println!();
+    writeln!(out)?;
 
     // ── Disk space ──
-    section("Disk space");
-    let _ = Command::new("df")
+    write_section(out, "Disk space")?;
+    let df_output = Command::new("df")
         .args([
             "-h",
             "--output=target,avail,pcent",
@@ -107,11 +101,14 @@ pub fn run_doctor(format: DoctorOutput) -> Result<()> {
             "/mnt/data",
             "/data",
         ])
-        .status();
-    println!();
+        .output();
+    if let Ok(o) = df_output {
+        out.write_all(&o.stdout)?;
+    }
+    writeln!(out)?;
 
     // ── Tools ──
-    section("Tools");
+    write_section(out, "Tools")?;
     let tools = [
         ("git", "git --version"),
         ("gh", "gh --version"),
@@ -140,12 +137,12 @@ pub fn run_doctor(format: DoctorOutput) -> Result<()> {
     ];
 
     for (name, cmd_str) in &tools {
-        check_tool(&system, name, cmd_str);
+        check_tool(&system, out, name, cmd_str)?;
     }
-    println!();
+    writeln!(out)?;
 
     // ── Cargo tools ──
-    section("Cargo tools");
+    write_section(out, "Cargo tools")?;
     let cargo_tools = [
         "cargo-watch",
         "cargo-audit",
@@ -163,31 +160,33 @@ pub fn run_doctor(format: DoctorOutput) -> Result<()> {
         } else {
             "MISSING"
         };
-        println!("  {tool:<20} {status}");
+        writeln!(out, "  {tool:<20} {status}")?;
     }
-    println!();
+    writeln!(out)?;
 
     // ── Docker group ──
-    section("Docker group");
+    write_section(out, "Docker group")?;
     let user = std::env::var("USER").unwrap_or_else(|_| "unknown".into());
     let output = Command::new("id").arg("-nG").arg(&user).output();
     match output {
         Ok(o) => {
             let groups = String::from_utf8_lossy(&o.stdout);
             let in_docker = groups.split_whitespace().any(|g| g == "docker");
-            println!(
+            writeln!(
+                out,
                 "  User '{user}' in docker group: {}",
                 if in_docker { "yes" } else { "NO" }
-            );
+            )?;
         }
-        Err(_) => println!("  Could not determine groups for user '{user}'"),
+        Err(_) => writeln!(out, "  Could not determine groups for user '{user}'")?,
     }
-    println!();
+    writeln!(out)?;
 
     // ── Config ──
-    section("Config");
+    write_section(out, "Config")?;
     let config_path = config::config_path();
-    println!(
+    writeln!(
+        out,
         "  Config file: {} ({})",
         config_path.display(),
         if config_path.exists() {
@@ -195,23 +194,23 @@ pub fn run_doctor(format: DoctorOutput) -> Result<()> {
         } else {
             "not found"
         }
-    );
+    )?;
 
     // ── SSH ──
-    section("SSH keys");
+    write_section(out, "SSH keys")?;
     let ssh_dir = dirs::home_dir().unwrap_or_default().join(".ssh");
     if ssh_dir.exists() {
         for e in std::fs::read_dir(&ssh_dir).into_iter().flatten().flatten() {
             let name = e.file_name();
             let name = name.to_string_lossy();
             if name.ends_with(".pub") {
-                println!("  {}", e.path().display());
+                writeln!(out, "  {}", e.path().display())?;
             }
         }
     } else {
-        println!("  No ~/.ssh directory found");
+        writeln!(out, "  No ~/.ssh directory found")?;
     }
-    println!();
+    writeln!(out)?;
 
     Ok(())
 }
@@ -234,16 +233,20 @@ const CONNECTIVITY_TIMEOUT_SECS: u64 = 5;
 const WRITE_TEST_FILE: &str = ".mash-doctor-write-test";
 
 #[allow(dead_code)]
-pub fn run_preflight_checks(system: &dyn SystemOps, staging_override: Option<&Path>) -> Result<()> {
-    section("Pre-flight checks");
+pub fn run_preflight_checks(
+    system: &dyn SystemOps,
+    staging_override: Option<&Path>,
+    out: &mut dyn Write,
+) -> Result<()> {
+    write_section(out, "Pre-flight checks")?;
     let report = collect_preflight_checks(system, staging_override)?;
-    let had_errno = display_preflight_checks(&report.checks);
-    println!();
+    let had_errno = display_preflight_checks(&report.checks, out)?;
+    writeln!(out)?;
     if had_errno {
         Err(anyhow!("pre-flight checks reported critical issues"))
     } else {
-        println!("  Pre-flight checks passed");
-        println!();
+        writeln!(out, "  Pre-flight checks passed")?;
+        writeln!(out)?;
         Ok(())
     }
 }
@@ -297,19 +300,19 @@ pub fn collect_preflight_checks(
     Ok(PreflightReport { checks })
 }
 
-fn display_preflight_checks(checks: &[PreflightCheck]) -> bool {
+fn display_preflight_checks(checks: &[PreflightCheck], out: &mut dyn Write) -> Result<bool> {
     let mut had_error = false;
     for check in checks {
         let mut label = check.label.clone();
         if let Some(detail) = &check.detail {
             label = format!("{label}: {detail}");
         }
-        report(label, check.status);
+        write_report(out, label, check.status)?;
         if check.status == CheckStatus::Error {
             had_error = true;
         }
     }
-    had_error
+    Ok(had_error)
 }
 
 fn check_required_command(cmd: &str) -> PreflightCheck {
@@ -521,7 +524,6 @@ fn read_mem_available() -> Result<u64> {
     for line in content.lines() {
         if let Some(rest) = line.strip_prefix("MemAvailable:") {
             let value = rest
-                .trim()
                 .split_whitespace()
                 .next()
                 .ok_or_else(|| anyhow!("MemAvailable entry in /proc/meminfo is malformed"))?;
@@ -603,38 +605,55 @@ fn format_bytes(bytes: u64) -> String {
 }
 
 #[allow(dead_code)]
-fn section(name: &str) {
-    println!("── {name} ──");
+fn write_section(out: &mut dyn Write, name: &str) -> std::io::Result<()> {
+    writeln!(out, "── {name} ──")
 }
 
 #[allow(dead_code)]
-fn show_cmd(system: &dyn SystemOps, label: &str, cmd: &str, args: &[&str]) {
+fn show_cmd(
+    system: &dyn SystemOps,
+    out: &mut dyn Write,
+    label: &str,
+    cmd: &str,
+    args: &[&str],
+) -> std::io::Result<()> {
     let mut command = Command::new(cmd);
     command.args(args);
     match system.command_output(&mut command) {
         Ok(o) => {
-            let out = String::from_utf8_lossy(&o.stdout);
-            println!("  {label:<16} {}", out.trim());
+            let stdout = String::from_utf8_lossy(&o.stdout);
+            writeln!(out, "  {label:<16} {}", stdout.trim())
         }
-        Err(_) => println!("  {label:<16} (not available)"),
+        Err(_) => writeln!(out, "  {label:<16} (not available)"),
     }
 }
 
 #[allow(dead_code)]
-fn show_file(system: &dyn SystemOps, path: &Path, keys: &[&str]) {
+fn show_file(
+    system: &dyn SystemOps,
+    out: &mut dyn Write,
+    path: &Path,
+    keys: &[&str],
+) -> std::io::Result<()> {
     if let Ok(content) = system.read_to_string(path) {
         for key in keys {
             for line in content.lines() {
                 if let Some(rest) = line.strip_prefix(&format!("{key}=")) {
-                    println!("  {key:<16} {}", rest.trim_matches('"'));
+                    writeln!(out, "  {key:<16} {}", rest.trim_matches('"'))?;
                 }
             }
         }
     }
+    Ok(())
 }
 
 #[allow(dead_code)]
-fn check_tool(system: &dyn SystemOps, name: &str, cmd_str: &str) {
+fn check_tool(
+    system: &dyn SystemOps,
+    out: &mut dyn Write,
+    name: &str,
+    cmd_str: &str,
+) -> std::io::Result<()> {
     let parts: Vec<&str> = cmd_str.split_whitespace().collect();
     let mut command = Command::new(parts[0]);
     command.args(&parts[1..]);
@@ -643,19 +662,21 @@ fn check_tool(system: &dyn SystemOps, name: &str, cmd_str: &str) {
         Ok(o) if o.status.success() => {
             let ver = String::from_utf8_lossy(&o.stdout);
             let first_line = ver.lines().next().unwrap_or("").trim();
-            println!("  {name:<20} {first_line}");
+            writeln!(out, "  {name:<20} {first_line}")
         }
-        _ => {
-            println!("  {name:<20} MISSING");
-        }
+        _ => writeln!(out, "  {name:<20} MISSING"),
     }
 }
 
-fn report(message: impl AsRef<str>, status: CheckStatus) {
+fn write_report(
+    out: &mut dyn Write,
+    message: impl AsRef<str>,
+    status: CheckStatus,
+) -> std::io::Result<()> {
     match status {
-        CheckStatus::Success => println!("{}", message.as_ref()),
-        CheckStatus::Warning => eprintln!("Warning: {}", message.as_ref()),
-        CheckStatus::Error => eprintln!("ERROR: {}", message.as_ref()),
+        CheckStatus::Success => writeln!(out, "{}", message.as_ref()),
+        CheckStatus::Warning => writeln!(out, "Warning: {}", message.as_ref()),
+        CheckStatus::Error => writeln!(out, "ERROR: {}", message.as_ref()),
     }
 }
 
@@ -701,8 +722,10 @@ mod tests {
         result
     }
 
+    type ConnectFn = Box<dyn Fn(&str, u16, Duration) -> Result<TcpStream> + Send + Sync>;
+
     struct StubSystem {
-        connect_fn: Box<dyn Fn(&str, u16, Duration) -> Result<TcpStream> + Send + Sync>,
+        connect_fn: ConnectFn,
     }
 
     impl StubSystem {
@@ -774,7 +797,9 @@ mod tests {
             status: CheckStatus::Error,
             detail: None,
         };
-        assert!(!display_preflight_checks(&[success]));
-        assert!(display_preflight_checks(&[error_check]));
+        let mut buf = Vec::new();
+        assert!(!display_preflight_checks(&[success], &mut buf).unwrap());
+        let mut buf = Vec::new();
+        assert!(display_preflight_checks(&[error_check], &mut buf).unwrap());
     }
 }

@@ -1,4 +1,6 @@
 # WO-002-introduce-formal-phase-trait
+> **Neon Chronicle (Technical polish)**: WO-002-introduce-formal-phase-trait keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ## Objective
 Introduce a formal `Phase` trait to provide a structured and extensible way to define installation phases in `installer-core`.

@@ -60,7 +60,11 @@ pub fn detect() -> Result<PlatformInfo> {
             tracing::info!("Detected Arch-based distro: {} {}", distro, distro_version);
         }
         "fedora" => {
-            tracing::info!("Detected Fedora-based distro: {} {}", distro, distro_version);
+            tracing::info!(
+                "Detected Fedora-based distro: {} {}",
+                distro,
+                distro_version
+            );
         }
         _ => {
             tracing::warn!(
@@ -104,7 +108,10 @@ fn determine_family(distro: &str, id_like: &str) -> String {
         "arch".into()
     } else if like_lower.contains("debian") || like_lower.contains("ubuntu") {
         "debian".into()
-    } else if like_lower.contains("fedora") || like_lower.contains("rhel") || like_lower.contains("centos") {
+    } else if like_lower.contains("fedora")
+        || like_lower.contains("rhel")
+        || like_lower.contains("centos")
+    {
         "fedora".into()
     } else {
         "unknown".into()

@@ -1,4 +1,6 @@
 # `mash-installer` - Analysis and Improvement Plan (Plan B)
+> **Neon Chronicle (Technical polish)**: PlanB keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 This document provides a detailed analysis of the `mash-installer` project, highlighting existing strengths, identifying areas for immediate fixes, and proposing further improvements.
 

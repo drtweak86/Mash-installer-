@@ -1,4 +1,6 @@
 
+> **Neon Chronicle (Technical polish)**: WO-005-decouple-ui-println keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 # Title
 WO-005: Decouple UI - Remove `println!` from `installer-core`
 

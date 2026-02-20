@@ -14,17 +14,12 @@ use tracing_subscriber::{
 
 use crate::{InstallContext, Phase};
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum LogFormat {
+    #[default]
     Human,
     Json,
-}
-
-impl Default for LogFormat {
-    fn default() -> Self {
-        LogFormat::Human
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -140,11 +135,17 @@ struct LockedWriter {
 
 impl Write for LockedWriter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.inner.lock().unwrap().write(buf)
+        self.inner
+            .lock()
+            .map_err(|e| io::Error::other(e.to_string()))?
+            .write(buf)
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        self.inner.lock().unwrap().flush()
+        self.inner
+            .lock()
+            .map_err(|e| io::Error::other(e.to_string()))?
+            .flush()
     }
 }
 

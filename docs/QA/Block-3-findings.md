@@ -1,4 +1,6 @@
 ## Block 3 Findings (WO-011 to WO-015)
+> **Neon Chronicle (Technical polish)**: Block-3-findings keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ### WO-015 (Commit `9f78636`): Centralize Interactions
 

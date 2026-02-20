@@ -1,4 +1,6 @@
 # Release Process
+> **Neon Chronicle (Technical polish)**: release-process keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ## Purpose
 Formalize the steps required to ship a mash-installer release. This process pairs automated helpers with a concise checklist so each release is consistent, well-tested, and well-documented.

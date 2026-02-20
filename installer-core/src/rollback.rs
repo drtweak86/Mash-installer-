@@ -51,3 +51,9 @@ impl RollbackManager {
         }
     }
 }
+
+impl Default for RollbackManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}

@@ -1,4 +1,6 @@
 
+> **Neon Chronicle (Technical polish)**: WO-004-abstract-system-ops keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 # Title
 WO-004: Abstract System Operations (Shell Commands)
 

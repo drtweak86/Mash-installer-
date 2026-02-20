@@ -1,4 +1,6 @@
 # WO-018-formalize-testing-infrastructure
+> **Neon Chronicle (Technical polish)**: WO-018-formalize-testing-infrastructure keeps the gears and runes aligned, so the neon hum is restrained to precise, actionable beats. ⚙️
+
 
 ## Objective
 Formalize and enhance the testing infrastructure for `mash-installer` to ensure comprehensive coverage across diverse environments, explicitly addressing `maelstrom` compatibility and providing robust alternative testing mechanisms for kernel-dependent or sandboxed scenarios.

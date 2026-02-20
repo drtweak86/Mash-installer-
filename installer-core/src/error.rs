@@ -1,8 +1,10 @@
 use crate::cmd;
 use crate::context::UserOptionsContext;
+use crate::dry_run::DryRunEntry;
+use crate::ConfigError;
 use crate::InstallOptions;
-use crate::PhaseEvent;
 use crate::ProfileLevel;
+use crate::{PhaseEvent, PhaseOutput};
 use anyhow::Error;
 use std::fmt;
 use std::path::PathBuf;
@@ -115,9 +117,7 @@ impl InstallerError {
     pub fn developer_message(&self) -> &str {
         &self.developer_detail
     }
-}
 
-impl InstallerError {
     pub fn command_output(&self) -> Option<&cmd::CommandExecutionDetails> {
         self.command_output.as_ref()
     }
@@ -136,13 +136,24 @@ impl std::error::Error for InstallerError {
 }
 
 #[derive(Clone, Debug)]
-pub struct RunSummary {
+pub struct DriverInfo {
+    pub name: String,
+    pub description: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct InstallationReport {
     pub completed_phases: Vec<String>,
     pub staging_dir: PathBuf,
     pub errors: Vec<InstallerError>,
+    pub outputs: Vec<PhaseOutput>,
+    pub events: Vec<PhaseEvent>,
+    pub options: InstallOptions,
+    pub driver: DriverInfo,
+    pub dry_run_log: Vec<DryRunEntry>,
 }
 
-impl RunSummary {
+impl InstallationReport {
     pub fn has_errors(&self) -> bool {
         !self.errors.is_empty()
     }
@@ -152,33 +163,9 @@ impl RunSummary {
     }
 }
 
-impl Default for RunSummary {
-    fn default() -> Self {
-        Self {
-            completed_phases: Vec::new(),
-            staging_dir: PathBuf::from("<unknown>"),
-            errors: Vec::new(),
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct DriverInfo {
-    pub name: String,
-    pub description: String,
-}
-
-#[derive(Clone, Debug)]
-pub struct InstallationReport {
-    pub summary: RunSummary,
-    pub events: Vec<PhaseEvent>,
-    pub options: InstallOptions,
-    pub driver: DriverInfo,
-}
-
 #[derive(Debug)]
 pub struct InstallerRunError {
-    pub report: InstallationReport,
+    pub report: Box<InstallationReport>,
     pub source: InstallerError,
 }
 
@@ -206,20 +193,58 @@ impl From<Error> for InstallerRunError {
         );
 
         InstallerRunError {
-            report: InstallationReport {
-                summary: RunSummary {
-                    completed_phases: Vec::new(),
-                    staging_dir: PathBuf::from("<unknown>"),
-                    errors: vec![installer_error.clone()],
-                },
+            report: Box::new(InstallationReport {
+                completed_phases: Vec::new(),
+                staging_dir: PathBuf::from("<unknown>"),
+                errors: vec![installer_error.clone()],
+                outputs: Vec::new(),
                 events: Vec::new(),
                 options: InstallOptions::default(),
                 driver: DriverInfo {
                     name: "<unknown>".to_string(),
                     description: "unknown driver".to_string(),
                 },
-            },
+                dry_run_log: Vec::new(),
+            }),
             source: installer_error,
         }
+    }
+}
+
+impl From<Error> for Box<InstallerRunError> {
+    fn from(source: Error) -> Self {
+        Box::new(InstallerRunError::from(source))
+    }
+}
+
+impl From<ConfigError> for Box<InstallerRunError> {
+    fn from(source: ConfigError) -> Self {
+        let installer_error = InstallerError::new(
+            "config",
+            "configuration load",
+            ErrorSeverity::Fatal,
+            Error::from(source),
+            InstallerStateSnapshot::default(),
+            Some("Inspect ~/.config/mash-installer/config.toml for corruption or permissions issues.".to_string()),
+        );
+
+        let report = InstallationReport {
+            completed_phases: Vec::new(),
+            staging_dir: PathBuf::from("<unknown>"),
+            errors: vec![installer_error.clone()],
+            outputs: Vec::new(),
+            events: Vec::new(),
+            options: InstallOptions::default(),
+            driver: DriverInfo {
+                name: "<unknown>".to_string(),
+                description: "unknown driver".to_string(),
+            },
+            dry_run_log: Vec::new(),
+        };
+
+        Box::new(InstallerRunError {
+            report: Box::new(report),
+            source: installer_error,
+        })
     }
 }

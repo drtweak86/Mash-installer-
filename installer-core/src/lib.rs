@@ -14,6 +14,7 @@ pub mod dry_run;
 mod error;
 mod fonts;
 mod github;
+mod hyprland;
 pub mod interaction;
 pub mod localization;
 mod logging;
@@ -290,6 +291,13 @@ fn build_phase_list(options: &UserOptionsContext, strings: &Localization) -> Vec
             "System packages",
             "System packages installed",
             pkg::install_phase,
+        ),
+        localized_phase(
+            strings,
+            "hyprland_audio",
+            "Hyprland audio fix (Arch)",
+            "Hyprland audio configured",
+            hyprland::install_phase,
         ),
         localized_phase(
             strings,

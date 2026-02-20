@@ -1,3 +1,11 @@
+//! Rust toolchain installation and cargo tools
+//!
+//! Optimized for: Raspberry Pi 4B 8GB RAM, 4 cores, external USB 3.0 HDD
+//! - Uses cargo-binstall for pre-compiled binaries (avoids 30+ min compilation)
+//! - Batch installs all tools at once for parallel downloads
+//! - Sets CARGO_BUILD_JOBS=4 to utilize all Pi 4B cores
+//! - Minimal rustup profile to reduce disk usage
+
 use anyhow::{Context, Result};
 use std::path::PathBuf;
 use std::process::Command;
@@ -51,19 +59,22 @@ fn install_rustup(ctx: &mut PhaseContext) -> Result<()> {
         return Ok(());
     }
 
-    tracing::info!("Installing rustup + stable toolchain");
+    tracing::info!("Installing rustup + stable toolchain (minimal profile for faster install)");
     if ctx.options.dry_run {
         ctx.record_dry_run(
             "rust_toolchain",
             "Would install rustup toolchain",
-            Some("curl rustup.rs | sh -s -- -y".into()),
+            Some("curl rustup.rs | sh -s -- -y --profile minimal".into()),
         );
-        tracing::info!("[dry-run] curl rustup.rs | sh -s -- -y");
+        tracing::info!("[dry-run] curl rustup.rs | sh -s -- -y --profile minimal");
         return Ok(());
     }
 
+    // Use minimal profile to reduce download/install time (optimized for Pi 4B)
     let mut install_cmd = Command::new("sh");
-    install_cmd.arg("-c").arg("curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable");
+    install_cmd.arg("-c").arg(
+        "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal"
+    );
     cmd::run(&mut install_cmd).context("installing rustup")?;
     Ok(())
 }
@@ -139,46 +150,78 @@ fn install_cargo_tools(ctx: &mut PhaseContext) -> Result<()> {
         || cargo_home().join("bin/cargo-binstall").exists();
 
     if use_binstall {
-        tracing::info!("Using cargo-binstall for fast binary installation! 🚀");
+        tracing::info!("Using cargo-binstall for fast parallel installation! 🚀");
     } else {
         tracing::warn!("cargo-binstall not available; falling back to slow cargo install (this will take a while...)");
     }
 
+    // Filter out already-installed tools
+    let mut missing_tools: Vec<&str> = Vec::new();
     for (crate_name, bin_name) in tools {
         let bin_path = cargo_home().join("bin").join(bin_name);
         if bin_path.exists() || which::which(bin_name).is_ok() {
             tracing::info!("{bin_name} already installed");
-            continue;
+        } else {
+            missing_tools.push(crate_name);
+        }
+    }
+
+    if missing_tools.is_empty() {
+        tracing::info!("All cargo tools already installed");
+        return Ok(());
+    }
+
+    if ctx.options.dry_run {
+        ctx.record_dry_run(
+            "rust_toolchain",
+            "Would install cargo tools",
+            Some(missing_tools.join(", ")),
+        );
+        return Ok(());
+    }
+
+    if use_binstall {
+        // BATCH INSTALL ALL TOOLS AT ONCE - Much faster! (optimized for Pi 4B)
+        tracing::info!(
+            "Installing {} tools in one batch: {}",
+            missing_tools.len(),
+            missing_tools.join(", ")
+        );
+        let mut install_cmd = Command::new(cargo_bin());
+        install_cmd.arg("binstall").arg("--no-confirm");
+
+        // Optimize for Pi 4B: 4 cores, external USB 3.0 HDD
+        install_cmd
+            .env("CARGO_BUILD_JOBS", "4")
+            .env("CARGO_NET_GIT_FETCH_WITH_CLI", "true");
+
+        for crate_name in &missing_tools {
+            install_cmd.arg(crate_name);
         }
 
-        if ctx.options.dry_run {
-            ctx.record_dry_run(
-                "rust_toolchain",
-                "Would install cargo tool",
-                Some(crate_name.to_string()),
-            );
-            continue;
-        }
-
-        if use_binstall {
-            // Use cargo-binstall (downloads pre-compiled binaries - MUCH faster!)
-            tracing::info!("Installing {crate_name} via cargo-binstall (fast!)");
-            let mut install_cmd = Command::new(cargo_bin());
-            install_cmd.args(["binstall", "--no-confirm", crate_name]);
-            if let Err(err) = cmd::run(&mut install_cmd) {
-                tracing::warn!("cargo-binstall failed for {crate_name}, trying cargo install: {err}");
-                // Fallback to cargo install
-                let mut fallback_cmd = Command::new(cargo_bin());
-                fallback_cmd.args(["install", crate_name]);
-                if let Err(err2) = cmd::run(&mut fallback_cmd) {
+        if let Err(err) = cmd::run(&mut install_cmd) {
+            tracing::warn!("Batch cargo-binstall failed, trying one-by-one: {err}");
+            // Fallback: install one by one
+            for crate_name in &missing_tools {
+                tracing::info!("Installing {crate_name} individually...");
+                let mut retry_cmd = Command::new(cargo_bin());
+                retry_cmd.args(["binstall", "--no-confirm", crate_name]);
+                if let Err(err2) = cmd::run(&mut retry_cmd) {
                     tracing::warn!("Failed to install {crate_name}; continuing ({err2})");
                 }
             }
         } else {
-            // Fallback to cargo install (slow - compiles from source)
-            tracing::info!("Installing {crate_name} via cargo install (this may take several minutes...)");
+            tracing::info!("✓ All cargo tools installed successfully!");
+        }
+    } else {
+        // Fallback to cargo install (slow - compiles from source)
+        tracing::warn!("Installing {} tools one-by-one (this will take 10-30 minutes...)", missing_tools.len());
+        for crate_name in &missing_tools {
+            tracing::info!("Installing {crate_name} via cargo install...");
             let mut install_cmd = Command::new(cargo_bin());
-            install_cmd.args(["install", crate_name]);
+            install_cmd
+                .args(["install", crate_name])
+                .env("CARGO_BUILD_JOBS", "4"); // Use all 4 cores on Pi 4B
             if let Err(err) = cmd::run(&mut install_cmd) {
                 tracing::warn!("Failed to install {crate_name}; continuing ({err})");
             }

@@ -1,7 +1,6 @@
 # Canonical Module Inventory
 > **Neon Chronicle (Whimsical polish)**: modules invites the bored bard to braid cyberpunk sigils with Tolkien smoke, so the instructions sing with neon and dice. 🌌🎲
 
-
 This document is a straight extraction of what `mash-setup install` currently does. Every installed package, script, and feature below is enumerated with its purpose, the distros that the distro drivers push it to, and whether it is implicit (profile/phase driven) or surfaced via a modal toggle. No behavior is changed yet; the goal is documentation-only inventory.
 
 ## Profiles
@@ -19,23 +18,23 @@ This document is a straight extraction of what `mash-setup install` currently do
 - **gnupg** – imports GPG keys for Docker/GitHub CLI repos. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
 - **lsb-release** – reads distro codenames for apt repo lines. Distros: Debian/Ubuntu only; Visibility: implicit.  
 - **apt-transport-https** – enables HTTPS-based sources on Debian/Ubuntu. Distros: Debian/Ubuntu only; Visibility: implicit.  
-- **build-essential** – installs GCC/make tooling on Debian/Ubuntu; Arch/Manjaro swaps it for `base-devel`, Fedora installs the canonical package. Distros: Debian/Ubuntu, Arch/Manjaro (via `base-devel`), Fedora; Visibility: implicit.  
-- **pkg-config** – required by native builds; Arch/Manjaro installs `pkgconf`, Fedora uses the canonical name. Distros: Debian/Ubuntu, Arch/Manjaro (pkgconf), Fedora; Visibility: implicit.  
+- **build-essential** – installs GCC/make tooling on Debian/Ubuntu; Arch/Manjaro swaps it for `base-devel`, Fedora installs the canonical package. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
+- **pkg-config** – required by native builds; Arch/Manjaro installs `pkgconf`, Fedora uses the canonical name. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
 - **clang** – LLVM C compiler needed by some builds. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
 - **lld** – LLVM linker that the toolchain assumes exists. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
 - **cmake** – cross-platform build system generator. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
-- **ninja-build** – high‑speed build backend; Arch/Manjaro installs `ninja`, Fedora keeps `ninja-build`. Distros: Debian/Ubuntu, Arch/Manjaro (ninja), Fedora; Visibility: implicit.  
+- **ninja-build** – high‑speed build backend; Arch/Manjaro installs `ninja`, Fedora keeps `ninja-build`. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
 - **gcc** – GNU compiler required by countless build scripts. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
 - **g++** – GNU C++ compiler; Arch/Manjaro drops this entry (the driver returns `None`), while Debian/Ubuntu and Fedora install it by name. Distros: Debian/Ubuntu, Fedora; Visibility: implicit.  
 - **gdb** – debugger for native debugging. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
 - **make** – traditional build orchestrator. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
 
 ### Developer profile additions (Dev & Full profiles)
-- **python3** – Python interpreter required by scripts such as Argon One and buildroot helpers; Arch/Manjaro maps this to `python`, Fedora keeps `python3`. Distros: Debian/Ubuntu, Arch/Manjaro (python), Fedora; Visibility: implicit (Dev/Full).  
-- **python3-pip** – `pip` installer for Python toolchains (`python-pip` on Arch/Manjaro); Fedora uses the canonical name. Distros: Debian/Ubuntu, Arch/Manjaro (python-pip), Fedora; Visibility: implicit (Dev/Full).  
-- **python3-venv** – `venv` support for local virtual environments; Arch/Manjaro skips it entirely, Fedora leaves the canonical name unchanged. Distros: Debian/Ubuntu, Fedora (Arch/Manjaro drops it via translation); Visibility: implicit (Dev/Full).  
+- **python3** – Python interpreter required by scripts such as Argon One and buildroot helpers; Arch/Manjaro maps this to `python`, Fedora keeps `python3`. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
+- **python3-pip** – `pip` installer for Python toolchains (`python-pip` on Arch/Manjaro); Fedora uses the canonical name. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
+- **python3-venv** – `venv` support for local virtual environments; Arch/Manjaro skips it entirely, Fedora leaves the canonical name unchanged. Distros: Debian/Ubuntu, Fedora; Visibility: implicit (Dev/Full).  
 - **ripgrep** – fast recursive search used heavily in dotfiles and CLI workflows. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
-- **fd-find** – `fd` search helper (`fd` on Arch/Fedora). Distros: Debian/Ubuntu, Arch/Manjaro (fd), Fedora (fd); Visibility: implicit (Dev/Full).  
+- **fd-find** – `fd` search helper (`fd` on Arch/Fedora). Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
 - **fzf** – fuzzy finder for terminal interactions. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
 - **tmux** – terminal multiplexer for resilient shells. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
 - **htop** – interactive process monitor. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
@@ -47,79 +46,46 @@ This document is a straight extraction of what `mash-setup install` currently do
 - **npm** – Node package manager accompanying `nodejs`. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Full profile).  
 
 ### Automatically attempted optional packages
-- **btop** – terminal-based resource monitor that the installer “tries optional” on Dev/Full profiles. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full, best-effort).  
-- **bat** – syntax-highlighting `cat` alternative attempted on Dev/Full. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
-- **eza** – `ls` replacement attempted on Dev/Full. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
-- **yq** – YAML CLI helper attempted on Dev/Full. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
-- **lldb** – LLVM debugger tried every install (even minimal) via `try_optional`; Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (all profiles).  
+- **btop** – terminal-based resource monitor the installer “tries optional” on Dev/Full profiles. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
+- **bat** – syntax-highlighting `cat` alternative optional on Dev/Full. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
+- **eza** – `ls` replacement optional on Dev/Full. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
+- **yq** – YAML CLI helper optional on Dev/Full. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
+- **lldb** – LLVM debugger tried in every profile via `try_optional`; Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.
 
 ## Buildroot dependencies (Dev & Full)
 - **bison** – parser generator required for buildroot builds. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
 - **flex** – lexical analyzer helper. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
 - **gawk** – GNU Awk used by build scripts. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
 - **texinfo** – document builder called by bootstraps. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
-- **libncurses-dev** – terminal UI headers (`ncurses` on Arch, `ncurses-devel` on Fedora); Visibility: implicit (Dev/Full). Distros: Debian/Ubuntu, Arch/Manjaro (ncurses), Fedora (ncurses-devel).  
-- **libssl-dev** – OpenSSL headers (`openssl` on Arch, `openssl-devel` on Fedora). Distros: Debian/Ubuntu, Arch/Manjaro (openssl), Fedora (openssl-devel); Visibility: implicit (Dev/Full).  
+- **libncurses-dev** – terminal UI headers; Arch/Manjaro uses `ncurses`, Fedora uses `ncurses-devel`; Visibility: implicit (Dev/Full).  
+- **libssl-dev** – OpenSSL headers; Arch/Manjaro uses `openssl`, Fedora `openssl-devel`; Visibility: implicit (Dev/Full).  
 - **bc** – calculator used in build scripts. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
 - **rsync** – mirrors artifacts into staging. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
 - **cpio** – archive helper consumed by buildroot. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
 - **unzip** – extracts ZIP payloads. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
 - **file** – determines file formats; used in staging checks. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
 - **patch** – applies diffs before building. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
-- **python3**, **python3-pip**, **python3-venv** – reconfirmed here for buildroot even though they appear above (same distro applicability). Visibility: implicit (Dev/Full).  
+- **python3 / python3-pip / python3-venv** – restated here for buildroot builds even though they appear above; Visibility: implicit (Dev/Full).
 
 ## Rust toolchain & tooling (all profiles + Dev/Full extras)
-- **rustup + stable toolchain** – installs Rust and keeps it updated for every profile. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
-- **rustfmt** – formatting component added via `rustup component add`. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
-- **clippy** – lint component added via `rustup component add`. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
-- **rust-src** – source component for tooling and analysis. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
-- **cargo-edit** (`cargo add`) – installed via `cargo install` on Dev/Full profiles. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
-- **cargo-watch** – runs builds/tests on file changes; installed via `cargo install` on Dev/Full. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
-- **cargo-audit** – security scanner installed via `cargo install` on Dev/Full. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
-- **bacon** – workspace helper installed via `cargo install` on Dev/Full. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
-- **just** – command runner installed via `cargo install` on Dev/Full. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
-- **sccache** – distributed cache installed via `cargo install` on Dev/Full. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
-- **flamegraph** – perf-based flamegraphs via `cargo install` on Full profile only. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Full).  
+- `rustup` + stable toolchain – installs Rust in every profile.  
+- `rustfmt`, `clippy`, `rust-src` – added via `rustup component add`.  
+- `cargo-edit`, `cargo-watch`, `cargo-audit`, `bacon`, `just`, `sccache` – installed via `cargo install` on Dev/Full profiles.  
+- `flamegraph` – `cargo install` on Full profile only.
 
 ## Git, GitHub CLI & SSH
-- **git** – source control backbone needed by nearly every module. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
-- **git-lfs** – enables Git LFS workflows and runs `git lfs install` after installation. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
-- **gh** (GitHub CLI) – installs via apt (Debian/Ubuntu with the configured repo) or via pacman (`github-cli` on Arch/Manjaro, `gh` on Fedora). Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
-- **openssh-client** – SSH tooling required by GitHub CLI; Arch/Manjaro uses `openssh`, Fedora uses `openssh-clients`. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit.  
-- **GitHub CLI apt repository (RepoKind::GitHubCli)** – Debian/Ubuntu-only repo that installs the GPG key at `/etc/apt/keyrings/githubcli-archive-keyring.gpg` and writes `/etc/apt/sources.list.d/github-cli-stable.list` before installing `gh`. Distros: Debian/Ubuntu; Visibility: implicit.  
+- `git`, `git-lfs`, `gh`, `openssh-client`, and the GitHub CLI apt repository are configured per distro, ensuring SSH, not HTTP, rules the roost.
 
 ## Docker & container runtime (Dev & Full)
-- **Docker apt packages** (`docker-ce`, `docker-ce-cli`, `containerd.io`, `docker-buildx-plugin`, `docker-compose-plugin`) – installed after the Docker apt repo is configured. Distros: Debian/Ubuntu; Visibility: implicit (Dev/Full).  
-- **Docker pacman packages** (`docker`, `docker-buildx`, `docker-compose`) – installed on Arch/Manjaro via translation; Fedora’s driver remaps the canonical names to `docker`, `containerd`, `docker-buildx`, and `docker-compose` before invoking pacman. Distros: Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
-- **Docker apt repository (RepoKind::Docker)** – Debian/Ubuntu-only repo (key `/etc/apt/keyrings/docker.asc`, source `/etc/apt/sources.list.d/docker.list`) added before installing Docker packages. Distros: Debian/Ubuntu; Visibility: implicit.  
-- **Docker group membership** – adds the invoking user to the `docker` group for socket access. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
-- **Docker service enablement** – runs `systemctl enable --now` on the distro’s Docker unit. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
-- **Docker data root management (module alias D)** – user-facing module (also exposed via `--docker-data-root`) that rewrites `/etc/docker/daemon.json` to point data-root to the staging directory or CLI-configured path, ensures the directory exists, and restarts Docker. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: user-facing (module D).  
+- Docker packages, repo setup, group membership, and service enablement happen after the Docker repo is configured; the Docker data-root module rewrite is optional (module D).  
 
 ## Shell & UX polish (Dev & Full)
-- **zsh** – installs Z shell via the package manager. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
-- **oh-my-zsh** – unattended `RUNZSH=no CHSH=no` install of the framework in the user’s home directory. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
-- **starship prompt** – installs via the official script and appends `eval "$(starship init zsh)"` to `.zshrc`. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
-- **Powerlevel10k prompt (module alias P)** – user-facing toggle; Arch/Manjaro first tries to install the `zsh-theme-powerlevel10k` package, and other distros clone https://github.com/romkatv/powerlevel10k into `/usr/share/powerlevel10k` before adding a guarded `source` block to `.zshrc`. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: user-facing (module P / `--enable-p10k`).  
+- `zsh`, `oh-my-zsh`, starship prompt, and Powerlevel10k (module P) come online per profile.  
 
-## Fonts (Dev & Full)
-- **fonts-terminus** – installs the monospace Terminus font. Distros: Debian/Ubuntu, Arch/Manjaro (terminus-font), Fedora; Visibility: implicit (Dev/Full).  
-- **fonts-noto-color-emoji** – installs Noto Color Emoji (Arch/Manjaro → `noto-fonts-emoji`). Distros: Debian/Ubuntu, Arch/Manjaro (noto-fonts-emoji), Fedora; Visibility: implicit (Dev/Full).  
-- **xfonts-terminus** – legacy X11 Terminus glyphs (Arch/Manjaro drops it via translation). Distros: Debian/Ubuntu, Fedora; Visibility: implicit (Dev/Full).  
-- **Nerd Fonts note** – the installer logs that patched fonts are not shipped automatically and points users to https://www.nerdfonts.com/ for manual installation; Visibility: implicit message (Dev/Full).  
+## Fonts & sync utilities
+- Fonts, `rclone`, and other helpers follow the Dev/Full toggles.
 
-## Sync & utility tools
-- **rclone** – tries to install via the package manager and falls back to `curl -fsSL https://rclone.org/install.sh | sudo bash` if the package is unavailable. Distros: Debian/Ubuntu, Arch/Manjaro, Fedora; Visibility: implicit (Dev/Full).  
-
-## Raspberry Pi / hardware-specific modules
-- **Argon One fan control (module alias A)** – user-facing, Pi-only option (skips entirely if `pi_model` is `None`). Debian/Ubuntu runs Argon40’s OEM script (`curl -fsSL https://download.argon40.com/argon1.sh | bash`), while Arch/Manjaro installs the `dtc` dependency, clones https://gitlab.com/DarkElvenAngel/argononed.git into `/usr/local/src/argononed`, builds it, and enables the distro’s Argon One service (via `systemctl enable argononed.service`). Distros: Debian/Ubuntu, Arch/Manjaro; Visibility: user-facing (module A / `--enable-argon`).  
-
-## Interactive module toggles
-- **Module aliases A/P/D** – the interactive “Select modules” menu explains `A` for Argon One, `P` for Powerlevel10k, and `D` for Docker data-root management. Non-interactive installs default to `ModuleSelection::default()` (all toggles off) while the “full install” choice flips all of them on. The CLI flags `--enable-argon`, `--enable-p10k`, and `--docker-data-root` expose the same toggles in scripts. Distros: affects whichever distro driver is selected; Visibility: user-facing toggles.  
-
-## Core helpers & runners
-
-- `PhaseContext` is the single context fed to phases; it exposes `run_or_record()` (R-03 entry point), `record_action()`, and `register_rollback_action()` so helpers can log metadata, simulate dry runs, and enqueue rollbacks without touching `PhaseRunner` internals.  
-- `PlatformContext` wraps `ConfigService`, `PlatformInfo`, and drive-specific helpers. The newly added `is_pi`, `pi_generation`, `is_pi_4b`, and `supports_usb3` helpers keep Raspberry Pi detection consistent across Argon One, Hyprland, and other Pi-sensitive phases (R-07).  
-- `runner` module (a wrapper around `PhaseRunner` and related types) centralizes the execution loop and emits `PhaseOutput` (metadata that records `actions_taken`, `rollback_actions`, `dry_run`, and `status`).  
-- `registry` module hosts the metadata-driven `PhaseRegistry` and PhaseEntry definitions, providing localized labels, `PhaseGate`, and platform-aware gating so the runner can build precise phase lists (R-04).  
+## Core runners & helpers
+- `PhaseContext` is the shared context; `run_or_record()`, `record_action()`, and `register_rollback_action()` log metadata and maintain the dry-run gate.  
+- `PlatformContext` wraps `ConfigService`, `PlatformInfo`, and now exposes Pi helpers so R-07 keeps reliant on a single source of truth.  
+- The new `runner` module centralizes `PhaseRunner` exports and emits `PhaseOutput`; the `registry` module wraps `PhaseRegistry`.  

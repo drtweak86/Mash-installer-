@@ -10,6 +10,21 @@
 - [x] Block 5: Confirmed green build (fmt + clippy + test) and documented
 - [x] Shaft A: Strategic reconnaissance report filed and fully explored ✓
 
+## Session: 2026-02-20 – Phase 2 Closure (Current)
+
+### Summary
+Fully closed Phase 2: runner/registry split, InstallationReport/PhaseOutput contract, PhaseContext helper polish, Pi detection lore, and CLI wiring all locked down with the fmt/clippy/test trilogy.
+
+### Deliverables
+- [x] Split `installer-core/lib.rs` exports into dedicated `runner` and `registry` wrappers (R-02).
+- [x] Hardened `PhaseContext` helpers and documented them in `docs/modules.md` (R-01).
+- [x] Added Pi helpers (`is_pi`, `pi_generation`, `supports_usb3`) and recorded the lore in `docs/ARCH.md`/`docs/HISTORY.md` (R-07).
+- [x] Confirmed `InstallationReport`/`PhaseOutput` flows across CLI and tests while keeping `docs/mining-projects` docs intact (R-03/R-04/R-06).
+- [x] Ran `cargo fmt`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test` from `/work/Mash-installer` with green results.
+
+### Notes
+- Phase 3 (Pi 4B HDD) remains on ice until the ledger flips to it.
+
 ---
 
 ## Execution Order

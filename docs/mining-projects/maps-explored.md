@@ -111,3 +111,20 @@ pinning, and cleanup of legacy workflow duplication.
 - cargo fmt: clean
 - cargo clippy --all-targets --all-features -- -D warnings: clean
 - cargo test: 68 tests passing
+
+---
+
+## Session: 2026-02-20 – Phase 2 Closure (Final)
+
+### Summary
+The neon ledger now proclaims Phase 2 complete: runner/registry split, InstallationReport contract, PhaseContext helpers, Pi detection lore, and CLI wiring all sealed with the fmt/clippy/test trilogy.
+
+### Deliverables
+- [x] Created `.bard-persona.md` with the Drunken Dwarf Bard manifesto.
+- [x] Split `installer-core/lib.rs` exports into `runner` & `registry` wrappers and kept the CLI aligned with `InstallationReport`.
+- [x] Updated README/HISTORY/ARCH/modules/improvement-plan/QA notes to deck them with the Phase 2 completion story.
+- [x] Logged the closure in `docs/mining-projects/maps.md` and noted the paused Phase 3.
+- [x] Ran `cargo fmt`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test` from `/work/Mash-installer` with green results.
+
+### Notes
+- Phase 3 (Pi 4B HDD) work awaits the ledger flip; do not start before that.

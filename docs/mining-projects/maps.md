@@ -27,6 +27,19 @@ synced work branch, pushed to origin, opened PR #8 for merge to main.
 
 ---
 
+## Session: 2026-02-20 – Packaging & Ledger Sync (Current)
+
+### Summary
+The switchboard clinks with the new release workflow: package-deb and package-rpm jobs now orbit the build-release core, and the publish job bundles every artifact with polished checksums. While the forge breathes, trilogy bloodlines still await confirmation and the ledger pages are kept ready for new margins.
+
+### Deliverables
+- [x] Ship `package-deb` + `package-rpm` jobs into `.github/workflows/release.yml` with dedicated build and upload stages.
+- [x] Run `cargo fmt`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test` from `/home/drtweak/Mash-installer` to keep the trilogy green.
+- [x] Update `docs/HISTORY.md`, `docs/mining-projects/maps.md`, and `docs/mining-projects/maps-explored.md` with this session's story, maintaining the bardic tone.
+- [x] Confirm publish job now uploads `.deb`, `.rpm`, and the energized `PKGBUILD` to the GitHub Release bundle.
+
+---
+
 ## Execution Order
 
 ### 1. CI Lockdown (Complete)

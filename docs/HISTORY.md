@@ -58,3 +58,9 @@ Thirteen new tests joined the roster, bringing the total to 99—every one green
 
 **Margin note:**
 > “The forge doesn't just work now—it locks its doors, checks its papers, catches the signal before the blade falls, and verifies the rune after the ink dries. The neon rain can pound all it wants.”
+
+## Chronicle VI – The Courier and the Vault
+The release workflow now breathes two new couriers: `package-deb` and `package-rpm` take their orders from `build-release`, forge their `.deb`/`.rpm` shells, and then march the results into the `publish` vault beside the golden `PKGBUILD`. The publish step now bundles every artifact (x86_64/aarch64 binaries, debs, rpms, checksummed PKGBUILD) so every release tag leaves the forge fully armed. I ran the trilogy once more—`cargo fmt`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test`—to make sure the neon lights stayed steady while the package trains rolled past the gate.
+
+**Margin scribble:**
+> “Two new couriers, a vault that knows their names, and a bard who still spies warnings before bed. The list is logged; the games keep their rules; the forge is humming with stories to ink.”

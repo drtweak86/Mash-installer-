@@ -1,0 +1,30 @@
+# Maintainer: drtweak86
+# This PKGBUILD downloads the pre-built binary from GitHub Releases.
+# CI fills real SHA256 checksums at release time via sed substitution.
+
+pkgname=mash-setup-bin
+pkgver=VERSION_PLACEHOLDER
+pkgrel=1
+pkgdesc="Pi-optimized system installer for Mash development environments"
+arch=('x86_64' 'aarch64')
+url="https://github.com/drtweak86/Mash-installer"
+license=('MIT')
+depends=('curl' 'sudo')
+optdepends=('git: required for some installation phases')
+provides=('mash-setup')
+conflicts=('mash-setup')
+
+source_x86_64=("${url}/releases/download/v${pkgver}/mash-setup-x86_64-unknown-linux-gnu")
+source_aarch64=("${url}/releases/download/v${pkgver}/mash-setup-aarch64-unknown-linux-gnu")
+sha256sums_x86_64=('SKIP')
+sha256sums_aarch64=('SKIP')
+
+package() {
+    if [[ "$CARCH" == "x86_64" ]]; then
+        install -Dm755 "mash-setup-x86_64-unknown-linux-gnu" "${pkgdir}/usr/bin/mash-setup"
+    else
+        install -Dm755 "mash-setup-aarch64-unknown-linux-gnu" "${pkgdir}/usr/bin/mash-setup"
+    fi
+
+    install -Dm644 /dev/null "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

@@ -32,3 +32,25 @@ default = ["arch", "debian", "fedora"]
 arch = ["installer-arch"]
 debian = ["installer-debian"]
 fedora = ["installer-fedora"]
+
+[package.metadata.deb]
+maintainer = "drtweak86"
+copyright = "2024-2026, drtweak86"
+license-file = ["../LICENSE", "0"]
+extended-description = "Pi-optimized system installer for Mash development environments."
+depends = "curl, sudo"
+recommends = "git"
+section = "admin"
+priority = "optional"
+assets = [
+    ["target/release/mash-setup", "usr/bin/", "755"],
+]
+
+[package.metadata.generate-rpm]
+assets = [
+    { source = "target/release/mash-setup", dest = "/usr/bin/mash-setup", mode = "755" },
+]
+
+[package.metadata.generate-rpm.requires]
+curl = "*"
+sudo = "*"

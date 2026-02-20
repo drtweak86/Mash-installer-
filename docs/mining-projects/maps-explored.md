@@ -1,6 +1,23 @@
 # Mining Projects – Explored Maps
 > Archive of completed work, closed at the end of each session.
 
+## Session: 2026-02-20 – Packaging Sprint & Ledger Update
+
+### Summary
+The courier lanes were refitted so `package-deb` and `package-rpm` now trail the build-release job, the publish gate bundles their results plus the ebbing PKGBUILD, and the ledger received a fresh chapter while I watched the neon sky for warnings.
+
+### Deliverables
+- [x] Added `.deb/.rpm` packaging jobs and publish-asset bundling to `.github/workflows/release.yml`.
+- [x] Ran `cargo fmt`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test`.
+- [x] Logged the sprint in `docs/HISTORY.md`, `docs/mining-projects/maps.md`, and this archive.
+
+### Build Status
+- cargo fmt: clean
+- cargo clippy --all-targets --all-features -- -D warnings: clean
+- cargo test: clean
+
+---
+
 ## Session: 2026-02-20 – Phase 4: Hardening Complete
 
 ### Summary

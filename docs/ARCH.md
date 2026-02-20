@@ -12,6 +12,10 @@
 3. Distro drivers implement `DistroDriver` so each platform exposes metadata and backend hints without coupling to the core crate.
 4. Module toggles are aliased (A=Argon, P=Powerlevel10k, D=Docker data-root) in the CLI menu, and each `DistroDriver` provides package translations, repository metadata, and service names so the core phases can run the same pipeline across Debian/Arch/Fedora.
 
+## PlatformContext helpers
+
+- `PlatformContext::is_pi`, `::pi_generation`, `::is_pi_4b`, and `::supports_usb3` codify Raspberry Pi detection so phases (Argon One, Hyprland, Docker data-root) can ask for clean boolean answers instead of re-parsing strings. These helpers are part of R-07 and keep the context ready for Pi 4B-specific wiring before Phase 3 starts.
+
 ## Next steps
 - Add automated tests that verify driver translations/repo hooks and the module selection alias flow, keeping the pipeline safe and reproducible.
 - Keep README/docs/ARCH updated whenever new module toggles or driver hooks are introduced.

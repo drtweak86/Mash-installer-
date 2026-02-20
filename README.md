@@ -1,70 +1,65 @@
-![Banner of the bard}(docs/assets/banner_final.png)
+![Banner of the bard](docs/assets/banner_final.png)
 # MASH Installer
-> Forged beneath the ruins of older systmes.
+> Forged beneath the ruins of older systems, polished by neon rain, and narrated in a mix of Tolkien questcraft, cyberpunk grit, and Matrix rhythm.
 
-# 🌌 Mash-Installer: Cyber-Loom & Dwarven Forge Reborn
-You step off the mag-rail and into the neon canyon of **Mash-Installer**, where Tolkien questcraft meets cyberpunk rain, George R.R. Martin scheming, and the Matrix’s terse code all pulse in sync. The CLI is a `ratatui` glyph-grid battle station, `phase_runner` is the dungeon master pulling the levers, and each log entry turns into an enchanted ledger. Every change is forged with the creed carved in this repository: **Always Be Backing up, Keep Commits Small, Always Be Testing**—and the lore keeps `/work` as the forge, leaving `main` for the drop-tested crown.
+## 🌌 Mash-Installer: Cyber-Loom & Dwarven Forge Reborn
+You step off the mag-rail into the canyon of **Mash-Installer**, where George R.R. Martin scheming meets the lush detail of Tolkien and the terse Matrix code drops. The CLI is a `ratatui` glyph-grid battle station, `phase_runner` plays the dungeon master, and every log entry becomes an enchanted ledger. The ledger—`docs/improvement-plans.md`—is the single source of truth for the phases and their ordering, and the creed carved into this repo is still alive: `Always Be Backing up`, `Keep Commits Small`, and `Always Be Testing`. We build and test inside `/work/Mash-installer`, leaving `main` for the drop-tested crown.
 
-> **Neon Chronicle (Whimsical + Technical polish)**: This README thunders the saga, points to the ledger (`docs/improvement-plans.md`) as the current source of truth, and lays out why each upcoming act happens in this order. 🎤⚙️
+> **Neon Chronicle (Whimsical + Technical polish)**: This README thunders the saga, describes the reordered 10-point plan, records the deferred D-03 decision, and keeps the lore aligned with the ledger.
 
 ## 🕹 Quick Invocation (Fast Path)
-If you just want to trigger the ritual:
-```bash
+Invoke the ritual in one breath:
+```
 curl -fsSL https://raw.githubusercontent.com/drtweak86/Mash-installer-/main/bootstrap.sh | bash
 ```
-Prefer to inspect the scroll before burning it:
-```bash
+Prefer scoping the scroll first:
+```
 curl -fsSL -o bootstrap.sh https://raw.githubusercontent.com/drtweak86/Mash-installer-/main/bootstrap.sh
 less bootstrap.sh
 bash bootstrap.sh
 ```
+Every run chants `cargo fmt`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test` from `/work/Mash-installer` before anything touches `main`.
 
 ## 🧱 Act Structure (Phases & Status)
 | Act | Focus | Status |
 | --- | --- | --- |
-| Phase 1 – Deduplication | Shared helpers (PhaseContext, downloader, system utilities) were pulled apart, verbalized, and re-knit. | ✅ Complete (D-03 gate deferred until PhaseContext could shoulder it). |
-| Phase 2 – Refactoring | Turbulent split of `lib.rs`, the `PhaseRunner` forge, context hardening, registry design, and CLI/TUI stabilization. | 🟡 Active (R-02 through R-10 in motion, with R-02/R-01/ R-03 already shaping the new surface). |
-| Phase 3 – Pi 4B HDD | USB 3.0 tuning, HDD scheduler, Rust/Cargo home carving, smart I/O nodes. | ❄️ Pending Phase 2 API stability. |
-| Phase 4 – Hardening | TLS shepherding, SMART guard, rollback rituals, lockfiles, and signal forensics. | 🛡️ Blocked until the new core settles. |
+| Phase 1 – Deduplication | Helpers untangled, downloads unified, and duplicate system calls cleared. D-03 deferred until `PhaseContext` was ready. | ✅ Complete |
+| Phase 2 – Refactoring | `lib.rs` split, `PhaseRunner` forged, `PhaseContext` hardened, registry drafted, data contracts shaped, CLI/TUI teased apart. | ✅ Complete (R-02 through R-10 settled) |
+| Phase 3 – Pi 4B HDD | Preflight, USB 3.0, and HDD tuning for the blue ports. | ❄️ Paused until Phase 2 stabilizes |
+| Phase 4 – Hardening | TLS shepherding, rollback rituals, lockfiles, and signal forensics. | 🛡️ Blocked on Phase 2 API stability |
 
-## ⚙️ Phase 2 Priority & Strategy (Proposed Order)
-This ledger rearranges the remaining R-tasks to keep shared foundations stable, minimize rework, and ensure each consumer gets a clean API.
-1. **D-03 – Dry-run gate (`PhaseContext::run_or_record`)** – Already merged into `PhaseRunner` so dry-run logic exists once. Gate the action, then build on it. 🛡️
-2. **R-02 – Split `lib.rs`** – Module boundaries reduce cyclic noise; the rest of the team can evolve orchestrator, runner, and wiring without a monolithic tangle. 🧱
-3. **R-01 – Harden `PhaseContext` helpers** – With modules split the shared context can absorb package, download, and service helpers without dragging the global namespace. 🔩
-4. **R-03 – Structured `PhaseOutput`** – Before registries or reporting depend on the runner, we need a stable schema (`actions_taken`, `rollback_registered`, `errors`, `dry_run_state`). 🧾
-5. **R-08 – Typed `PackageSpec`** – Registry and phases must know whether payloads are required, optional, or profile-gated before wiring them into installs. 📦
-6. **R-05 – `ConfigService` error fidelity** – Blocks in configuration should bubble through the context with structured errors so downstream phases know when to bail. ⚠️
-7. **R-04 – PhaseRegistry** – Once context, outputs, and package specs are stabilized, the registry can build honest metadata around features, profiles, and component dependencies. 🗂️
-8. **R-07 – Pi detection helpers** – PlatformContext can now host clean hardware helpers after the registry can consume the metadata it produces. 🐧
-9. **R-09 – Flatten `RunSummary` into `InstallationReport`** – With reporting pillars stable we collapse duplication, simplifying the CLI/TUI wiring and shared buffers. 📜
-10. **R-06 – DriverTestHarness** – Tests can finally run against a stabilized `PhaseRunner`/`PhaseContext` with the new report surfaces in place. 🧪
-11. **R-10 – CLI/TUI split** – Keep this for the end; the interface deserves to remix only once the data contracts are golden. 🎛️
+## 🔁 Phase 2 Constellation (Reordered 10-Point Plan + D-03)
+The 10-point plan from `docs/QA/PlanA.md` now rides the rails behind a single gate: `PhaseContext::run_or_record()` (`D-03`). The saga continues with the explainable order below so each refactor builds on hardened foundations.
+1. **D-03 – Dry-run gate**: Phase actions now pass through `PhaseRunner`’s single portal; no duplicate `if dry_run`. This is recorded in the ledger so the deferral is transparent. 🛡️
+2. **Refactor `InstallContext`** (Plan point 1): Break the god object into focused contexts (`PlatformContext`, `UserOptionsContext`, `PhaseContext` slices) so phases only receive what they need. Tight coupling drops, testability rises. 🔧
+3. **Formal `Phase` trait** (Plan point 2): Define `name()`, `description()`, `execute()`, `should_run()`, and let each phase implement it. The trait rests on the slimmed contexts and lets the runner reason about metadata. 🧭
+4. **Phase runner redesign** (Plan point 4): Build `PhaseRunner` to iterate trait objects, capture structured reporting, and enforce the dry-run gate. It also becomes the public API that the CLI and TUI can consume. 🧱
+5. **Centralize configuration** (Plan point 7): `ConfigService` validates, surfaces defaults, and feeds every context slice, keeping config errors consistent. 🗂️
+6. **Abstract system helpers** (Plan point 8): Commands, downloads, file ops, and services move into shared helpers that master logging and dry-run behavior. 🛠️
+7. **Structured error handling** (Plan point 5): `ConfigService` and every phase wrap outcomes in rich error enums so regulators can triage without rerunning the phase stack. ⚠️
+8. **Externalize strings** (Plan point 9): UI text leaves the source and lands in config (TOML/JSON) so phases stay agnostic and localization becomes possible. 🗣️
+9. **CLI/TUI decoupling** (Plan point 3): The CLI consumes events and reports instead of printing directly; the core returns metadata, letting the interface stay declarative. 🎛️
+10. **Library API cleanup** (Plan point 10): `installer-core` returns structured `InstallationReport` data; the UI layers play conductor with those rich results. 📜
+11. **Driver test harness** (Plan point 6): Once the data contracts stabilize, fire up the harness to exercise each distro driver against the new surfaces and catch regressions early. 🧪
 
-Each order is intentional: shared core + context first, typing + output structures second, hardware/test layers afterward, and the UI refactor last.
+## ❓ D-03: Dry-run Gate Decision
+The deduplication phase deferred D-03 because the `PhaseContext` was still forming and dry-run checks were scattered. With `PhaseContext::run_or_record()` now living squarely in `PhaseRunner`, every action flows through one gate, one log, and one simulation path. This decision is logged here and mirrors the ledger entry in `docs/improvement-plans.md`.
 
-## 📚 D-03: The Deferred Gate
-### Why it was delayed
-Phase 1 lacked a consolidated `PhaseContext`, and duplicate `if dry_run` checks had already been scattered. Early intervention risked inconsistent behavior across phases.
-### Why it is now in place
-`PhaseContext::run_or_record()` lives inside `PhaseRunner`. Every action now flows through a single gate instead of re-implementing dry-run checks, so logging, reporting, and rollbacks remain consistent. Documenting this ensures future travelers know the deferral was intentional and reversible.
+## 🛠 Rules, Tooling, and Testing Rituals
+- `Always Be Backing up` — snapshot the world before major refactors.
+- `Keep Commits Small` — each logical change deserves a single hammer strike.
+- `Always Be Testing` — run `cargo fmt`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test` from `/work/Mash-installer`.
+- The toolbelt: `rustfmt`, `clippy`, and `sccache` keep builds fast and code tidy. Keep the cache warm between runs.
+- The workflow: build/test in the `work` branch, only merge to `main` when every log in `.logs` tells a green story.
 
-## 🧰 Rules, Guidelines, and Tooling Rituals
-- **Rules**: `Always Be Backing up`, `Keep Commits Small`, `Always Be Testing`. They’re etched in the README and in the forge:
-  - `Always Be Backing up`: snapshot before refactor.
-  - `Keep Commits Small`: every story is one commit, one strike of the hammer.
-  - `Always Be Testing`: run `cargo fmt`, `cargo clippy --all-targets --all-features -- -D warnings`, and suites before any merge.
-- **Guidelines**: Only use SSH for GitHub actions, ask for clarification if unsure, think like a seasoned Rust engineer, work (and test) in `/work`, keep `/docs` updated.
-- **Toolchain**: `cargo fmt`, `cargo clippy`, and `sccache` are our basic tooling. If `rustup` is missing, install it via `curl https://sh.rustup.rs -sSf | sh -s -- -y` and load `$HOME/.cargo/env` before running commands.
-- **Testing logs**: Each run writes `.logs/test-<mode>-<timestamp>.log` linked from `docs/QA` (and soon the neon ledger). Keep tests green before pushing to `main`.
+## 📚 Docs & Lore
+- `docs/improvement-plans.md` is the canonical ledger of phase order, D-03 status, and the 10-point plan rationale. It now captures the ordering above plus the deferral log.
+- `docs/QA/PlanA.md` still outlines the original 10 points but now also narrates why our reordered flow keeps dependencies satisfied and reduces churn.
+- `docs/HISTORY.md` is the drunken dwarf bard in the neon tavern; credit him for every build artifact, and the tale is updated with the current tooling and ordering.
+- Every doc in `/docs` now carries either a Whimsical or Technical polish note so you know the tone before you read.
 
-## 📜 Documentation Discipline
-Treat `docs/improvement-plans.md` as the living config for Phase 2 sequencing. Every doc should note whether it received a Whimsical or Technical polish—this README carries one of each. Update `/docs` whenever plan or tooling shifts.
-
-## 🔭 Next Steps (What Remains)
-1. Continue Phase 2 in the order above (this README and `docs/improvement-plans.md` record the new priority). R-02 and R-01 are already shaping the split context/staging.
-2. Keep wiring `installer-cli` and `installer-*` crates against the new shapes; they should compile once the registry/report shape stabilizes.
-3. Re-run `cargo fmt`, `cargo clippy`, and `cargo test` from `/work` after any substantive change. Green builds are the only ones that leave for `main`.
-4. After Phase 2 completes, move into Phase 3 (Pi 4B HDD) and Phase 4 (hardening) with the strengthened context.
-
-If you still ask “what about deferred D-03?” the answer is in the dry-run ledger above and in `docs/improvement-plans.md`, because both now record the decision and the reasoning.
+## 🔮 Next Steps (Execute, Record, Repeat)
+1. Maintain the finished Phase 2 ledger: any follow-up is documentation, tests, or tooling, not another API shift.  
+2. Keep using the `PhaseOutput` metadata, `PackageSpec` gating, and the `PhaseRunner`/`PhaseRegistry` pairing as the stable contract for CLI/TUI observers and future driver work.  
+3. Run `cargo fmt`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test` from `/work/Mash-installer` for each change, capture the `.logs`, and only promote green runs to `main`.  
+4. Once these signals stay calm, the ledger will flip Phase 3 from ❄️ to 🛠️ and the Pi 4B HDD ritual can finally begin.

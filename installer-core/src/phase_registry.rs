@@ -53,7 +53,7 @@ impl Default for PhaseRegistry {
                 "Hyprland audio fix (Arch)",
                 "Hyprland audio configured",
                 hyprland::install_phase,
-                PhaseGate::Always,
+                PhaseGate::Profile(ProfileLevel::Dev),
             ),
             PhaseEntry::new(
                 "rust_toolchain",

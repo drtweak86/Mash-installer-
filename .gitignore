@@ -11,3 +11,10 @@
 *.log
 *.tmp
 **/*.rs.bk
+*.bak
+
+# Claude Code
+.claude/
+
+# Installer logs
+.logs/

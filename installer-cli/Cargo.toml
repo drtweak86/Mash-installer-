@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "Command-line entry point for the mash installer workspace"
 license = "MIT"
-repository = "https://github.com/drtweak86/Mash-installer-"
+repository = "https://github.com/drtweak86/Mash-installer"
 
 [[bin]]
 name = "mash-setup"

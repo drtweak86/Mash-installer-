@@ -66,8 +66,8 @@ before we depend on it.
 - [x] Remove font/Hyprland/makepkg logic (mash-setup handles these)
 - [x] Add `uname -m` → target triple mapping (`aarch64` → `aarch64-unknown-linux-gnu`)
 - [x] Test on local machine (downloads from GitHub Release)
-- [ ] Document the one-liner curl install as the primary method
-- [ ] Test on clean Pi (no Rust installed)
+- [x] Document the one-liner curl install as the primary method
+- [x] Test on clean Pi (no Rust installed) - verified working
 
 **Why third:** Depends on tagged releases existing. Removes the 10-minute cargo
 build tax for end users. Biggest UX improvement per line of code changed.

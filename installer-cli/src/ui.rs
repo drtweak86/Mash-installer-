@@ -17,15 +17,36 @@ impl CliPhaseObserver {
     pub fn new() -> Self {
         let mp = MultiProgress::new();
         let overall = mp.add(ProgressBar::new(0));
+
+        // Start with a happy face!
         overall.set_style(
             ProgressStyle::with_template(
                 "{spinner:.cyan} [{bar:30}] {pos}/{len} phases  {percent}%  elapsed: {elapsed_precise}",
             )
             .unwrap()
-            .progress_chars("▰🚀▱") // Launch pad 🚀 Space ahead!
+            .progress_chars("▰😊▱")
             .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏ "),
         );
         overall.enable_steady_tick(Duration::from_millis(200));
+
+        // Spawn a thread to cycle through random emoji faces!
+        let pb_clone = overall.clone();
+        thread::spawn(move || {
+            let faces = ["😊", "🧐", "😎", "🤓", "🥳", "🤔", "😤", "🚀", "🎯", "✨"];
+            let mut idx = 0;
+            loop {
+                thread::sleep(Duration::from_millis(500)); // Change face every 500ms
+                idx = (idx + 1) % faces.len();
+                pb_clone.set_style(
+                    ProgressStyle::with_template(
+                        "{spinner:.cyan} [{bar:30}] {pos}/{len} phases  {percent}%  elapsed: {elapsed_precise}",
+                    )
+                    .unwrap()
+                    .progress_chars(&format!("▰{}▱", faces[idx]))
+                    .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏ "),
+                );
+            }
+        });
 
         Self {
             mp,

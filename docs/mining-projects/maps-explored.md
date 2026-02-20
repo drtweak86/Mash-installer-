@@ -1,6 +1,29 @@
 # Mining Projects – Explored Maps
 > Archive of completed work, closed at the end of each session.
 
+## Session: 2026-02-20 – Phase 3: Pi 4B HDD Tuning Complete
+
+### Summary
+Completed the remaining Phase 3 tasks: mount options optimization, swap configuration,
+kernel parameter tuning, and full Phase system integration. The `pi4b_hdd` module now
+runs as a proper phase in `PhaseRegistry`, self-skipping on non-Pi4B hardware.
+
+### Deliverables
+- [x] `optimize_mount_options()` — reads /proc/mounts, recommends noatime/commit=60 for ext4 HDD
+- [x] `configure_swap()` — checks swapon, recommends 2GB swap on external HDD
+- [x] `tune_kernel_params()` — reads /proc/sys/vm/, recommends swappiness=10, dirty_ratio=15
+- [x] `install_phase()` wired into PhaseRegistry as "Pi 4B HDD Tuning"
+- [x] New exports: MountOptimization, SwapConfig, KernelParam
+- [x] 12 pi4b_hdd tests (86 total), all green
+- [x] Pushed to work branch, PR #8 updated
+
+### Build Status
+- cargo fmt: clean
+- cargo clippy --all-targets --all-features -- -D warnings: clean
+- cargo test: 86 tests passing
+
+---
+
 ## Session: 2026-02-20 – Step 2: First Tagged Release v0.1.0
 
 ### Summary

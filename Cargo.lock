@@ -491,14 +491,14 @@ dependencies = [
 
 [[package]]
 name = "installer-arch"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "installer-core",
 ]
 
 [[package]]
 name = "installer-cli"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "anyhow",
  "clap",
@@ -518,7 +518,7 @@ dependencies = [
 
 [[package]]
 name = "installer-core"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "anyhow",
  "clap",
@@ -542,7 +542,7 @@ dependencies = [
 
 [[package]]
 name = "installer-debian"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "anyhow",
  "installer-core",
@@ -550,7 +550,7 @@ dependencies = [
 
 [[package]]
 name = "installer-fedora"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "installer-core",
 ]

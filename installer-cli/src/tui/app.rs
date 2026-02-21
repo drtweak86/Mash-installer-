@@ -351,9 +351,7 @@ impl TuiApp {
             Screen::ProfileSelect => self.handle_list_key(code, 3),
             Screen::ModuleSelect => self.handle_module_key(code),
             Screen::ThemeSelect => self.handle_list_key(code, 3),
-            Screen::Password => {
-                // Password input is handled below in the password_state check
-            }
+            Screen::Password => self.handle_password_key(code),
 
             Screen::SoftwareMode => self.handle_list_key(code, 2),
             Screen::SoftwareSelect => self.handle_software_key(code),
@@ -371,6 +369,32 @@ impl TuiApp {
                 }
                 _ => {}
             },
+        }
+    }
+
+    fn handle_password_key(&mut self, code: KeyCode) {
+        if let Some(ref mut s) = self.password_state {
+            match code {
+                KeyCode::Char(c) => {
+                    s.password.push(c);
+                }
+                KeyCode::Backspace => {
+                    s.password.pop();
+                }
+                KeyCode::Enter => {
+                    if let Some(s) = self.password_state.take() {
+                        let _ = s.reply.send(s.password);
+                        self.screen = Screen::Installing;
+                    }
+                }
+                KeyCode::Esc => {
+                    if let Some(s) = self.password_state.take() {
+                        let _ = s.reply.send(String::new());
+                        self.screen = Screen::Installing;
+                    }
+                }
+                _ => {}
+            }
         }
     }
 
@@ -516,31 +540,6 @@ impl TuiApp {
                 }
             }
             _ => {}
-        }
-
-        // Mid-install password prompt
-        if let Some(ref mut s) = self.password_state {
-            match code {
-                KeyCode::Char(c) => {
-                    s.password.push(c);
-                }
-                KeyCode::Backspace => {
-                    s.password.pop();
-                }
-                KeyCode::Enter => {
-                    if let Some(s) = self.password_state.take() {
-                        let _ = s.reply.send(s.password);
-                        self.screen = Screen::Installing;
-                    }
-                }
-                KeyCode::Esc => {
-                    if let Some(s) = self.password_state.take() {
-                        let _ = s.reply.send(String::new());
-                        self.screen = Screen::Installing;
-                    }
-                }
-                _ => {}
-            }
         }
     }
 

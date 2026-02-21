@@ -7,10 +7,55 @@ use tracing::{debug, error};
 
 /// Runs a command and provides detailed errors when it fails.
 pub fn run(cmd: &mut StdCommand) -> Result<Output> {
+    let program = cmd.get_program().to_string_lossy();
+    let is_sudo = program == "sudo" || program.ends_with("/sudo");
+    let password = if is_sudo {
+        crate::sudo_password::get_sudo_password()
+    } else {
+        None
+    };
+
     let desc = describe_command(cmd);
-    let output = cmd
-        .output()
-        .with_context(|| format!("running command: {desc}"))?;
+
+    let output = if let Some(pass) = password {
+        // Inject -S (stdin) into sudo command if not already present
+        let args: Vec<_> = cmd.get_args().collect();
+        let has_s = args.iter().any(|a| a.to_string_lossy() == "-S");
+        
+        let mut new_cmd = StdCommand::new(cmd.get_program());
+        if !has_s {
+            new_cmd.arg("-S");
+        }
+        new_cmd.args(args);
+        // Copy env and current_dir from original
+        for (k, v) in cmd.get_envs() {
+            if let Some(v) = v {
+                new_cmd.env(k, v);
+            } else {
+                new_cmd.env_remove(k);
+            }
+        }
+        if let Some(dir) = cmd.get_current_dir() {
+            new_cmd.current_dir(dir);
+        }
+
+        new_cmd.stdin(Stdio::piped());
+        new_cmd.stdout(Stdio::piped());
+        new_cmd.stderr(Stdio::piped());
+
+        let mut child = new_cmd.spawn().with_context(|| format!("spawning command: {desc}"))?;
+        
+        if let Some(mut stdin) = child.stdin.take() {
+            use std::io::Write;
+            let _ = writeln!(stdin, "{}", pass);
+        }
+
+        child.wait_with_output().with_context(|| format!("waiting for command: {desc}"))?
+    } else {
+        cmd.output()
+            .with_context(|| format!("running command: {desc}"))?
+    };
+
     let details = CommandExecutionDetails::from_output(desc.clone(), &output);
 
     debug!(

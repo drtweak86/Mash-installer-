@@ -36,4 +36,13 @@ impl PhaseObserver for RatatuiPhaseObserver {
         // Block the installer thread until the TUI user responds
         reply_rx.recv().unwrap_or(true)
     }
+
+    fn sudo_password(&mut self) -> anyhow::Result<String> {
+        let (reply_tx, reply_rx) = mpsc::channel::<String>();
+        let msg = TuiMessage::PasswordPrompt { reply: reply_tx };
+        if self.tx.send(msg).is_err() {
+            return Ok(String::new());
+        }
+        Ok(reply_rx.recv().unwrap_or_default())
+    }
 }

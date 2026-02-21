@@ -330,6 +330,11 @@ pub trait PhaseObserver {
     fn confirm(&mut self, _prompt: &str) -> bool {
         true
     }
+
+    /// Ask the user for a sudo password.
+    fn sudo_password(&mut self) -> anyhow::Result<String> {
+        Ok(String::new())
+    }
 }
 
 pub trait Phase {

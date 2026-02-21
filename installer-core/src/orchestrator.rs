@@ -122,6 +122,9 @@ pub fn run_with_driver(
         }
     }
 
+    if !crate::sudo::ensure_sudo_access(observer) {
+        tracing::warn!("Could not verify sudo access. Some phases may fail if they require elevated privileges.");
+    }
     let _sudo_keepalive = crate::sudo::start_sudo_keepalive();
 
     let plat = detect_platform()?;
@@ -201,10 +204,16 @@ pub fn run_with_driver(
         pkg_backend: driver.pkg_backend(),
     };
 
+    let interaction = crate::interaction::InteractionService::new(
+        opts.interactive,
+        platform_ctx.config().interaction.clone(),
+    );
+
     let ctx = InstallContext {
         options,
         platform: platform_ctx,
         ui: UIContext,
+        interaction,
         localization,
         rollback: RollbackManager::new(),
         dry_run_log: DryRunLog::new(),

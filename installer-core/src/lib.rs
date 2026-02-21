@@ -87,6 +87,7 @@ pub struct InstallContext {
     pub options: UserOptionsContext,
     pub platform: PlatformContext,
     pub ui: UIContext,
+    pub interaction: interaction::InteractionService,
     pub localization: Localization,
     pub rollback: RollbackManager,
     pub dry_run_log: DryRunLog,
@@ -98,10 +99,18 @@ impl InstallContext {
             &self.options,
             &self.platform,
             &self.ui,
+            &self.interaction,
             &self.localization,
             &self.rollback,
             &self.dry_run_log,
         )
+    }
+
+    /// Request a sudo password from the user via the provided observer and interaction service.
+    pub fn request_sudo_password(&self, observer: &mut dyn PhaseObserver) -> anyhow::Result<String> {
+        self.interaction.sudo_password(|_prompt| {
+            observer.sudo_password()
+        })
     }
 }
 // 1984 transition verified

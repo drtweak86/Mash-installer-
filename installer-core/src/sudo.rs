@@ -1,5 +1,6 @@
 use std::{
-    process::Command,
+    io::Write,
+    process::{Command, Stdio},
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
@@ -8,9 +9,11 @@ use std::{
     time::Duration,
 };
 
-use tracing::{debug, error, warn};
+use tracing::{debug, error, info, warn};
 
 use crate::cmd;
+use crate::phase_runner::PhaseObserver;
+use crate::sudo_password;
 
 /// Handle for the sudo keep-alive background thread.
 pub struct SudoKeepalive {
@@ -23,21 +26,56 @@ impl Drop for SudoKeepalive {
     }
 }
 
-/// Check if sudo requires a password and prompt for it if needed
-#[allow(dead_code)]
-pub fn ensure_sudo_access() -> bool {
+/// Check if sudo access is available. If not, prompt for password and verify.
+pub fn ensure_sudo_access(observer: &mut dyn PhaseObserver) -> bool {
+    // 1. Try passwordless sudo first
     let mut test_cmd = Command::new("sudo");
-    test_cmd.args(["-v"]);
-    // Use a pipe for stdin to avoid issues with TUI raw mode
-    test_cmd.stdin(std::process::Stdio::piped());
+    test_cmd.args(["-n", "-v"]); // -n = non-interactive
+    
+    if cmd::run(&mut test_cmd).is_ok() {
+        debug!("sudo access verified (passwordless)");
+        return true;
+    }
 
-    match cmd::run(&mut test_cmd) {
+    // 2. If passwordless fails, we need a password
+    debug!("sudo requires a password; requesting from observer");
+    match observer.sudo_password() {
+        Ok(pass) if !pass.is_empty() => {
+            // Store the password globally so cmd::run can use it
+            sudo_password::set_sudo_password(pass.clone());
+            
+            // Verify the password with sudo -S -v
+            let mut verify_cmd = Command::new("sudo");
+            verify_cmd.args(["-S", "-v"]);
+            verify_cmd.stdin(Stdio::piped());
+            verify_cmd.stdout(Stdio::null());
+            verify_cmd.stderr(Stdio::null());
+
+            if let Ok(mut child) = verify_cmd.spawn() {
+                if let Some(mut stdin) = child.stdin.take() {
+                    let _ = writeln!(stdin, "{}", pass);
+                }
+                match child.wait() {
+                    Ok(status) if status.success() => {
+                        info!("sudo access verified with password");
+                        true
+                    }
+                    _ => {
+                        error!("sudo authentication failed; incorrect password");
+                        sudo_password::clear_sudo_password();
+                        false
+                    }
+                }
+            } else {
+                false
+            }
+        }
         Ok(_) => {
-            debug!("sudo access verified successfully");
-            true
+            warn!("no sudo password provided; certain phases may fail");
+            false
         }
         Err(e) => {
-            error!("sudo access check failed: {}", e);
+            error!("failed to request sudo password: {}", e);
             false
         }
     }
@@ -54,18 +92,6 @@ pub fn start_sudo_keepalive() -> SudoKeepalive {
     let flag_clone = stop_flag.clone();
 
     thread::spawn(move || {
-        let mut test_cmd = Command::new("sudo");
-        test_cmd.args(["-v"]);
-        // Use a pipe for stdin to avoid issues with TUI raw mode
-        // This prevents sudo from trying to read password from terminal
-        test_cmd.stdin(std::process::Stdio::piped());
-
-        if let Err(e) = cmd::run(&mut test_cmd) {
-            error!("sudo -v failed: {}. Make sure you have sudo access without password (NOPASSWD) or run the installer manually.", e);
-            debug!("Not starting sudo keep-alive due to sudo failure");
-            return;
-        }
-
         debug!("Starting sudo keep-alive (refreshes every 30s)");
 
         loop {
@@ -74,20 +100,26 @@ pub fn start_sudo_keepalive() -> SudoKeepalive {
                 break;
             }
 
-            thread::sleep(Duration::from_secs(30));
-
-            if flag_clone.load(Ordering::SeqCst) {
-                break;
-            }
-
             let mut cmd = Command::new("sudo");
-            cmd.args(["-v"]);
-            // Use a pipe for stdin to avoid issues with TUI raw mode
-            cmd.stdin(std::process::Stdio::piped());
-            if let Err(e) = cmd::run(&mut cmd) {
-                warn!("sudo keep-alive refresh failed: {}", e);
-                break;
+            // If we have a password, use it
+            if let Some(pass) = sudo_password::get_sudo_password() {
+                cmd.args(["-S", "-v"]);
+                cmd.stdin(Stdio::piped());
+                cmd.stdout(Stdio::null());
+                cmd.stderr(Stdio::null());
+                
+                if let Ok(mut child) = cmd.spawn() {
+                    if let Some(mut stdin) = child.stdin.take() {
+                        let _ = writeln!(stdin, "{}", pass);
+                    }
+                    let _ = child.wait();
+                }
+            } else {
+                cmd.args(["-n", "-v"]);
+                let _ = cmd.status();
             }
+
+            thread::sleep(Duration::from_secs(30));
         }
     });
 

@@ -34,9 +34,6 @@ pub enum TuiMessage {
         ram_used_mb: u64,
         ram_total_mb: u64,
         net_rx_kbps: f32,
-        net_tx_kbps: f32,
-        io_r_kbps: f32,
-        io_w_kbps: f32,
     },
     BbsMessage(String),
     ConfirmPrompt {
@@ -45,7 +42,6 @@ pub enum TuiMessage {
     },
     #[allow(dead_code)]
     PasswordPrompt {
-        prompt: String,
         reply: Sender<String>,
     },
 
@@ -127,9 +123,6 @@ pub struct SysStats {
     pub ram_used_mb: u64,
     pub ram_total_mb: u64,
     pub net_rx_kbps: f32,
-    pub net_tx_kbps: f32,
-    pub io_r_kbps: f32,
-    pub io_w_kbps: f32,
 }
 
 // ── Confirm prompt state ─────────────────────────────────────────────────────
@@ -143,7 +136,6 @@ pub struct ConfirmState {
 // ── Password prompt state ────────────────────────────────────────────────────
 
 pub struct PasswordState {
-    pub prompt: String,
     pub reply: Sender<String>,
     pub password: String,
 }
@@ -335,6 +327,14 @@ impl TuiApp {
             return;
         }
 
+        // Numeric selection support
+        if let KeyCode::Char(c) = code {
+            if c.is_ascii_digit() && c != '0' {
+                let val = c.to_digit(10).unwrap() as usize;
+                self.handle_numeric_input(val);
+            }
+        }
+
         // Copy screen so we don't hold a borrow into self while calling &mut self methods
         let screen = self.screen;
         match screen {
@@ -371,6 +371,55 @@ impl TuiApp {
                 }
                 _ => {}
             },
+        }
+    }
+
+    fn handle_numeric_input(&mut self, val: usize) {
+        let idx = val.saturating_sub(1);
+        match self.screen {
+            Screen::DistroSelect => {
+                if idx < self.drivers.len() {
+                    self.menu_cursor = idx;
+                    self.advance_from_list();
+                }
+            }
+            Screen::ProfileSelect => {
+                if idx < 3 {
+                    self.menu_cursor = idx;
+                    self.advance_from_list();
+                }
+            }
+            Screen::ThemeSelect => {
+                if idx < 3 {
+                    self.menu_cursor = idx;
+                    self.advance_from_list();
+                }
+            }
+            Screen::SoftwareMode => {
+                if idx < 2 {
+                    self.menu_cursor = idx;
+                    self.advance_from_list();
+                }
+            }
+            Screen::SoftwareSelect => {
+                if let Some(cat) = SOFTWARE_CATEGORIES.get(self.software_category_idx) {
+                    if idx < cat.options.len() {
+                        self.menu_cursor = idx;
+                        let chosen = &cat.options[self.menu_cursor];
+                        self.software_picks.insert(cat.label, chosen.name);
+                        if self.software_category_idx + 1 >= SOFTWARE_CATEGORIES.len() {
+                            self.screen = Screen::Confirm;
+                            self.menu_cursor = 0;
+                        } else {
+                            self.software_category_idx += 1;
+                            self.menu_cursor = self
+                                .selected_option_index(self.software_category_idx)
+                                .unwrap_or(0);
+                        }
+                    }
+                }
+            }
+            _ => {}
         }
     }
 
@@ -690,18 +739,12 @@ impl TuiApp {
                 ram_used_mb,
                 ram_total_mb,
                 net_rx_kbps,
-                net_tx_kbps,
-                io_r_kbps,
-                io_w_kbps,
             } => {
                 self.sys_stats = SysStats {
                     cpu_pct,
                     ram_used_mb,
                     ram_total_mb,
                     net_rx_kbps,
-                    net_tx_kbps,
-                    io_r_kbps,
-                    io_w_kbps,
                 };
             }
             TuiMessage::BbsMessage(msg) => {
@@ -715,9 +758,8 @@ impl TuiApp {
                 });
                 self.screen = Screen::Confirm;
             }
-            TuiMessage::PasswordPrompt { prompt, reply } => {
+            TuiMessage::PasswordPrompt { reply } => {
                 self.password_state = Some(PasswordState {
-                    prompt,
                     reply,
                     password: String::new(),
                 });
@@ -843,7 +885,7 @@ pub fn run(
     app.dry_run = dry_run;
     app.continue_on_error = continue_on_error;
 
-    let tick_rate = Duration::from_millis(100);
+    let tick_rate = Duration::from_millis(250);
     let mut last_tick = Instant::now();
 
     loop {

@@ -1,80 +1,63 @@
-//! Cyberpunk color palette and style helpers for the MASH TUI.
+//! 1984 Retro-Station color palette and style helpers for the MASH TUI.
+//! Transformation from Cyberpunk to BBC Micro/UNIX station aesthetic.
 
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::BorderType;
 
-// ── Base palette ────────────────────────────────────────────────────────────
+// ── Base palette (Phosphor Glow) ─────────────────────────────────────────────
 
-pub const BLACK: Color = Color::Rgb(10, 10, 20);
-pub const WHITE: Color = Color::White;
-pub const CYAN: Color = Color::Rgb(0, 255, 255);
-pub const MAGENTA: Color = Color::Rgb(255, 0, 255);
-pub const GREEN: Color = Color::Rgb(0, 255, 65); // matrix green
-pub const YELLOW: Color = Color::Rgb(255, 215, 0);
-pub const RED: Color = Color::Rgb(255, 49, 49);
-pub const DIM_GRAY: Color = Color::Rgb(80, 80, 100);
+pub const BLACK: Color = Color::Black;
+pub const GREEN: Color = Color::Rgb(0, 255, 0); // Primary Phosphor
+pub const AMBER: Color = Color::Rgb(255, 191, 0); // Secondary Phosphor
+pub const RED: Color = Color::Rgb(255, 0, 0); // Fatal Error
+pub const DIM_GREEN: Color = Color::Rgb(0, 100, 0);
 
 // ── Style helpers ────────────────────────────────────────────────────────────
 
 pub fn default_style() -> Style {
-    Style::default().fg(WHITE).bg(BLACK)
+    Style::default().fg(GREEN).bg(BLACK)
 }
 
 pub fn border_style() -> Style {
-    Style::default().fg(CYAN).bg(BLACK)
+    Style::default().fg(GREEN).bg(BLACK)
 }
 
 pub fn title_style() -> Style {
     Style::default()
-        .fg(CYAN)
-        .bg(BLACK)
+        .fg(BLACK)
+        .bg(GREEN)
         .add_modifier(Modifier::BOLD)
 }
 
 pub fn selected_style() -> Style {
     Style::default()
-        .fg(MAGENTA)
-        .bg(BLACK)
+        .fg(BLACK)
+        .bg(AMBER)
         .add_modifier(Modifier::BOLD)
 }
 
 pub fn success_style() -> Style {
-    Style::default().fg(GREEN)
+    Style::default().fg(GREEN).add_modifier(Modifier::BOLD)
 }
 
 pub fn warning_style() -> Style {
-    Style::default().fg(YELLOW)
+    Style::default().fg(AMBER)
 }
 
 pub fn error_style() -> Style {
-    Style::default().fg(RED)
+    Style::default().fg(RED).add_modifier(Modifier::REVERSED)
 }
 
 pub fn dim_style() -> Style {
-    Style::default().fg(DIM_GRAY)
+    Style::default().fg(DIM_GREEN)
 }
 
 pub fn accent_style() -> Style {
-    Style::default().fg(MAGENTA)
-}
-
-pub fn bbs_style() -> Style {
-    Style::default()
-        .fg(MAGENTA)
-        .bg(BLACK)
-        .add_modifier(Modifier::BOLD | Modifier::ITALIC)
-}
-
-pub fn progress_filled_style() -> Style {
-    Style::default().fg(CYAN)
+    Style::default().fg(AMBER)
 }
 
 // ── Border helpers ───────────────────────────────────────────────────────────
 
-pub fn inner_border_type() -> BorderType {
-    BorderType::Rounded
-}
-
 pub fn outer_border_type() -> BorderType {
-    BorderType::Double
+    BorderType::Thick
 }

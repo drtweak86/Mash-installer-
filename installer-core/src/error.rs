@@ -99,7 +99,11 @@ impl InstallerError {
     ) -> Self {
         let phase = phase.into();
         let description = description.into();
-        let message = format!("{phase} failed: {}", source.root_cause());
+        let message = format!(
+            "PHASE_{}: HALTED_WITH_ERROR: {}",
+            phase.to_uppercase(),
+            source.root_cause().to_string().to_uppercase()
+        );
         let developer_detail = format!("{source:#}");
         let command_output = source
             .downcast_ref::<cmd::CommandExecutionError>()

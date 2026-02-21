@@ -27,6 +27,33 @@ Strategic reconnaissance of the forge. Audited architecture, identified shell bo
 
 ---
 
+## SHAFT C <COMPLETED> ✅
+
+### Summary
+Complete aesthetic transformation from cyberpunk neon to 1984 BBC Micro/UNIX terminal station.
+
+### Technical Analysis
+- **Palette Shift**: Implemented Green/Amber phosphor theme (#00FF00, #FFBF00).
+- **Layout Refactor**: Transitioned from a 4-pane cockpit to a single-pane scrolling terminal buffer with a dedicated status bar.
+- **Interaction Model**: Implemented numbered command prompts and direct numeric key selection (1-9).
+- **Animation logic**: Adjusted station heartbeat (tick rate) to 250ms for authentic retro response times.
+- **Error formatting**: Re-engineered `InstallerError` to use industrial uppercase "HALTED_WITH_ERROR" patterns.
+
+### Files Touched
+- `installer-cli/src/tui/theme.rs` (palette and style overhaul)
+- `installer-cli/src/tui/render.rs` (complete layout and widget rewrite)
+- `installer-cli/src/tui/menus.rs` (menu widget and prompt overhaul)
+- `installer-cli/src/tui/app.rs` (keyboard handling and tick rate adjustment)
+- `installer-core/src/error.rs` (industrial error formatting)
+- `docs/mining-projects/shaftc.md` (completed plan)
+
+### Verification
+- ✅ cargo check clean.
+- ✅ Logic remains intact (function > form).
+- ✅ Numeric selection verified.
+
+---
+
 ## SHAFT B <NOT_COMPLETED> ⏳
 
 ### Summary
@@ -44,27 +71,6 @@ Integration of the BBC/UNIX retro-futuristic theme (i3-gaps + Kitty) and wallpap
 
 ### Status
 - ⏳ Integration Pending...
-
----
-
-## SHAFT C <NOT_COMPLETED> ⏳
-
-### Summary
-Aesthetic transformation from cyberpunk neon to BBC Micro/UNIX terminal (1984 meets 2026).
-
-### Technical Analysis (Plan)
-- **Palette Shift**: Replace neon cyans with Green/Amber phosphor (#00FF00, #FFBF00).
-- **Layout Refactor**: Move from 4-pane layout to a single-pane scrolling UNIX terminal.
-- **UI Interaction**: Transition from visual bars to command-line prompts (> _).
-
-### Files to be Touched
-- `installer-cli/src/tui/theme.rs` (palette refactor)
-- `installer-cli/src/tui/render.rs` (layout refactor)
-- `installer-cli/src/tui/menus.rs` (interaction refactor)
-- `installer-core/src/fonts.rs` (typography enforcement)
-
-### Status
-- ⏳ Planned & Charted.
 
 ---
 **Last Updated**: 2026-02-21

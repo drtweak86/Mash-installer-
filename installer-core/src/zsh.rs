@@ -1,9 +1,12 @@
 use anyhow::{Context, Result};
 use std::fmt::Write as _;
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
-use crate::{cmd, package_manager, PhaseContext, PkgBackend};
+use crate::{cmd, options::ProfileLevel, package_manager, PhaseContext, PkgBackend};
+use which::which;
 
 fn home_dir() -> PathBuf {
     dirs::home_dir().unwrap_or_else(|| PathBuf::from("/root"))
@@ -15,9 +18,32 @@ const P10K_SYSTEM_DIR: &str = "/usr/share/powerlevel10k";
 const P10K_THEME_FILE: &str = "/usr/share/powerlevel10k/powerlevel10k.zsh-theme";
 const P10K_TAG: &str = "v1.13.0";
 
+const STARSHIP_CONFIG: &str = include_str!("../../resources/shell/starship.toml");
+const KITTY_CONFIG: &str = include_str!("../../resources/shell/kitty.conf");
+const EZA_ALIASES_SCRIPT: &str = include_str!("../../resources/shell/eza_aliases.sh");
+const STARSHIP_MARKER: &str = "starship init zsh";
+const STARSHIP_BLOCK: &str = r#"
+# Starship prompt (added by mash-installer)
+if command -v starship >/dev/null; then
+  eval "$(starship init zsh)"
+fi
+"#;
+const EZA_MARKER: &str = ".eza_aliases";
+const EZA_BLOCK: &str = r#"
+# Goblin eza aliases (added by mash-installer)
+if [ -f "$HOME/.eza_aliases" ]; then
+  source "$HOME/.eza_aliases"
+fi
+"#;
+
 pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
     install_zsh(ctx)?;
     install_omz(ctx)?;
+    install_starship(ctx)?;
+    deploy_starship_config(ctx)?;
+    ensure_starship_init(ctx)?;
+    install_kitty_config(ctx)?;
+    install_eza_aliases(ctx)?;
 
     if ctx.options.enable_p10k {
         install_p10k(ctx)?;
@@ -46,10 +72,18 @@ fn install_omz(ctx: &mut PhaseContext) -> Result<()> {
         return Ok(());
     }
 
+    let omz_dir_clone = omz_dir.clone();
+    ctx.register_rollback_action("remove oh-my-zsh directory", move || {
+        if omz_dir_clone.exists() {
+            std::fs::remove_dir_all(&omz_dir_clone)?;
+        }
+        Ok(())
+    });
+
     if let Err(err) = cmd::Command::new("sh")
         .arg("-c")
         .arg(
-            r#"RUNZSH=no CHSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)""#,
+            r#"RUNZSH=no CHSH=no sh -c "$(curl -fsSL --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)""#,
         )
         .execute()
     {
@@ -196,6 +230,119 @@ fn add_p10k_source_to_zshrc(ctx: &mut PhaseContext) -> Result<()> {
     }
 
     tracing::info!("Added Powerlevel10k source block to .zshrc");
+    Ok(())
+}
+
+fn install_starship(ctx: &mut PhaseContext) -> Result<()> {
+    if which("starship").is_ok() {
+        tracing::info!("Starship prompt already installed");
+        return Ok(());
+    }
+
+    if ctx.options.dry_run {
+        ctx.record_action("Would install the Starship prompt");
+        return Ok(());
+    }
+
+    tracing::info!("Installing Starship prompt via official installer");
+    cmd::Command::new("sh")
+        .arg("-c")
+        .arg("curl -fsSL --proto '=https' --tlsv1.2 https://starship.rs/install.sh | sh -s -- -y")
+        .execute()
+        .context("while installing Starship prompt")?;
+
+    ctx.record_action("Installed Starship prompt");
+    Ok(())
+}
+
+fn deploy_starship_config(ctx: &mut PhaseContext) -> Result<()> {
+    let path = home_dir().join(".config/starship/starship.toml");
+    write_config_file(ctx, &path, STARSHIP_CONFIG, "Starship configuration")
+}
+
+fn ensure_starship_init(ctx: &mut PhaseContext) -> Result<()> {
+    let zshrc = home_dir().join(".zshrc");
+    ensure_block_in_rc(&zshrc, STARSHIP_MARKER, STARSHIP_BLOCK, ctx)
+}
+
+fn install_kitty_config(ctx: &mut PhaseContext) -> Result<()> {
+    if ctx.options.profile < ProfileLevel::Dev {
+        tracing::info!("Skipping Kitty configuration for non-Dev profile");
+        return Ok(());
+    }
+
+    let path = home_dir().join(".config/kitty/kitty.conf");
+    write_config_file(ctx, &path, KITTY_CONFIG, "Kitty configuration")
+}
+
+fn install_eza_aliases(ctx: &mut PhaseContext) -> Result<()> {
+    if !ctx.platform.driver.is_package_installed("eza") {
+        tracing::info!("Skipping eza aliases because eza is not installed");
+        return Ok(());
+    }
+
+    let alias_path = home_dir().join(".eza_aliases");
+    write_config_file(ctx, &alias_path, EZA_ALIASES_SCRIPT, "eza aliases")?;
+
+    let zshrc = home_dir().join(".zshrc");
+    ensure_block_in_rc(&zshrc, EZA_MARKER, EZA_BLOCK, ctx)?;
+
+    let bashrc = home_dir().join(".bashrc");
+    ensure_block_in_rc(&bashrc, EZA_MARKER, EZA_BLOCK, ctx)
+}
+
+fn write_config_file(
+    ctx: &mut PhaseContext,
+    path: &Path,
+    contents: &str,
+    description: &str,
+) -> Result<()> {
+    if ctx.options.dry_run {
+        ctx.record_action(format!("Would write {description} to {}", path.display()));
+        return Ok(());
+    }
+
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+
+    std::fs::write(path, contents)?;
+    ctx.record_action(format!("Wrote {description} to {}", path.display()));
+    Ok(())
+}
+
+fn ensure_block_in_rc(
+    path: &Path,
+    marker: &str,
+    block: &str,
+    ctx: &mut PhaseContext,
+) -> Result<()> {
+    let content = if path.exists() {
+        std::fs::read_to_string(path)?
+    } else {
+        String::new()
+    };
+
+    if content.contains(marker) {
+        tracing::info!("Shell fragment already present in {}", path.display());
+        return Ok(());
+    }
+
+    if ctx.options.dry_run {
+        ctx.record_action(format!("Would append shell fragment to {}", path.display()));
+        return Ok(());
+    }
+
+    if path.exists() {
+        backup_file(path)?;
+        let mut file = OpenOptions::new().append(true).open(path)?;
+        writeln!(file)?;
+        writeln!(file, "{block}")?;
+    } else {
+        std::fs::write(path, block)?;
+    }
+
+    ctx.record_action(format!("Appended shell fragment to {}", path.display()));
     Ok(())
 }
 

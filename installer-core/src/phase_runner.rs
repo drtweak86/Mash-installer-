@@ -6,7 +6,9 @@ use tracing::{error, info};
 use crate::{
     context::{PhaseContext, PhaseMetadata},
     error::{ErrorSeverity, InstallerError, InstallerStateSnapshot},
-    logging, InstallContext,
+    logging,
+    signal::SignalGuard,
+    InstallContext,
 };
 
 #[derive(Debug)]
@@ -109,6 +111,7 @@ impl PhaseRunner {
         &self,
         ctx: &InstallContext,
         observer: &mut dyn PhaseObserver,
+        signal_guard: Option<&SignalGuard>,
     ) -> Result<PhaseRunResult, Box<PhaseRunError>> {
         let total = self.phases.len();
 
@@ -128,6 +131,33 @@ impl PhaseRunner {
         let mut outputs = Vec::new();
 
         for (i, phase) in self.phases.iter().enumerate() {
+            // Check for interrupt signal between phases
+            if signal_guard.is_some_and(|sg| sg.is_interrupted()) {
+                info!("Signal received, rolling back and shutting down gracefully...");
+                if let Err(rb_err) = ctx.rollback.rollback_all() {
+                    error!("rollback encountered errors during signal shutdown: {rb_err}");
+                } else {
+                    info!("rollback completed after signal");
+                }
+                let installer_error = InstallerError::new(
+                    "signal_handler",
+                    "Interrupted by signal",
+                    ErrorSeverity::Fatal,
+                    anyhow::anyhow!("Installation interrupted by SIGINT/SIGTERM"),
+                    InstallerStateSnapshot::from_options(&ctx.options),
+                    Some("Re-run the installer to resume.".to_string()),
+                );
+                return Err(Box::new(PhaseRunError {
+                    result: PhaseRunResult {
+                        completed_phases: completed,
+                        outputs,
+                        events,
+                        errors,
+                    },
+                    source: installer_error,
+                }));
+            }
+
             let phase_name = phase.name().to_string();
             let phase_description = phase.description().to_string();
 
@@ -557,7 +587,7 @@ mod tests {
         ];
         let runner = PhaseRunner::from_phases(phases);
         let mut observer = RecordingObserver::new();
-        let result = runner.run(&ctx, &mut observer)?;
+        let result = runner.run(&ctx, &mut observer, None)?;
 
         assert_eq!(
             result.completed_phases,
@@ -608,7 +638,7 @@ mod tests {
         let runner = PhaseRunner::from_phases(phases);
         let mut observer = RecordingObserver::new();
 
-        let err = runner.run(&ctx, &mut observer).unwrap_err();
+        let err = runner.run(&ctx, &mut observer, None).unwrap_err();
         assert_eq!(err.source.phase, "phase-error");
         assert_eq!(err.source.user_message(), "phase-error failed: boom");
         assert_eq!(err.result.errors.len(), 1);
@@ -652,7 +682,7 @@ mod tests {
         let mut observer = RecordingObserver::new();
         let runner = PhaseRunner::with_policy(phases, PhaseErrorPolicy::ContinueOnError);
 
-        let result = runner.run(&ctx, &mut observer)?;
+        let result = runner.run(&ctx, &mut observer, None)?;
         assert_eq!(
             result.completed_phases,
             vec!["phase-one".to_string(), "phase-three".to_string()]
@@ -695,7 +725,7 @@ mod tests {
         let runner = PhaseRunner::from_phases(phases);
         let mut observer = RecordingObserver::new();
 
-        let result = runner.run(&ctx, &mut observer)?;
+        let result = runner.run(&ctx, &mut observer, None)?;
         assert_eq!(
             result.completed_phases,
             vec!["phase-one".to_string(), "phase-two".to_string()]

@@ -88,7 +88,7 @@ pub fn run_driver_selection(
     platform: &PlatformInfo,
     interaction: &InteractionService,
 ) -> Result<&'static dyn DistroDriver> {
-    println!("Step 1/3: Distro selection");
+    println!("Step 1/4: Distro selection");
     println!("1) Auto detect (default)");
     println!("2) Select distribution manually");
 
@@ -155,7 +155,7 @@ pub fn run_module_menu(
     driver_name: &str,
     interaction: &InteractionService,
 ) -> Result<ModuleSelection> {
-    println!("\nStep 2/3: Modules for {}", driver_name);
+    println!("\nStep 2/4: Modules for {}", driver_name);
     println!("Available module selection modes:");
     let modes = [
         "Full install (default – all modules enabled)",
@@ -198,7 +198,7 @@ pub fn run_module_menu(
 }
 
 pub fn run_profile_menu(interaction: &InteractionService) -> Result<ProfileLevel> {
-    println!("\nStep 3/3: Choose profile");
+    println!("\nStep 4/4: Choose profile");
     let options = [
         "basics – minimal tooling",
         "basics-dev – add developer packages",

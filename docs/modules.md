@@ -3,6 +3,24 @@
 
 This document is a straight extraction of what `mash-setup install` currently does. Every installed package, script, and feature below is enumerated with its purpose, the distros that the distro drivers push it to, and whether it is implicit (profile/phase driven) or surfaced via a modal toggle. No behavior is changed yet; the goal is documentation-only inventory.
 
+## UI Layer (installer-cli)
+
+As of 2026-02-21, the **Ratatui TUI** is the primary UI layer. The legacy `indicatif`/stdio
+path remains available via `--no-tui` and is used automatically for non-interactive mode.
+
+### TUI modules (`installer-cli/src/tui/`)
+
+| Module | Role |
+|--------|------|
+| `mod.rs` | Module root, re-exports `run()` |
+| `app.rs` | `TuiApp` state machine, `Screen` enum, `TuiMessage` bus, event loop |
+| `render.rs` | 4-pane draw pipeline (Main, ActionLog, SysStats, BBS strip) |
+| `menus.rs` | Welcome / DistroSelect / ModuleSelect / ProfileSelect / Confirm screens |
+| `theme.rs` | Cyberpunk palette (cyan, magenta, matrix-green, red, gold) |
+| `bbs.rs` | 44-entry BBS message bank + 4-second cycler thread |
+| `sysinfo_poller.rs` | CPU%/RAM via `sysinfo 0.33`; NET/IO from `/proc`; 1-second poll |
+| `observer.rs` | `RatatuiPhaseObserver` — sends `PhaseEvent` → `TuiMessage` via mpsc |
+
 ## Profiles
 
 ### Minimal profile (core system packages)

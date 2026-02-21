@@ -1,0 +1,98 @@
+ 
+# ~/.config/starship.toml
+format = """
+$username\
+$hostname\
+$directory\
+$git_branch\
+$git_state\
+$git_status\
+$package\
+$rust\
+$golang\
+$nodejs\
+$python\
+$memory_usage\
+$time\
+$cmd_duration\
+$line_break\
+$character"""
+
+[username]
+style_user = "bold green"
+style_root = "bold red"
+format = "[$user]($style) "
+disabled = false
+show_always = true
+
+[hostname]
+ssh_only = false
+format = "[$hostname](bold yellow) "
+disabled = false
+
+[directory]
+truncation_length = 3
+style = "bold blue"
+format = "[$path]($style)[$read_only]($read_only_style) "
+
+[git_branch]
+symbol = "🌿 "
+style = "bold purple"
+format = "[$symbol$branch]($style) "
+
+[git_state]
+format = "[\($state( $progress_current/$progress_total)\)]($style) "
+style = "bold yellow"
+
+[git_status]
+format = "[($all_status$ahead_behind)]($style) "
+style = "bold green"
+conflicted = "🏳️ "
+ahead = "⇡${count} "
+behind = "⇣${count} "
+diverged = "⇕⇡${ahead_count}⇣${behind_count} "
+untracked = "?${count} "
+stashed = "≡ "
+modified = "!${count} "
+staged = "+${count} "
+renamed = "»${count} "
+deleted = "✘${count} "
+
+[package]
+format = "via [📦 $version](208 bold) "
+
+[rust]
+format = "via [🦀 $version](red bold) "
+
+[golang]
+format = "via [🐹 $version](cyan bold) "
+
+[nodejs]
+format = "via [🤖 $version](green bold) "
+
+[python]
+format = "via [🐍 $version](yellow bold) "
+
+[memory_usage]
+format = "$symbol[${ram}( | ${swap})]($style) "
+threshold = 75
+symbol = "🧠 "
+style = "bold dimmed white"
+
+[time]
+format = "🕒 [$time]($style) "
+style = "bold white"
+disabled = false
+
+[cmd_duration]
+format = "🕒 [$duration]($style) "
+style = "bold yellow"
+min_time = 1000
+
+[line_break]
+disabled = false
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+vicmd_symbol = "[❮](bold yellow)"

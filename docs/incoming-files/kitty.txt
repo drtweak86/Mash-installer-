@@ -1,0 +1,51 @@
+ 
+# ~/.config/kitty/kitty.conf
+font_family      JetBrainsMono Nerd Font
+font_size        14.0
+bold_font        auto
+italic_font      auto
+bold_italic_font auto
+
+# BBC Acorn-inspired colors
+background        #000000
+foreground        #FFFFFF
+cursor            #FF5555
+cursor_text_color  #000000
+
+# Selection colors
+selection_background #444444
+selection_foreground #FFFFFF
+
+# URL color
+url_color          #55FF55
+
+# Tab bar
+tab_bar_style      separated
+tab_bar_margin     0
+tab_powerline_style angled
+
+# Window
+window_padding_width 10
+initial_window_width 800
+initial_window_height 600
+
+# Scrollback
+scrollback_lines 10000
+scrollback_pager less --chop-long-lines --RAW-CONTROL-CHARS
+
+# Mouse
+mouse_hide_wait 3.0
+
+# Vintage BBC Acorn cursor
+cursor_shape block
+cursor_blink_interval 0.5
+
+# Enable ligatures
+enable_ligatures true
+
+# Map Ctrl+Shift+C/V to copy/paste
+map ctrl+shift+c copy_to_clipboard
+map ctrl+shift+v paste_from_clipboard
+
+# BBC Micro-inspired bell (disabled)
+enable_audio_bell no

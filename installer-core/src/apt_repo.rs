@@ -50,7 +50,7 @@ fn add_gpg_key(config: &AptRepoConfig, ctx: &mut PhaseContext) -> Result<()> {
     let key_url = (config.key_url)(&ctx.platform.platform)?;
     let mut cmd = Command::new("sh");
     cmd.arg("-c").arg(format!(
-        "curl -fsSL {key_url} | sudo tee {path} > /dev/null && sudo chmod go+r {path}",
+        "curl -fsSL --proto '=https' --tlsv1.2 {key_url} | sudo tee {path} > /dev/null && sudo chmod go+r {path}",
         path = config.key_path
     ));
     cmd::run(&mut cmd).context("downloading apt repo GPG key")?;

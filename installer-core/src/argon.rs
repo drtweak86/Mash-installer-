@@ -136,9 +136,20 @@ fn install_argon_oem(ctx: &mut PhaseContext) -> Result<()> {
         return Ok(());
     }
 
+    ctx.register_rollback_action("remove argon one config files", || {
+        // The OEM script creates these config files; clean up on rollback
+        for path in &["/etc/argon/argon1.conf", "/etc/argon/argononed.conf"] {
+            let p = std::path::Path::new(path);
+            if p.exists() {
+                let _ = std::fs::remove_file(p);
+            }
+        }
+        Ok(())
+    });
+
     let mut cmd = Command::new("sh");
     cmd.arg("-c")
-        .arg("curl -fsSL https://download.argon40.com/argon1.sh | bash");
+        .arg("curl -fsSL --proto '=https' --tlsv1.2 https://download.argon40.com/argon1.sh | bash");
     if let Err(err) = cmd::run(&mut cmd).context("running Argon One OEM install script") {
         tracing::warn!("Argon One OEM install script failed; this is non-critical ({err})");
     }

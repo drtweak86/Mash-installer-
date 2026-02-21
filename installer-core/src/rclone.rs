@@ -53,7 +53,7 @@ fn install_via_script(ctx: &mut PhaseContext) -> Result<()> {
     let mut install_cmd = Command::new("sh");
     install_cmd
         .arg("-c")
-        .arg("curl -fsSL https://rclone.org/install.sh | sudo bash");
+        .arg("curl -fsSL --proto '=https' --tlsv1.2 https://rclone.org/install.sh | sudo bash");
     if let Err(err) = cmd::run(&mut install_cmd).context("running rclone install script") {
         tracing::warn!("rclone install script failed; continuing ({err})");
     }

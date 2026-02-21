@@ -163,6 +163,14 @@ impl fmt::Display for CommandExecutionError {
 
 impl Error for CommandExecutionError {}
 
+/// Standard flags for all `curl` invocations.
+///
+/// Returns `["-fsSL", "--proto", "=https", "--tlsv1.2"]` to enforce
+/// TLS 1.2+ on every download. Use via `.args(curl_flags())`.
+pub fn curl_flags() -> &'static [&'static str] {
+    &["-fsSL", "--proto", "=https", "--tlsv1.2"]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -181,6 +189,15 @@ mod tests {
         let output = run(&mut cmd)?;
         assert!(output.status.success());
         Ok(())
+    }
+
+    #[test]
+    fn curl_flags_includes_tls_enforcement() {
+        let flags = curl_flags();
+        assert!(flags.contains(&"--proto"), "should include --proto");
+        assert!(flags.contains(&"=https"), "should include =https");
+        assert!(flags.contains(&"--tlsv1.2"), "should include --tlsv1.2");
+        assert!(flags.contains(&"-fsSL"), "should include -fsSL");
     }
 
     #[test]

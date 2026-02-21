@@ -170,6 +170,8 @@ Added entries for:
 - QA findings: Block-1, Block-2, PlanA updated
 - phase2-next-steps.md: new planning document
 - registry.rs, runner.rs: new module stubs
+- docs/incoming-files/software_tiers.md: expanded to document the 12-category, five-option palette.
+- resources/shell: added Kitty, Starship, and eza alias templates for the shell phase.
 
 ---
 

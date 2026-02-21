@@ -8,6 +8,7 @@ use crate::hyprland;
 use crate::localization::Localization;
 use crate::options::ProfileLevel;
 use crate::phase_runner::{FunctionPhase, Phase};
+use crate::pi4b_hdd;
 use crate::pkg;
 use crate::rclone;
 use crate::rust;
@@ -103,6 +104,13 @@ impl Default for PhaseRegistry {
                 "rclone ready",
                 rclone::install_phase,
                 PhaseGate::Profile(ProfileLevel::Dev),
+            ),
+            PhaseEntry::new(
+                "pi4b_hdd_tuning",
+                "Pi 4B HDD Tuning",
+                "HDD tuning applied",
+                pi4b_hdd::install_phase,
+                PhaseGate::Always,
             ),
             PhaseEntry::new(
                 "argon_one",

@@ -3,7 +3,7 @@ use clap::{Parser, Subcommand};
 use installer_core::cmd::CommandExecutionDetails;
 use installer_core::{
     detect_platform, init_logging, interaction::InteractionService, ConfigService, DistroDriver,
-    InstallOptions, InstallationReport, ProfileLevel,
+    InstallOptions, InstallationReport, ProfileLevel, SoftwareTierPlan,
 };
 use std::io::{self, Write};
 use std::path::PathBuf;
@@ -11,7 +11,9 @@ use tracing::info;
 
 mod catalog;
 mod menu;
-mod ui;
+mod software_tiers;
+mod tui;
+mod ui_legacy;
 
 #[derive(Parser)]
 #[command(
@@ -40,6 +42,10 @@ struct Cli {
     /// Profile to install: minimal, dev, full  (skips the profile menu)
     #[arg(long, value_name = "LEVEL")]
     profile: Option<String>,
+
+    /// Use the classic stdio interface instead of the Ratatui TUI
+    #[arg(long)]
+    no_tui: bool,
 }
 
 #[derive(Subcommand)]
@@ -60,7 +66,6 @@ fn main() -> Result<()> {
 
     let config_service = ConfigService::load()?;
     init_logging(&config_service.config().logging, cli.verbose)?;
-    let platform_info = detect_platform().context("detecting host platform")?;
 
     // Build list of available drivers based on compile-time features
     let drivers: Vec<&'static dyn DistroDriver> = vec![
@@ -77,8 +82,18 @@ fn main() -> Result<()> {
             "No distro drivers available! Recompile with at least one feature: arch, debian, or fedora"
         );
     }
+
+    // ── TUI path (default) ───────────────────────────────────────────────────
+    if !cli.no_tui && !cli.non_interactive {
+        return tui::run(drivers, cli.dry_run, cli.continue_on_error)
+            .context("TUI exited with error");
+    }
+
+    // ── Legacy stdio path (--no-tui or --non-interactive) ────────────────────
+    let platform_info = detect_platform().context("detecting host platform")?;
     let interaction_config = config_service.config().interaction.clone();
     let interaction = InteractionService::new(!cli.non_interactive, interaction_config);
+
     let driver = if cli.non_interactive {
         menu::auto_detect_driver(&drivers, &platform_info).unwrap_or_else(|| drivers[0])
     } else {
@@ -89,6 +104,12 @@ fn main() -> Result<()> {
         menu::ModuleSelection::default()
     } else {
         menu::run_module_menu(driver.name(), &interaction)?
+    };
+
+    let software_plan = if cli.non_interactive {
+        SoftwareTierPlan::default()
+    } else {
+        software_tiers::run_software_tier_menu(&interaction)?
     };
 
     let profile = if let Some(ref p) = cli.profile {
@@ -108,6 +129,7 @@ fn main() -> Result<()> {
         enable_p10k: modules.enable_p10k,
         docker_data_root: modules.docker_data_root,
         continue_on_error: cli.continue_on_error,
+        software_plan,
     };
 
     info!(
@@ -118,7 +140,7 @@ fn main() -> Result<()> {
         modules
     );
 
-    let mut observer = ui::CliPhaseObserver::new();
+    let mut observer = ui_legacy::CliPhaseObserver::new();
     run_installer_with_ui(driver, options, &mut observer).context("installer failed")
 }
 
@@ -238,9 +260,9 @@ fn write_multiline(out: &mut dyn Write, label: &str, text: &str) -> std::io::Res
 fn run_installer_with_ui(
     driver: &'static dyn DistroDriver,
     options: InstallOptions,
-    observer: &mut ui::CliPhaseObserver,
+    observer: &mut ui_legacy::CliPhaseObserver,
 ) -> Result<()> {
-    ui::print_banner();
+    ui_legacy::print_banner();
     let dry_run = options.dry_run;
     let run_result = installer_core::run_with_driver(driver, options, observer);
     observer.finish();

@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use crate::SoftwareTierPlan;
+
 /// Options provided by the CLI that drive `run_with_driver`.
 #[derive(Clone, Debug)]
 pub struct InstallOptions {
@@ -11,6 +13,7 @@ pub struct InstallOptions {
     pub enable_p10k: bool,
     pub docker_data_root: bool,
     pub continue_on_error: bool,
+    pub software_plan: SoftwareTierPlan,
 }
 
 impl Default for InstallOptions {
@@ -24,6 +27,7 @@ impl Default for InstallOptions {
             enable_p10k: false,
             docker_data_root: false,
             continue_on_error: false,
+            software_plan: SoftwareTierPlan::default(),
         }
     }
 }

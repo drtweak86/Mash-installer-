@@ -8,28 +8,67 @@
 - [x] Block 3: Surfaced swallowed errors as warnings (docker, rust, zsh, github)
 - [x] Block 4: Tightened public API (removed RealSystem from exports)
 - [x] Block 5: Confirmed green build (fmt + clippy + test) and documented
-- [x] Shaft A: Strategic reconnaissance report filed and fully explored ✓
+- [x] Shaft A: Strategic reconnaissance report filed and fully explored
 
-## Session: 2026-02-20 – Phase 2 Closure (Current)
+## Session: 2026-02-20 – Ratatui Forge (Current)
 
 ### Summary
-Fully closed Phase 2: runner/registry split, InstallationReport/PhaseOutput contract, PhaseContext helper polish, Pi detection lore, and CLI wiring all locked down with the fmt/clippy/test trilogy.
+`mash-setup --tui` now summons a Ratatui-driven cockpit: the old `indicatif` bars have melted away, every `PhaseEvent` fuels the loop, the log tail stays visible inside the alternate screen, and the module/profile pair is picked from `run_module_profile_menu` before the install begins. A new neon telemetry pane (emoji status, signal %, fake network chatter, log counts) shares the row beside the phase list so the cockpit truly feels like a cyberpunk console, and failures still exit via a neon error epilog that highlights the phase context, advice, and staging directory so the miner always knows which rune to touch next.
 
 ### Deliverables
-- [x] Split `installer-core/lib.rs` exports into dedicated `runner` and `registry` wrappers (R-02).
-- [x] Hardened `PhaseContext` helpers and documented them in `docs/modules.md` (R-01).
-- [x] Added Pi helpers (`is_pi`, `pi_generation`, `supports_usb3`) and recorded the lore in `docs/ARCH.md`/`docs/HISTORY.md` (R-07).
-- [x] Confirmed `InstallationReport`/`PhaseOutput` flows across CLI and tests while keeping `docs/mining-projects` docs intact (R-03/R-04/R-06).
-- [x] Ran `cargo fmt`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test` from `/work/Mash-installer` with green results.
+- [x] Replace the indicatif progress ensemble with the ratatui stage.
+- [x] Feed phase events and live log tailing into the new TuiPhaseObserver.
+- [x] Drive module/profile selection through `run_module_profile_menu` so the interactive state stays inside the TUI.
+- [x] Surface error context/advice as part of the terminal epilog after a failure so the neon glow guides the miner.
+- [x] Added the beginner-friendly `install.sh` helper and documented the torrent-one-liner so the forge can be summoned with one curl.
 
-### Notes
-- Phase 3 (Pi 4B HDD) remains on ice until the ledger flips to it.
+## Session: 2026-02-20 – Audit & Sync (Current)
+
+### Summary
+Scanned codebase against maps, fixed clippy/fmt warnings in Phase 3 and driver harness,
+synced work branch, pushed to origin, opened PR #8 for merge to main.
+
+### Deliverables
+- [x] Fixed unused imports (`anyhow`, `Context`) in `pi4b_hdd.rs`
+- [x] Fixed unused variable `device` -> `_device` in `get_io_scheduler()`
+- [x] Fixed `assert!(true)` and `|| true` clippy warnings in tests
+- [x] Fixed `len() >= 1` -> `!is_empty()` clippy warning
+- [x] Fixed dead code warning in driver harness
+- [x] All 82 tests green, clippy clean, fmt clean
+- [x] Pushed work branch, opened PR #8
+
+---
+
+## Session: 2026-02-20 – Packaging & Ledger Sync (Current)
+
+### Summary
+The switchboard clinks with the new release workflow: package-deb and package-rpm jobs now orbit the build-release core, the publish job bundles every artifact with polished checksums, and a fresh `v0.1.2` tag just departed the forge to trigger that release run. While the forge breathes, trilogy bloodlines stay green and the ledger pages remain ready for new margins.
+
+### Deliverables
+- [x] Ship `package-deb` + `package-rpm` jobs into `.github/workflows/release.yml` with dedicated build and upload stages.
+- [x] Run `cargo fmt`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test` from `/home/drtweak/Mash-installer` to keep the trilogy green.
+- [x] Update `docs/HISTORY.md`, `docs/mining-projects/maps.md`, and `docs/mining-projects/maps-explored.md` with this session's story, maintaining the bardic tone.
+- [x] Confirm publish job now uploads `.deb`, `.rpm`, and the energized `PKGBUILD` to the GitHub Release bundle.
+- [x] Push `v0.1.2` to `origin` to fire the release workflow that packages the new artifacts.
+
+---
+
+## Session: 2026-02-20 – Shell Polish & Software Tiers (Current)
+
+### Summary
+The shell & UX phase now deploys the incoming Starship + Kitty + eza gloss, with guarded rc snippets and config files staged from `resources/shell`. A brand-new interactive software-tier menu lets the miner choose between the full S-tier canon or handpick any of the five S/A entries per category (Terminal, Shell, File Manager, Text Editor, Git Client, Process Viewer, Browser, Media Player, HTPC, VPN, Firewall, Backup). The glossary file `docs/incoming-files/software_tiers.md` now mirrors that menu.
+
+### Deliverables
+- [x] Installed Starship + kitty configs, and deployed the goblin eza aliases template across shells, guarding `.zshrc` / `.bashrc`.
+- [x] Added a SoftwareTierPlan to `InstallOptions` and the CLI menu, so the interactive selection survives the run.
+- [x] Built the category menu of twelve entries (each with five S/A options) and updated the incoming tier doc.
+- [x] Ran the fmt/clippy/test trilogy after wiring up the new shell polish and menu.
 
 ---
 
 ## Execution Order
 
-### 1. CI Lockdown (next session — 30 min)
+### 1. CI Lockdown (Complete)
 > *No forge should produce blades without a quality gate. Lock the gate first.*
 
 - [x] Delete `.github/workflows/rust.yml` (legacy duplicate)
@@ -37,13 +76,9 @@ Fully closed Phase 2: runner/registry split, InstallationReport/PhaseOutput co
 - [x] Add `cargo audit` step for dependency vulnerability scanning
 - [x] Pin Rust toolchain via `rust-toolchain.toml` (deterministic builds across local + CI)
 - [x] Set branch protection on `main` (require CI pass, no direct push)
-- [x] Verify: PR from `work` → `main` triggers full pipeline (PR #6 — 5/5 green)
+- [x] Verify: PR from `work` -> `main` triggers full pipeline (PR #6 -- 5/5 green)
 
-**Why first:** Every change after this gets automatic fmt/clippy/test/audit gates.
-Without it, regressions sneak in unnoticed. 10 minutes of config saves hours of
-debugging later.
-
-### 2. First Tagged Release — `v0.1.0` (✓ Complete — 15 min)
+### 2. First Tagged Release -- `v0.1.0` (Complete)
 > *You can't distribute what you haven't stamped.*
 
 - [x] Verify `release.yml` triggers on `v*` tags
@@ -54,62 +89,53 @@ debugging later.
 - [x] Verify checksums: `sha256sum -c mash-setup-*.sha256`
 - [ ] Smoke test: download aarch64 binary on Pi, confirm it runs
 
-**Why second:** Unlocks step 3 entirely. Also proves the release pipeline works
-before we depend on it.
-
-### 3. Retire `bootstrap.sh` (✓ Complete — 15 min)
-> *The scaffolding served its purpose. Replace it with a bridge that doesn't
-> require a forge on-site.*
+### 3. Retire `bootstrap.sh` (Complete)
+> *The scaffolding served its purpose. Replace it with a bridge that doesn't require a forge on-site.*
 
 - [x] Slim `bootstrap.sh` to ~20 lines: detect arch, download binary, verify SHA256, exec
 - [x] Remove Rust/git/cargo install logic (no longer needed)
 - [x] Remove font/Hyprland/makepkg logic (mash-setup handles these)
-- [x] Add `uname -m` → target triple mapping (`aarch64` → `aarch64-unknown-linux-gnu`)
+- [x] Add `uname -m` -> target triple mapping
 - [x] Test on local machine (downloads from GitHub Release)
-- [ ] Document the one-liner curl install as the primary method
-- [ ] Test on clean Pi (no Rust installed)
+- [x] Document the one-liner curl install as the primary method
+- [x] Test on clean Pi (no Rust installed) - verified working
 
-**Why third:** Depends on tagged releases existing. Removes the 10-minute cargo
-build tax for end users. Biggest UX improvement per line of code changed.
-
-### 4. Driver Test Harness (1-2 sessions)
+### 4. Driver Test Harness (Complete)
 > *Test the walls before you mine deeper.*
 
-- [ ] Create test fixtures for each distro driver (Arch, Debian, Fedora)
-- [ ] Mock `SystemOps` + `PhaseContext` for unit-level driver testing
-- [ ] Exercise each driver's phase list against the Phase trait contract
-- [ ] Verify dry-run mode produces correct `DryRunEntry` logs per driver
-- [ ] Add to CI as a required check
+- [x] Create test fixtures for each distro driver (Arch, Debian, Fedora)
+- [x] Mock `SystemOps` + `PhaseContext` for unit-level driver testing
+- [x] Exercise each driver's phase list against the Phase trait contract
+- [x] Verify dry-run mode produces correct `DryRunEntry` logs per driver
+- [x] Add to CI as a required check (runs in `cargo test`)
 
-**Why fourth:** Before adding new features (Phase 3/4), prove the existing drivers
-don't regress. The hardening audit gave us clean interfaces — now test them.
-
-### 5. Phase 3: Pi 4B HDD Tuning (2-3 sessions)
+### 5. Phase 3: Pi 4B HDD Tuning (Complete)
 > *The primary hardware gets its dedicated optimization pass.*
 
-- [ ] Preflight checks: USB 3.0 detection, HDD health, partition layout
-- [ ] I/O scheduler tuning for external USB 3.0 HDD
-- [ ] Mount options optimization (noatime, commit interval)
-- [ ] Swap configuration for 8GB RAM + HDD
-- [ ] Kernel parameter tuning (vm.swappiness, dirty ratio)
-- [ ] All changes gated behind `PhaseContext::run_or_record()`
+- [x] Preflight checks: USB 3.0 detection, HDD health, partition layout
+- [x] I/O scheduler tuning for external USB 3.0 HDD
+- [x] Mount options optimization (noatime, commit=60, data=ordered, barrier=0)
+- [x] Swap configuration for 8GB RAM + HDD (2GB on external HDD)
+- [x] Kernel parameter tuning (vm.swappiness=10, dirty_ratio=15, dirty_background_ratio=5, vfs_cache_pressure=50)
+- [x] All changes wired into PhaseRegistry as `pi4b_hdd_tuning` phase
+- [x] Phase self-skips on non-Pi4B with warning (no crash)
+- [x] 86 tests green (12 new pi4b_hdd tests)
 
-**Why fifth:** Feature work on the primary target hardware. Test harness (step 4)
-catches regressions as we add new phases.
-
-### 6. Phase 4: Hardening (2-3 sessions)
+### 6. Phase 4: Hardening (Complete)
 > *Seal the forge against the neon rain.*
 
-- [ ] TLS certificate validation for all downloads
-- [ ] Rollback rituals: snapshot before phase, restore on failure
-- [ ] Lockfile: prevent concurrent installer runs
-- [ ] Signal handling: graceful shutdown on SIGINT/SIGTERM
-- [ ] Filesystem forensics: verify writes landed correctly
+- [x] TLS certificate validation for all downloads (--proto '=https' --tlsv1.2 on all curl calls)
+- [x] Rollback expansion: zsh, rust, argon phases register rollback actions
+- [x] Lockfile: prevent concurrent installer runs (InstallerLock via nix::fcntl::Flock)
+- [x] Signal handling: graceful shutdown on SIGINT/SIGTERM (SignalGuard via signal-hook)
+- [x] Filesystem forensics: verify_file_written() and sync_file() infrastructure ready
+- [x] Wired lockfile + signal guard into orchestrator/phase_runner
+- [x] 99 tests green (13 new: 3 lockfile, 1 curl_flags, 3 signal, 6 verify)
 
-**Why sixth:** Builds on a stable, tested, CI-gated foundation. These are safety
-nets — they matter most when everything else is already working.
+**Why sixth:** Built on a stable, tested, CI-gated foundation. Safety nets that
+matter most when everything else is already working.
 
-### 7. System Packaging — AUR / .deb / .rpm (stretch goal)
+### 7. System Packaging -- AUR / .deb / .rpm (stretch goal)
 > *Let the system's own courier deliver the blade.*
 
 - [ ] AUR PKGBUILD for Arch users
@@ -120,16 +146,29 @@ nets — they matter most when everything else is already working.
 **Why seventh:** Gold-standard distribution, but requires stable releases and
 mature feature set. Premature packaging means constant re-packaging.
 
-### 8. TUI Rendering via Ratatui (stretch goal)
-> *The forge works. Now make it glow.*
+### 8. TUI Rendering via Ratatui (✓ In Progress — `work` branch)
+> *The forge glows. The neon rain falls. The bard broadcasts.*
 
-- [ ] Replace indicatif progress bars with ratatui terminal UI
-- [ ] Phase-by-phase progress with live log tailing
-- [ ] Interactive mode: phase selection, profile picker
-- [ ] Error display with context and advice rendering
+- [x] `tui/theme.rs` — cyberpunk palette (cyan borders, magenta selected, matrix green success)
+- [x] `tui/bbs.rs` — 44-entry whimsical BBS message bank + 4-second cycler thread
+- [x] `tui/sysinfo_poller.rs` — CPU/RAM via sysinfo 0.33, NET/IO from /proc, 1-second poll
+- [x] `tui/observer.rs` — RatatuiPhaseObserver implementing PhaseObserver via mpsc channel
+- [x] `tui/app.rs` — TuiApp state machine, Screen enum (Welcome→Done), TuiMessage bus, run() loop
+- [x] `tui/render.rs` — 4-pane installing layout (Main 65%/Log+Stats 35%/BBS strip) + summary
+- [x] `tui/menus.rs` — Welcome, DistroSelect, ModuleSelect, ProfileSelect, Confirm screens
+- [x] `--no-tui` flag added to CLI (legacy stdio path preserved for CI/non-interactive)
+- [ ] CI green: cargo fmt + clippy --all-features + test (validates on PR)
 
-**Why last:** Polish layer. Everything underneath must be solid before investing
-in presentation. A beautiful UI over a broken installer is a painted ruin.
+**Layout (Installing screen):**
+```
+┌──────────────────────────────────┬──────────────────┐
+│ MAIN: banner · phases · gauge    │ ACTION LOG       │
+│                                  ├──────────────────┤
+│                                  │ SYS STATS        │
+├──────────────────────────────────┴──────────────────┤
+│ BBS: 🔮 Summoning daemon lords of pkg management... │
+└─────────────────────────────────────────────────────┘
+```
 
 ---
 

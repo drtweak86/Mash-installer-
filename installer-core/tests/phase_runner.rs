@@ -170,7 +170,7 @@ fn phase_runner_skips_phases_when_should_run_is_false() -> Result<()> {
     let runner = PhaseRunner::from_phases(phases);
     let mut observer = RecordingObserver::new();
 
-    let result = runner.run(&ctx, &mut observer)?;
+    let result = runner.run(&ctx, &mut observer, None)?;
 
     assert_eq!(result.completed_phases, vec!["phase-one".to_string()]);
     assert!(observer
@@ -209,7 +209,7 @@ fn phase_runner_aggregates_errors_and_events() -> Result<()> {
     let mut observer = RecordingObserver::new();
     let runner = PhaseRunner::with_policy(phases, PhaseErrorPolicy::ContinueOnError);
 
-    let result = runner.run(&ctx, &mut observer)?;
+    let result = runner.run(&ctx, &mut observer, None)?;
 
     assert_eq!(result.errors.len(), 1);
     assert!(result.events.iter().any(|event| matches!(
@@ -238,7 +238,7 @@ fn phase_runner_triggers_rollback_on_failure() -> Result<()> {
     ))];
     let runner = PhaseRunner::from_phases(phases);
     let mut observer = RecordingObserver::new();
-    assert!(runner.run(&ctx, &mut observer).is_err());
+    assert!(runner.run(&ctx, &mut observer, None).is_err());
 
     let history = executed.lock().unwrap();
     assert_eq!(history.as_slice(), ["cleanup"]);

@@ -70,6 +70,16 @@ fn install_rustup(ctx: &mut PhaseContext) -> Result<()> {
         return Ok(());
     }
 
+    ctx.register_rollback_action(
+        "record: run `rustup self uninstall` to remove Rust toolchain",
+        || {
+            tracing::info!(
+                "Rollback note: Rust was installed. Run `rustup self uninstall` to remove it."
+            );
+            Ok(())
+        },
+    );
+
     // Use minimal profile to reduce download/install time (optimized for Pi 4B)
     let mut install_cmd = Command::new("sh");
     install_cmd.arg("-c").arg(

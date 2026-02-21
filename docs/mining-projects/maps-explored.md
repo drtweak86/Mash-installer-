@@ -1,6 +1,114 @@
 # Mining Projects – Explored Maps
 > Archive of completed work, closed at the end of each session.
 
+## Session: 2026-02-20 – Ratatui Forge (Current)
+
+### Summary
+The TUI campaign is complete: `mash-setup --tui` now spins up the Ratatui cockpit instead of `indicatif`, the log tail is fed by the `PhaseEvent` stream, module/profile selection happens inside `run_module_profile_menu`, and a neon telemetry panel (emoji signal %, fake telegraph chatter, log counts) shares the row beside the phase list while errors still exit with the neon epilog so the miner reads the advice before the screen clears.
+
+### Deliverables
+- [x] Replace the indicatif spinner fleet with the TuiPhaseObserver stage.
+- [x] Plumb `run_module_profile_menu` and software tiers into the new UI so menus live in one terminal ritual.
+- [x] Emit the neon error epilog once the Ratatui loop has the log tail and context wiring in place.
+- [x] Documented the tiny `install.sh` shortcut so even first-bin dwarves only need one curl to reach the forge.
+
+## Session: 2026-02-20 – Packaging Sprint & Ledger Update
+
+### Summary
+The courier lanes were refitted so `package-deb` and `package-rpm` now trail the build-release job, the publish gate bundles their results plus the ebbing PKGBUILD, and the ledger received a fresh chapter while I watched the neon sky for warnings.
+
+### Deliverables
+- [x] Added `.deb/.rpm` packaging jobs and publish-asset bundling to `.github/workflows/release.yml`.
+- [x] Ran `cargo fmt`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test`.
+- [x] Logged the sprint in `docs/HISTORY.md`, `docs/mining-projects/maps.md`, and this archive.
+
+### Build Status
+- cargo fmt: clean
+- cargo clippy --all-targets --all-features -- -D warnings: clean
+- cargo test: clean
+
+## Session: 2026-02-20 – Release Trigger
+
+### Summary
+`work` just pushed `v0.1.2` into the sky; the release workflow now runs with the new `.deb`, `.rpm`, and checksumed `PKGBUILD` cohorts.
+
+### Deliverables
+- [x] Push `v0.1.2` tag to `origin` so `.github/workflows/release.yml` fires the build-release → package-deb/rpm → publish relay.
+- [ ] Monitor GitHub Actions for the release job results and confirm the artifacts land before closing the vault.
+
+### Build Status
+- release workflow triggered by `v0.1.2` (check GitHub Actions for the green signal).
+
+---
+
+## Session: 2026-02-20 – Shell Polish & Software Tiers
+
+### Summary
+Starship, Kitty, and the goblin eza alias palette now land with guarded rc blocks from `resources/shell`. The interactive “software tiers” menu ships a dozen categories with five curated S/A choices each, so the miner can either let the installer pick the S-tier champions or select their own build. The new plan is logged into `InstallOptions`, and the tier doc mirrors the menu.
+
+### Deliverables
+- [x] Added Starship + Kitty + eza config deployment to the shell phase with backups and guarded blocks.
+- [x] Implemented `SoftwareTierPlan`, wired it through `InstallOptions`, and introduced the CLI menu that surfaces the 12-category, five-option list.
+- [x] Updated `docs/incoming-files/software_tiers.md` to document the curated tiers.
+- [x] fmt/clippy/test trilogy stayed green while wiring up the new UX.
+
+### Build Status
+- cargo fmt: clean
+- cargo clippy --all-targets --all-features -- -D warnings: clean
+- cargo test: clean
+
+---
+
+## Session: 2026-02-20 – Phase 4: Hardening Complete
+
+### Summary
+Sealed the forge against the neon rain. Five hardening measures implemented:
+lockfile (concurrent run prevention), TLS hardening (all curl calls pinned to TLS 1.2+),
+signal handling (graceful SIGINT/SIGTERM shutdown with rollback), rollback expansion
+(zsh, rust, argon phases register actions), and filesystem forensics infrastructure.
+
+### Deliverables
+- [x] `lockfile.rs` — `InstallerLock` via `nix::fcntl::Flock`, exclusive non-blocking
+- [x] `cmd.rs` — `curl_flags()` helper centralizing TLS enforcement
+- [x] TLS hardened: `apt_repo.rs`, `rclone.rs`, `argon.rs`, `zsh.rs`
+- [x] `signal.rs` — `SignalGuard` via `signal-hook`, `Arc<AtomicBool>` flag
+- [x] `verify.rs` — `verify_file_written()` + `sync_file()` infrastructure
+- [x] Rollback: `zsh.rs` (omz dir), `rust.rs` (note), `argon.rs` (config files)
+- [x] `orchestrator.rs` — acquires lockfile + signal guard before phases
+- [x] `phase_runner.rs` — checks signal between phases, triggers rollback
+- [x] 13 new tests (99 total), all green
+- [x] `signal-hook = "0.3"` added to Cargo.toml
+
+### Build Status
+- cargo fmt: clean
+- cargo clippy --all-targets --all-features -- -D warnings: clean
+- cargo test: 99 tests passing
+
+---
+
+## Session: 2026-02-20 – Phase 3: Pi 4B HDD Tuning Complete
+
+### Summary
+Completed the remaining Phase 3 tasks: mount options optimization, swap configuration,
+kernel parameter tuning, and full Phase system integration. The `pi4b_hdd` module now
+runs as a proper phase in `PhaseRegistry`, self-skipping on non-Pi4B hardware.
+
+### Deliverables
+- [x] `optimize_mount_options()` — reads /proc/mounts, recommends noatime/commit=60 for ext4 HDD
+- [x] `configure_swap()` — checks swapon, recommends 2GB swap on external HDD
+- [x] `tune_kernel_params()` — reads /proc/sys/vm/, recommends swappiness=10, dirty_ratio=15
+- [x] `install_phase()` wired into PhaseRegistry as "Pi 4B HDD Tuning"
+- [x] New exports: MountOptimization, SwapConfig, KernelParam
+- [x] 12 pi4b_hdd tests (86 total), all green
+- [x] Pushed to work branch, PR #8 updated
+
+### Build Status
+- cargo fmt: clean
+- cargo clippy --all-targets --all-features -- -D warnings: clean
+- cargo test: 86 tests passing
+
+---
+
 ## Session: 2026-02-20 – Step 2: First Tagged Release v0.1.0
 
 ### Summary

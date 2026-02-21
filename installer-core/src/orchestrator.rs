@@ -12,12 +12,14 @@ use crate::{
         InstallerStateSnapshot,
     },
     localization::Localization,
+    lockfile::InstallerLock,
     logging,
     options::InstallOptions,
     phase_registry::PhaseRegistry,
     phase_runner::{PhaseErrorPolicy, PhaseEvent, PhaseObserver, PhaseRunError, PhaseRunner},
     platform::detect as detect_platform,
     rollback::RollbackManager,
+    signal::SignalGuard,
     InstallContext,
 };
 
@@ -26,6 +28,78 @@ pub fn run_with_driver(
     opts: InstallOptions,
     observer: &mut dyn PhaseObserver,
 ) -> Result<InstallationReport, Box<InstallerRunError>> {
+    // Acquire exclusive lock to prevent concurrent runs
+    let _lock = InstallerLock::acquire().map_err(|e| {
+        let report = InstallationReport {
+            completed_phases: vec![],
+            staging_dir: PathBuf::from("/tmp"),
+            errors: vec![],
+            outputs: Vec::new(),
+            events: vec![],
+            options: opts.clone(),
+            driver: DriverInfo {
+                name: driver.name().to_string(),
+                description: driver.description().to_string(),
+            },
+            dry_run_log: Vec::new(),
+        };
+        Box::new(InstallerRunError {
+            report: Box::new(report),
+            source: InstallerError::new(
+                "lockfile",
+                "Concurrent run prevention",
+                ErrorSeverity::Fatal,
+                e,
+                InstallerStateSnapshot::from_options(&UserOptionsContext {
+                    profile: opts.profile,
+                    staging_dir: PathBuf::from("/tmp"),
+                    dry_run: opts.dry_run,
+                    interactive: opts.interactive,
+                    enable_argon: opts.enable_argon,
+                    enable_p10k: opts.enable_p10k,
+                    docker_data_root: opts.docker_data_root,
+                }),
+                Some("Wait for the other instance to finish or remove the lock file.".to_string()),
+            ),
+        })
+    })?;
+
+    // Register signal handlers for graceful shutdown
+    let signal_guard = SignalGuard::new().map_err(|e| {
+        let report = InstallationReport {
+            completed_phases: vec![],
+            staging_dir: PathBuf::from("/tmp"),
+            errors: vec![],
+            outputs: Vec::new(),
+            events: vec![],
+            options: opts.clone(),
+            driver: DriverInfo {
+                name: driver.name().to_string(),
+                description: driver.description().to_string(),
+            },
+            dry_run_log: Vec::new(),
+        };
+        Box::new(InstallerRunError {
+            report: Box::new(report),
+            source: InstallerError::new(
+                "signal_handler",
+                "Signal handler registration",
+                ErrorSeverity::Fatal,
+                e,
+                InstallerStateSnapshot::from_options(&UserOptionsContext {
+                    profile: opts.profile,
+                    staging_dir: PathBuf::from("/tmp"),
+                    dry_run: opts.dry_run,
+                    interactive: opts.interactive,
+                    enable_argon: opts.enable_argon,
+                    enable_p10k: opts.enable_p10k,
+                    docker_data_root: opts.docker_data_root,
+                }),
+                None,
+            ),
+        })
+    })?;
+
     if std::env::var("USER").is_err() {
         let user = std::env::var("SUDO_USER").ok().or_else(|| {
             Command::new("whoami")
@@ -140,7 +214,7 @@ pub fn run_with_driver(
     let runner = PhaseRunner::with_policy(phases, policy);
     let install_span = logging::install_span(&ctx);
     let _install_guard = install_span.enter();
-    let run_result = runner.run(&ctx, observer);
+    let run_result = runner.run(&ctx, observer, Some(&signal_guard));
     let dry_run_log = ctx.dry_run_log.entries();
     match run_result {
         Ok(result) => Ok(InstallationReport {
@@ -249,7 +323,8 @@ mod tests {
             vec![
                 "System packages",
                 "Rust toolchain + cargo tools",
-                "Git, GitHub CLI, SSH"
+                "Git, GitHub CLI, SSH",
+                "Pi 4B HDD Tuning",
             ]
         );
     }

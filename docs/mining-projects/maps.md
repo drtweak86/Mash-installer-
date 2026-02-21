@@ -105,13 +105,13 @@ Integrate BBC/UNIX retro-futuristic theme (i3-gaps + Kitty) and wallpaper downlo
    - Update documentation and changelog
 
 ### Deliverables
-- [ ] Wallpaper downloader integrated into software tiers
-- [ ] Retro theme installable as option (with auto-dependency handling)
-- [ ] Hyprland removed from installer options
+- [x] Wallpaper downloader integrated into software tiers
+- [x] Retro theme installable as option (with auto-dependency handling)
+- [x] Hyprland removed from installer options
 - [ ] TUI flow reorganized: Detection → Profile → Options → Themes → Software → Install
-- [ ] All dependencies handled automatically
+- [x] All dependencies handled automatically
 - [ ] First-boot scripts configured for wallpaper download
-- [ ] Complete documentation updated
+- [x] Complete documentation updated
 - [ ] Tests passing on Raspberry Pi 4B
 - [ ] User acceptance testing complete
 
@@ -237,7 +237,7 @@ Integrate BBC/UNIX retro-futuristic theme (i3-gaps + Kitty) and wallpaper downlo
 - [x] `tui/app.rs` — TuiApp state machine, Screen enum (Welcome→Done), TuiMessage bus, run() loop
 - [x] `tui/menus.rs` — Welcome, DistroSelect, ModuleSelect, ProfileSelect, Confirm screens
 - [x] `--no-tui` flag added to CLI (legacy stdio path preserved for CI/non-interactive)
-- [ ] CI green: cargo fmt + clippy --all-features + test (validates on PR)
+- [x] CI green: cargo fmt + clippy --all-features + test (validates on PR)
 
 **Layout (Installing screen):**
 ```

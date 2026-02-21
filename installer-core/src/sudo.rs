@@ -23,6 +23,26 @@ impl Drop for SudoKeepalive {
     }
 }
 
+/// Check if sudo requires a password and prompt for it if needed
+#[allow(dead_code)]
+pub fn ensure_sudo_access() -> bool {
+    let mut test_cmd = Command::new("sudo");
+    test_cmd.args(["-v"]);
+    // Use a pipe for stdin to avoid issues with TUI raw mode
+    test_cmd.stdin(std::process::Stdio::piped());
+
+    match cmd::run(&mut test_cmd) {
+        Ok(_) => {
+            debug!("sudo access verified successfully");
+            true
+        }
+        Err(e) => {
+            error!("sudo access check failed: {}", e);
+            false
+        }
+    }
+}
+
 /// Start a background thread to keep sudo alive during long operations.
 ///
 /// Note: When running in TUI mode, sudo password prompts may not work properly

@@ -1,84 +1,58 @@
 ![Banner of the bard](docs/assets/banner_final.png)
-# MASH Installer
-> **Mythic Assembly & Sigil Heuristics** — forged where neon rain meets stone and every glyph is a command rune.
 
-## What Does It Do?
+# 🛠️ MASH-installer
+> **Mythic Assembly & Sigil Heuristics** — A high-performance, Ratatui-powered Linux system provisioner forged in Rust.
 
-**MASH Installer is your 3 AM rage-quit recovery tool.** When you've borked your dev station beyond recognition and need it back **NOW**, this is your lifeline.
+## 📋 Project Overview
+MASH-installer is a comprehensive system provisioning tool designed for rapid recovery and idempotent setup of development environments. It specializes in Raspberry Pi 4B optimization but supports aarch64 and x86_64 architectures across multiple distributions.
 
-### The One-Liner (For When You're Raging at 3 AM)
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/drtweak86/Mash-installer/work/install.sh | bash
-```
-
-`install.sh` in this repo does the heavy lifting: it detects your architecture, grabs the matching release binary (no tarballs, no firmware guesswork), and immediately executes it. Copy, paste, and you vault into the neon forge without thinking twice.
-
-### What You Get
-
-- **System packages** - All the essentials your machine needs
-- **Rust toolchain** - Latest stable with cargo tools
-- **Git & GitHub CLI** - Version control ready to roll
-- **Docker Engine** - Containers at your fingertips
-- **Shell & UX** - zsh, starship, and all the goodies
-- **Fonts & Themes** - Because even rage-quit terminals deserve to be pretty
-- **Buildroot dependencies** - For when you need to compile the world
-
-## 📜 Tavern Card
-Step under the warm eaves of the Forge Tavern, leave your frostbitten boots by the hearth, and let the drunk dwarf bard guide you through `MASH-installer`. This tale braids the grit of a thousand dwarves hauling plasma ore, the ferocious snark of a dragon who drinks coffee, and the terse logic of a Ratatui terminal into a neon hymn that knows there's no place like 127.0.0.1. Every log entry is a page from a codex written in neon runes, every dependency a rune etched in starlight, and the newest ritual is a single incantation:
-
+### 🚀 Quick Start
+Run the following command to summon the installer directly from the forge:
 ```bash
 sh <(curl -L https://raw.githubusercontent.com/drtweak86/Mash-installer/main/install.sh)
 ```
 
-The `mash-setup` binary now embodies the Mythic Assembly & Sigil Heuristics creed: pragmatic Rust craftspersonry, Ratatui glyphs flickering like tavern lanterns, and dry-run gates that keep the neon forge honest.
+## 🏗️ Technical Architecture
+The project is structured as a modular Rust workspace, ensuring separation of concerns between core logic, UI, and platform-specific implementations.
 
-## ⚙️ What the Bard Recommends
-- **First dram:** Run `./mash-setup --help` to see the full CLI menu; the Ratatui TUI launches by default with a 4-pane cyberpunk layout.
-- **Classic mode:** Add `--no-tui` to fall back to the original `indicatif` progress-bar UI — handy for CI, SSH sessions, and pipe-friendly scripts.
-- **Dry-run mode:** Add `--dry-run` to preview every stage without touching your system.
-- **Green oath:** Always `cd /work/Mash-installer` before running `cargo fmt`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test`; the forge only crowns green builds.
-- **Commits:** Keep them tight (KCS), back up your work (ABB), test everything (ABT), and ink the changes in `docs/mining-projects/maps*.md` plus this very README (ABD).
+### 📂 Directory Structure
+- `installer-core/`: The engine. Handles phase management, dry-runs, and system abstractions.
+- `installer-cli/`: The driver. Contains the Ratatui TUI and CLI argument handling.
+- `installer-arch/`, `installer-debian/`, `installer-fedora/`: Distribution-specific drivers.
+- `resources/`: Shell configurations, themes, and string localizations.
+- `docs/`: Technical specifications, historical records, and the Bard's personal journal.
 
-## ⚠️ Sudo Password Note
-When running the TUI installer, sudo password prompts may not work properly due to terminal raw mode. To resolve this:
+## ⚙️ Core Features
+- **Ratatui TUI**: A 4-pane cyberpunk interface with real-time telemetry and status monitoring.
+- **Idempotent Phases**: Every installation step is gated and trackable.
+- **Dry-Run Mode**: Full execution simulation with detailed logging (`--dry-run`).
+- **Pi 4B Optimization**: Dedicated tuning for USB 3.0 HDDs, kernel parameters, and I/O schedulers.
+- **Safety First**: TLS hardening, exclusive lockfiles, and graceful signal handling (SIGINT/SIGTERM) with rollback support.
 
-1. **Recommended:** Configure sudo with NOPASSWD for the installer:
-   ```bash
-   echo "$USER ALL=(ALL) NOPASSWD: /path/to/mash-setup" | sudo tee /etc/sudoers.d/mash-installer
-   sudo chmod 440 /etc/sudoers.d/mash-installer
-   ```
+## 🛠️ Development & Quality Gates
+The forge only crowns green builds. All contributions must pass the following rituals:
 
-2. **Alternative:** Run in classic mode (no TUI):
-   ```bash
-   ./mash-setup --no-tui
-   ```
+```bash
+# Linting & Formatting
+cargo fmt --all -- --check
+cargo clippy --all-targets --all-features -- -D warnings
 
-This will use the progress-bar UI which allows sudo password prompts to work normally.
+# Testing
+cargo test --all --all-features
 
-## 🖥️ TUI Layout
+# Shell Validation
+shellcheck install.sh
 ```
-┌──────────────────────────────────────────┬──────────────────┐
-│  MAIN (65%)                               │  ACTION LOG      │
-│  ASCII banner · phase list · gauge        │  timestamped     │
-│  elapsed time · current phase detail      ├──────────────────┤
-│                                           │  SYS STATS       │
-│                                           │  CPU RAM NET I/O │
-├───────────────────────────────────────────┴──────────────────┤
-│ 🔮 BBS: Summoning the daemon lords of pkg management...      │
-└──────────────────────────────────────────────────────────────┘
-```
-Keys: `↑/↓` or `j/k` navigate · `Space` toggle · `Enter` confirm · `Esc` back · `q` quit
 
-## 👑 The Lore of MASH
-`Mythic Assembly & Sigil Heuristics` is the championed interpretation, but if the tavern prefers other toasts, consider:
+## 📜 Documentation
+- 🍺 [Bard's BBS Profile](docs/bard-bbs-profile.md) — The engineer's persona and rules of the forge.
+- 📖 [History & Journal](docs/HISTORY.md) — The chronicle of the installer's evolution.
+- 🗺️ [Mining Maps](docs/mining-projects/maps.md) — Current session work and future shafts.
+- 🛡️ [Sudo Technical Report](BUG_REPORT_SUDO_TUI.md) — Technical details on TUI password handling.
 
-1. **Metal Arcane Systems Hub** — for nights when the neon guts feel industrial.
-2. **Missions Above Steel Horizons** — for journeys where the rails are alive with plasma.
+## ⚖️ License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-No matter the moniker, the creed remains: secure SSH for GitHub, sober Ratatui artistry, and a bard who keeps the story alive in `docs/HISTORY.md`.
-
-**Meet the Bard**: 🍺 [Bard's BBS Profile](docs/bard-bbs-profile.md) — the drunken dwarf engineer who forges neon runes in Rust and Ratatui. Rules: ABB, ABT, ABD, KCS. Always smithing, always testing.
-
-## 🧭 Next Steps
-When the hearth is warm and Phase 2 is sealed, the bard says: keep the ledger polished, keep the toolchain preheated (`rustfmt`, `clippy`, `sccache`), and let Phase 3 (Pi 4B HDD tuning) sit in the wings until the lane is formally lit.
+---
+**Signed,**  
+*Bard, Drunken Dwarf Runesmith*

@@ -66,89 +66,6 @@ The shell & UX phase now deploys the incoming Starship + Kitty + eza gloss, with
 
 ---
 
-## 🏗️ SHAFT B – RETRO THEME & WALLPAPER INTEGRATION (ACTIVE)
-**Status**: Planning Complete, Integration Pending
-**Started**: 2024-02-21
-**Plan**: `docs/mining-projects/shaftb.md` (20KB comprehensive plan)
-
-### Summary
-Integrate BBC/UNIX retro-futuristic theme (i3-gaps + Kitty) and wallpaper downloader into MASH Installer main flow. Replace Hyprland with i3-gaps for better Raspberry Pi 4B compatibility. Reorganize TUI flow for logical progression: Detection → Profile → Options → Themes → Software → Install.
-
-### Strategic Plan
-**Document**: `docs/mining-projects/shaftb.md`
-**Timeline**: 5 days (2024-02-22 to 2024-02-27)
-**Owner**: Bard (Drunken Dwarf Runesmith)
-
-#### Integration Phases
-1. **Phase 2 - Core Integration** (Day 1):
-   - Add wallpaper downloader to software tiers
-   - Add retro theme to software tiers
-   - Implement basic installation logic
-   - Test build compilation
-
-2. **Phase 3 - Theme Integration** (Day 2):
-   - Implement dependency checking (i3/Kitty auto-install)
-   - Create configuration deployment logic
-   - Remove Hyprland references
-   - Test theme installation
-
-3. **Phase 4 - TUI Reorganization** (Day 3):
-   - Implement new theme selection menu
-   - Reorder existing menus for logical flow
-   - Update navigation and user experience
-   - Test complete flow
-
-4. **Phase 5 - Testing & Polish** (Day 4):
-   - Test on Raspberry Pi 4B
-   - Verify memory usage and performance
-   - Test wallpaper download and error handling
-   - Update documentation and changelog
-
-### Deliverables
-- [ ] Wallpaper downloader integrated into software tiers
-- [ ] Retro theme installable as option (with auto-dependency handling)
-- [ ] Hyprland removed from installer options
-- [ ] TUI flow reorganized: Detection → Profile → Options → Themes → Software → Install
-- [ ] All dependencies handled automatically
-- [ ] First-boot scripts configured for wallpaper download
-- [ ] Complete documentation updated
-- [ ] Tests passing on Raspberry Pi 4B
-- [ ] User acceptance testing complete
-
-### Components Ready
-✅ **Wallpaper Downloader** (`docs/incoming-files/wallpaper_downloader_final.py`)
-- 8 categories, 6000 images
-- Wallhaven API integration
-- First-boot mode support
-- Complete documentation
-
-✅ **Retro Theme Configuration**
-- i3-gaps: BBC/UNIX retro-futuristic aesthetic
-- Kitty: Terminus 14px, retro color scheme
-- Conky: System monitor with retro aesthetic
-- All configs tested and documented
-
-✅ **Documentation**
-- `docs/incoming-files/wallpaper_downloader_README.md` (6.8KB)
-- `docs/incoming-files/README.md` (updated)
-- `docs/mining-projects/shaftb.md` (20KB strategic plan)
-
-### Blockers
-⚠️ **Wallhaven API Key**: Required for production use (placeholder in code)
-⚠️ **Integration Time**: 5 days estimated, not yet started
-⚠️ **Testing**: Not yet tested on actual Raspberry Pi 4B
-
-### Next Steps
-1. Begin Phase 2 - Core Integration (add to software tiers)
-2. Implement dependency handling for i3/Kitty
-3. Remove Hyprland references
-4. Reorganize TUI flow
-5. Test and polish
-
-**Target Completion**: 2024-02-27
-
----
-
 ## Execution Order
 
 ### 1. CI Lockdown (Complete)
@@ -213,9 +130,10 @@ Integrate BBC/UNIX retro-futuristic theme (i3-gaps + Kitty) and wallpaper downlo
 - [x] Signal handling: graceful shutdown on SIGINT/SIGTERM (SignalGuard via signal-hook)
 - [x] Filesystem forensics: verify_file_written() and sync_file() infrastructure ready
 - [x] Wired lockfile + signal guard into orchestrator/phase_runner
-- [x] 99 tests green (13 new: 3 lockfile, 1 signal, 6 verify)
+- [x] 99 tests green (13 new: 3 lockfile, 1 curl_flags, 3 signal, 6 verify)
 
-**Why sixth:** Built on a stable, tested, CI-gated foundation. Safety nets that matter most when everything else is already working.
+**Why sixth:** Built on a stable, tested, CI-gated foundation. Safety nets that
+matter most when everything else is already working.
 
 ### 7. System Packaging -- AUR / .deb / .rpm (stretch goal)
 > *Let the system's own courier deliver the blade.*
@@ -225,7 +143,8 @@ Integrate BBC/UNIX retro-futuristic theme (i3-gaps + Kitty) and wallpaper downlo
 - [ ] `.rpm` package for Fedora (via `cargo-rpm` or manual)
 - [ ] Add package builds to release pipeline
 
-**Why seventh:** Gold-standard distribution, but requires stable releases and mature feature set. Premature packaging means constant re-packaging.
+**Why seventh:** Gold-standard distribution, but requires stable releases and
+mature feature set. Premature packaging means constant re-packaging.
 
 ### 8. TUI Rendering via Ratatui (✓ In Progress — `work` branch)
 > *The forge glows. The neon rain falls. The bard broadcasts.*
@@ -235,6 +154,7 @@ Integrate BBC/UNIX retro-futuristic theme (i3-gaps + Kitty) and wallpaper downlo
 - [x] `tui/sysinfo_poller.rs` — CPU/RAM via sysinfo 0.33, NET/IO from /proc, 1-second poll
 - [x] `tui/observer.rs` — RatatuiPhaseObserver implementing PhaseObserver via mpsc channel
 - [x] `tui/app.rs` — TuiApp state machine, Screen enum (Welcome→Done), TuiMessage bus, run() loop
+- [x] `tui/render.rs` — 4-pane installing layout (Main 65%/Log+Stats 35%/BBS strip) + summary
 - [x] `tui/menus.rs` — Welcome, DistroSelect, ModuleSelect, ProfileSelect, Confirm screens
 - [x] `--no-tui` flag added to CLI (legacy stdio path preserved for CI/non-interactive)
 - [ ] CI green: cargo fmt + clippy --all-features + test (validates on PR)
@@ -258,54 +178,3 @@ Integrate BBC/UNIX retro-futuristic theme (i3-gaps + Kitty) and wallpaper downlo
 - **Test before extend**: Driver harness before new phases
 - **Foundation before facade**: Core stability before TUI polish
 - **Green before merge**: `work` branch only merges to `main` when fmt + clippy + test pass
-
----
-
-## 📊 STATUS DASHBOARD
-
-### Active Projects
-| Project | Status | Owner | Timeline |
-|---------|--------|-------|----------|
-| Shaft B - Retro Integration | ✅ Planning Complete | Bard | 2024-02-22 to 2024-02-27 |
-| TUI Ratatui | ⚠️ In Progress | Claude/Bard | Ongoing |
-| CI/Pipeline | ✅ Complete | Bard | Complete |
-
-### Completed Projects
-| Project | Status | Completion Date |
-|---------|--------|-----------------|
-| Shaft A - Reconnaissance | ✅ Complete | 2024-02-20 |
-| Phase 1-5 - Core & Hardening | ✅ Complete | 2024-02-20 |
-| Release v0.1.2 | ✅ Complete | 2024-02-20 |
-
-### Blockers
-| Item | Severity | Resolution Plan |
-|------|----------|------------------|
-| Wallhaven API Key | 🔴 High | Obtain key before production deployment |
-| Integration Time | 🟡 Medium | Allocate 5 days, begin 2024-02-22 |
-| Pi 4B Testing | 🟡 Medium | Test after integration complete |
-
----
-
-## 🗺️ SOURCE OF TRUTH
-
-**This document (`maps.md`) is the canonical source of truth for:**
-- Current project status
-- Active mining sessions
-- Execution order
-- Blockers and risks
-- Completion criteria
-
-**Supporting Documents:**
-- `shaftb.md` - Detailed integration plan (20KB)
-- `maps-explored.md` - Historical context
-- `HISTORY.md` - Release chronology
-
-**Last Updated**: 2024-02-21
-**Next Review**: 2024-02-22 (Phase 2 kickoff)
-**Owner**: Bard (Drunken Dwarf Runesmith)
-
----
-
-*Document Status: ACTIVE* 🟢
-*Version: 2.1* (Updated 2024-02-21 with Shaft B integration plan)
-*Previous Version: 2.0* (Archived as maps-2024-02-21-snapshot.md)

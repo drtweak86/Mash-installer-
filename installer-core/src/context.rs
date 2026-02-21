@@ -8,6 +8,7 @@ use crate::localization::Localization;
 use crate::platform::PlatformInfo;
 use crate::rollback::RollbackManager;
 use crate::staging;
+use crate::SoftwareTierPlan;
 use anyhow::Result;
 
 /// CLI-supplied options that guide the installation.
@@ -19,6 +20,7 @@ pub struct UserOptionsContext {
     pub enable_argon: bool,
     pub enable_p10k: bool,
     pub docker_data_root: bool,
+    pub software_plan: SoftwareTierPlan,
 }
 
 /// Options that override values in the persisted Mash config.

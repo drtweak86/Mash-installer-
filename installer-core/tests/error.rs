@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use installer_core::cmd::{CommandExecutionDetails, CommandExecutionError};
 use installer_core::{
     DriverInfo, ErrorSeverity, InstallOptions, InstallationReport, InstallerError,
-    InstallerStateSnapshot, ProfileLevel, UserOptionsContext,
+    InstallerStateSnapshot, ProfileLevel, SoftwareTierPlan, UserOptionsContext,
 };
 use std::path::PathBuf;
 
@@ -15,6 +15,7 @@ fn build_user_options() -> UserOptionsContext {
         enable_argon: true,
         enable_p10k: false,
         docker_data_root: false,
+        software_plan: SoftwareTierPlan::default(),
     }
 }
 

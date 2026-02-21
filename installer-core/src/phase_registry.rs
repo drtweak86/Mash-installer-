@@ -4,7 +4,6 @@ use crate::context::UserOptionsContext;
 use crate::docker;
 use crate::fonts;
 use crate::github;
-use crate::hyprland;
 use crate::localization::Localization;
 use crate::options::ProfileLevel;
 use crate::phase_runner::{FunctionPhase, Phase};
@@ -12,6 +11,7 @@ use crate::pi4b_hdd;
 use crate::pkg;
 use crate::rclone;
 use crate::rust;
+use crate::software_tiers;
 use crate::zsh;
 use crate::PhaseContext;
 use anyhow::Result;
@@ -50,11 +50,11 @@ impl Default for PhaseRegistry {
                 PhaseGate::Always,
             ),
             PhaseEntry::new(
-                "hyprland_audio",
-                "Hyprland audio fix (Arch)",
-                "Hyprland audio configured",
-                hyprland::install_phase,
-                PhaseGate::Profile(ProfileLevel::Dev),
+                "software_tiers",
+                "Curated software tiers",
+                "Software tiers installed",
+                software_tiers::install_phase,
+                PhaseGate::SoftwareTiers,
             ),
             PhaseEntry::new(
                 "rust_toolchain",
@@ -163,6 +163,7 @@ enum PhaseGate {
     Always,
     Profile(ProfileLevel),
     ModuleArgon,
+    SoftwareTiers,
 }
 
 impl PhaseGate {
@@ -171,6 +172,7 @@ impl PhaseGate {
             PhaseGate::Always => true,
             PhaseGate::Profile(level) => options.profile >= *level,
             PhaseGate::ModuleArgon => options.enable_argon,
+            PhaseGate::SoftwareTiers => !options.software_plan.is_empty(),
         }
     }
 }

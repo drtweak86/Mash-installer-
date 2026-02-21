@@ -2,8 +2,8 @@ use crate::cmd;
 use crate::context::UserOptionsContext;
 use crate::dry_run::DryRunEntry;
 use crate::ConfigError;
-use crate::InstallOptions;
 use crate::ProfileLevel;
+use crate::{InstallOptions, SoftwareTierPlan};
 use crate::{PhaseEvent, PhaseOutput};
 use anyhow::Error;
 use std::fmt;
@@ -24,6 +24,7 @@ pub struct InstallerStateSnapshot {
     pub enable_argon: bool,
     pub enable_p10k: bool,
     pub docker_data_root: bool,
+    pub software_plan: SoftwareTierPlan,
 }
 
 impl InstallerStateSnapshot {
@@ -36,6 +37,7 @@ impl InstallerStateSnapshot {
             enable_argon: options.enable_argon,
             enable_p10k: options.enable_p10k,
             docker_data_root: options.docker_data_root,
+            software_plan: options.software_plan.clone(),
         }
     }
 }
@@ -50,6 +52,7 @@ impl Default for InstallerStateSnapshot {
             enable_argon: false,
             enable_p10k: false,
             docker_data_root: false,
+            software_plan: SoftwareTierPlan::default(),
         }
     }
 }
@@ -58,7 +61,7 @@ impl fmt::Display for InstallerStateSnapshot {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "profile={:?}, staging={}, dry_run={}, interactive={}, enable_argon={}, enable_p10k={}, docker_data_root={}",
+            "profile={:?}, staging={}, dry_run={}, interactive={}, enable_argon={}, enable_p10k={}, docker_data_root={}, software_plan(full={}, theme={:?}, selections={})",
             self.profile,
             self.staging_dir.display(),
             self.dry_run,
@@ -66,6 +69,9 @@ impl fmt::Display for InstallerStateSnapshot {
             self.enable_argon,
             self.enable_p10k,
             self.docker_data_root,
+            self.software_plan.full_install,
+            self.software_plan.theme_plan,
+            self.software_plan.selections.len(),
         )
     }
 }

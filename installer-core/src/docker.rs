@@ -265,8 +265,8 @@ mod tests {
     use super::*;
     use crate::{
         backend::PkgBackend, driver::DistroDriver, dry_run::DryRunLog, ConfigService, Localization,
-        PhaseContext, PlatformContext, PlatformInfo, ProfileLevel, RollbackManager, UIContext,
-        UserOptionsContext,
+        PhaseContext, PlatformContext, PlatformInfo, ProfileLevel, RollbackManager,
+        SoftwareTierPlan, UIContext, UserOptionsContext,
     };
     use anyhow::Result;
     use serde_json::json;
@@ -331,6 +331,7 @@ mod tests {
                 enable_argon: false,
                 enable_p10k: false,
                 docker_data_root: false,
+                software_plan: SoftwareTierPlan::default(),
             };
             let localization = Localization::load_default()?;
 

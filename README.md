@@ -62,5 +62,7 @@ Keys: `↑/↓` or `j/k` navigate · `Space` toggle · `Enter` confirm · `Esc` 
 
 No matter the moniker, the creed remains: secure SSH for GitHub, sober Ratatui artistry, and a bard who keeps the story alive in `docs/HISTORY.md`.
 
+**Meet the Bard**: 🍺 [Bard's BBS Profile](docs/bard-bbs-profile.md) — the drunken dwarf engineer who forges neon runes in Rust and Ratatui. Rules: ABB, ABT, ABD, KCS. Always smithing, always testing.
+
 ## 🧭 Next Steps
 When the hearth is warm and Phase 2 is sealed, the bard says: keep the ledger polished, keep the toolchain preheated (`rustfmt`, `clippy`, `sccache`), and let Phase 3 (Pi 4B HDD tuning) sit in the wings until the lane is formally lit.

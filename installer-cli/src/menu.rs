@@ -1,7 +1,9 @@
 //! Interactive menu system for driver, module, and profile selection
 
 use anyhow::Result;
-use installer_core::{interaction::InteractionService, DistroDriver, PlatformInfo, ProfileLevel};
+use installer_core::{
+    interaction::InteractionService, DistroDriver, PlatformInfo, ProfileLevel, ThemePlan,
+};
 use std::io::{self, Write};
 use tracing::warn;
 
@@ -29,6 +31,36 @@ impl ModuleSelection {
             }
         }
         false
+    }
+}
+
+pub fn run_theme_menu(interaction: &InteractionService) -> Result<ThemePlan> {
+    println!("\nStep 3/6: Theme Selection");
+    println!("Choose your window manager theme:");
+
+    let options = vec![
+        "BBC/UNIX Retro Theme (i3 + Kitty) - Classic 1980s computing aesthetic",
+        "BBC/UNIX Retro Theme + Wallpaper Pack - Complete retro experience with 6000+ wallpapers",
+        "No theme changes - Keep current configuration",
+    ];
+
+    let choice = interaction.select_option(
+        "theme.selection",
+        "Select theme option",
+        &options,
+        3,
+        |prompt, options| {
+            for (idx, option) in options.iter().enumerate() {
+                println!("{}) {}", idx + 1, option);
+            }
+            Ok(prompt_choice(prompt, 3, options.len()))
+        },
+    )?;
+
+    match choice {
+        1 => Ok(ThemePlan::RetroOnly),
+        2 => Ok(ThemePlan::RetroWithWallpapers),
+        _ => Ok(ThemePlan::None),
     }
 }
 

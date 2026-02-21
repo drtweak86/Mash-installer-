@@ -389,7 +389,7 @@ mod tests {
         localization::Localization,
         platform::PlatformInfo,
         rollback::RollbackManager,
-        InstallContext, ProfileLevel,
+        InstallContext, ProfileLevel, SoftwareTierPlan,
     };
     use anyhow::{anyhow, Result};
     use std::path::PathBuf;
@@ -538,6 +538,7 @@ mod tests {
             enable_argon: false,
             enable_p10k: false,
             docker_data_root: false,
+            software_plan: SoftwareTierPlan::default(),
         };
         let localization = Localization::load_default()?;
 

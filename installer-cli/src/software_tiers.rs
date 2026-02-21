@@ -1,3 +1,4 @@
+use super::menu::run_theme_menu;
 use anyhow::Result;
 use installer_core::{interaction::InteractionService, SoftwareTierPlan};
 use std::collections::BTreeMap;
@@ -414,20 +415,19 @@ pub fn run_software_tier_menu(interaction: &InteractionService) -> Result<Softwa
     )?;
 
     if choice == 1 {
-        Ok(full_s_tier_plan())
+        // For full S-tier install, we still need to ask about theme
+        println!("\nStep 3/6: Theme Selection");
+        let theme_plan = run_theme_menu(interaction)?;
+        let mut picks = BTreeMap::new();
+        for category in SOFTWARE_CATEGORIES {
+            if let Some(recommended) = category.options.first() {
+                picks.insert(category.label, recommended.name);
+            }
+        }
+        Ok(SoftwareTierPlan::new(true, picks, theme_plan))
     } else {
         run_custom_selection(interaction)
     }
-}
-
-fn full_s_tier_plan() -> SoftwareTierPlan {
-    let mut picks = BTreeMap::new();
-    for category in SOFTWARE_CATEGORIES {
-        if let Some(recommended) = category.options.first() {
-            picks.insert(category.label, recommended.name);
-        }
-    }
-    SoftwareTierPlan::new(true, picks)
 }
 
 fn run_custom_selection(interaction: &InteractionService) -> Result<SoftwareTierPlan> {
@@ -452,7 +452,12 @@ fn run_custom_selection(interaction: &InteractionService) -> Result<SoftwareTier
         let chosen = &category.options[selection - 1];
         picks.insert(category.label, chosen.name);
     }
-    Ok(SoftwareTierPlan::new(false, picks))
+
+    // Add theme selection
+    println!("\nStep 3/6: Theme Selection");
+    let theme_plan = run_theme_menu(interaction)?;
+
+    Ok(SoftwareTierPlan::new(false, picks, theme_plan))
 }
 
 fn format_option(option: &SoftwareOption) -> String {

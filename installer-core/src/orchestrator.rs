@@ -58,6 +58,7 @@ pub fn run_with_driver(
                     enable_argon: opts.enable_argon,
                     enable_p10k: opts.enable_p10k,
                     docker_data_root: opts.docker_data_root,
+                    software_plan: opts.software_plan.clone(),
                 }),
                 Some("Wait for the other instance to finish or remove the lock file.".to_string()),
             ),
@@ -94,6 +95,7 @@ pub fn run_with_driver(
                     enable_argon: opts.enable_argon,
                     enable_p10k: opts.enable_p10k,
                     docker_data_root: opts.docker_data_root,
+                    software_plan: opts.software_plan.clone(),
                 }),
                 None,
             ),
@@ -185,6 +187,7 @@ pub fn run_with_driver(
         enable_argon: opts.enable_argon,
         enable_p10k: opts.enable_p10k,
         docker_data_root: opts.docker_data_root,
+        software_plan: opts.software_plan.clone(),
     };
 
     let platform_ctx = PlatformContext {
@@ -283,6 +286,7 @@ fn warn_non_pi_4b(
                 enable_argon: opts.enable_argon,
                 enable_p10k: opts.enable_p10k,
                 docker_data_root: opts.docker_data_root,
+                software_plan: opts.software_plan.clone(),
             }),
             Some("This installer is designed for Raspberry Pi 4B only.".to_string()),
         ),
@@ -292,7 +296,10 @@ fn warn_non_pi_4b(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{context::UserOptionsContext, localization::Localization, options::ProfileLevel};
+    use crate::{
+        context::UserOptionsContext, localization::Localization, options::ProfileLevel,
+        SoftwareTierPlan,
+    };
     use std::path::PathBuf;
 
     fn make_user_options(profile: ProfileLevel, enable_argon: bool) -> UserOptionsContext {
@@ -304,6 +311,7 @@ mod tests {
             enable_argon,
             enable_p10k: false,
             docker_data_root: false,
+            software_plan: SoftwareTierPlan::default(),
         }
     }
 

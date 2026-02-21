@@ -5,7 +5,7 @@ use anyhow::Result;
 use installer_core::{
     dry_run::DryRunLog, ConfigService, DistroDriver, ErrorSeverity, InstallContext, Phase,
     PhaseContext, PhaseEvent, PhaseObserver, PhaseRunner, PkgBackend, PlatformInfo, ProfileLevel,
-    UIContext, UserOptionsContext,
+    SoftwareTierPlan, UIContext, UserOptionsContext,
 };
 use std::path::PathBuf;
 
@@ -157,6 +157,7 @@ fn build_context_for_driver(driver: &'static dyn DistroDriver) -> Result<Install
         enable_argon: false,
         enable_p10k: false,
         docker_data_root: false,
+        software_plan: SoftwareTierPlan::default(),
     };
     let localization = installer_core::localization::Localization::load_default()?;
 

@@ -5,7 +5,7 @@ use installer_core::RollbackManager;
 use installer_core::{
     ConfigService, DistroDriver, ErrorSeverity, InstallContext, Phase, PhaseContext,
     PhaseErrorPolicy, PhaseEvent, PhaseObserver, PhaseRunner, PkgBackend, PlatformContext,
-    PlatformInfo, ProfileLevel, UIContext, UserOptionsContext,
+    PlatformInfo, ProfileLevel, SoftwareTierPlan, UIContext, UserOptionsContext,
 };
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -127,6 +127,7 @@ fn build_install_context() -> Result<InstallContext> {
         enable_argon: false,
         enable_p10k: false,
         docker_data_root: false,
+        software_plan: SoftwareTierPlan::default(),
     };
     let localization = Localization::load_default()?;
 

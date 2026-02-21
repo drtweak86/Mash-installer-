@@ -14,7 +14,6 @@ pub mod dry_run;
 mod error;
 mod fonts;
 mod github;
-mod hyprland;
 pub mod interaction;
 pub mod localization;
 mod lockfile;
@@ -39,6 +38,7 @@ mod staging;
 mod sudo;
 mod system;
 mod systemd;
+mod theme;
 #[allow(dead_code)]
 mod verify;
 mod zsh;
@@ -74,7 +74,12 @@ pub use runner::{
     PhaseRunner,
 };
 pub use software_tiers::SoftwareTierPlan;
+pub use software_tiers::ThemePlan;
 pub use system::SystemOps;
+pub use theme::{
+    command_exists, ensure_i3_installed, ensure_kitty_installed, ensure_retro_theme_dependencies,
+    install_retro_theme, install_theme_file, ThemeConfig,
+};
 
 /// Central context threaded through every install phase.
 pub struct InstallContext {

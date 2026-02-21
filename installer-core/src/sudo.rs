@@ -24,13 +24,22 @@ impl Drop for SudoKeepalive {
 }
 
 /// Start a background thread to keep sudo alive during long operations.
+///
+/// Note: When running in TUI mode, sudo password prompts may not work properly
+/// due to terminal raw mode. Users should either:
+/// 1. Configure sudo with NOPASSWD for the installer commands, or
+/// 2. Run the installer in non-TUI mode with --no-tui flag
 pub fn start_sudo_keepalive() -> SudoKeepalive {
     let stop_flag = Arc::new(AtomicBool::new(false));
     let flag_clone = stop_flag.clone();
 
     thread::spawn(move || {
         let mut test_cmd = Command::new("sudo");
-        test_cmd.args(["-v"]).stdin(std::process::Stdio::inherit());
+        test_cmd.args(["-v"]);
+        // Use a pipe for stdin to avoid issues with TUI raw mode
+        // This prevents sudo from trying to read password from terminal
+        test_cmd.stdin(std::process::Stdio::piped());
+
         if let Err(e) = cmd::run(&mut test_cmd) {
             error!("sudo -v failed: {}. Make sure you have sudo access without password (NOPASSWD) or run the installer manually.", e);
             debug!("Not starting sudo keep-alive due to sudo failure");
@@ -52,7 +61,9 @@ pub fn start_sudo_keepalive() -> SudoKeepalive {
             }
 
             let mut cmd = Command::new("sudo");
-            cmd.args(["-v"]).stdin(std::process::Stdio::inherit());
+            cmd.args(["-v"]);
+            // Use a pipe for stdin to avoid issues with TUI raw mode
+            cmd.stdin(std::process::Stdio::piped());
             if let Err(e) = cmd::run(&mut cmd) {
                 warn!("sudo keep-alive refresh failed: {}", e);
                 break;

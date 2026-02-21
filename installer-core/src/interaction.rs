@@ -111,4 +111,31 @@ impl InteractionService {
         }
         interactive_fn(prompt, options)
     }
+
+    /// Prompt for sudo password
+    pub fn sudo_password<F>(&self, mut interactive_fn: F) -> Result<String>
+    where
+        F: FnMut(&str) -> Result<String>,
+    {
+        if !self.interactive {
+            return Ok(String::new());
+        }
+        interactive_fn("Enter sudo password:")
+    }
+
+    /// Prompt for sudo password with custom message
+    #[allow(dead_code)]
+    pub fn sudo_password_with_message<F>(
+        &self,
+        prompt: &str,
+        mut interactive_fn: F,
+    ) -> Result<String>
+    where
+        F: FnMut(&str) -> Result<String>,
+    {
+        if !self.interactive {
+            return Ok(String::new());
+        }
+        interactive_fn(prompt)
+    }
 }

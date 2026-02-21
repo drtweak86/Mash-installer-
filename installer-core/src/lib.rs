@@ -36,6 +36,7 @@ mod signal;
 mod software_tiers;
 mod staging;
 mod sudo;
+mod sudo_password;
 mod system;
 mod systemd;
 mod theme;

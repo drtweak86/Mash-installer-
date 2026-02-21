@@ -482,3 +482,63 @@ pub fn draw_mid_install_confirm(f: &mut Frame, area: Rect, app: &TuiApp) {
     let btn_para = Paragraph::new(buttons).alignment(Alignment::Center);
     f.render_widget(btn_para, chunks[1]);
 }
+
+// ── Mid-install password prompt ────────────────────────────────────────────
+
+pub fn draw_password_prompt(
+    f: &mut Frame,
+    area: Rect,
+    _app: &TuiApp,
+    state: &crate::tui::app::PasswordState,
+) {
+    let prompt_rect = centered_rect(60, 30, area);
+    let block = menu_block("🔐 Sudo Password Required");
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .margin(2)
+        .constraints([
+            Constraint::Length(3),
+            Constraint::Length(1),
+            Constraint::Min(1),
+            Constraint::Length(3),
+        ])
+        .split(prompt_rect);
+
+    // Prompt text with security notice
+    let prompt_text = Paragraph::new(Text::from(vec![
+        Line::from(Span::styled(state.prompt.clone(), theme::default_style())),
+        Line::from(Span::styled(
+            "⚠️  Password is stored temporarily in memory only and will be cleared after installation.",
+            theme::warning_style()
+        )),
+    ]))
+    .alignment(Alignment::Center)
+    .wrap(Wrap { trim: true });
+    f.render_widget(prompt_text, chunks[0]);
+
+    // Password input field (show asterisks)
+    let password_display = "*".repeat(state.password.len());
+    let input_text = Paragraph::new(Text::from(password_display.clone()))
+        .alignment(Alignment::Center)
+        .style(theme::accent_style());
+    f.render_widget(input_text, chunks[2]);
+
+    // Instructions
+    let instructions = Line::from(vec![
+        Span::styled("Enter password: ", theme::default_style()),
+        Span::styled(&password_display, theme::accent_style()),
+    ]);
+    let instr_para = Paragraph::new(instructions).alignment(Alignment::Center);
+    f.render_widget(instr_para, chunks[2]);
+
+    // Key hints
+    let hints = Paragraph::new(Text::from(vec![Line::from(Span::styled(
+        "Enter: Confirm  Esc: Cancel  Backspace: Delete",
+        theme::dim_style(),
+    ))]))
+    .alignment(Alignment::Center);
+    f.render_widget(hints, chunks[3]);
+
+    f.render_widget(block, prompt_rect);
+}

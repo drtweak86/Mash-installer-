@@ -20,6 +20,7 @@ use crate::{
     platform::detect as detect_platform,
     rollback::RollbackManager,
     signal::SignalGuard,
+    sudo_password,
     InstallContext,
 };
 
@@ -28,6 +29,9 @@ pub fn run_with_driver(
     opts: InstallOptions,
     observer: &mut dyn PhaseObserver,
 ) -> Result<InstallationReport, Box<InstallerRunError>> {
+    // Initialize sudo password storage
+    sudo_password::init_sudo_password();
+
     // Acquire exclusive lock to prevent concurrent runs
     let _lock = InstallerLock::acquire().map_err(|e| {
         let report = InstallationReport {

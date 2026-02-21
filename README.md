@@ -40,6 +40,22 @@ The `mash-setup` binary now embodies the Mythic Assembly & Sigil Heuristics cree
 - **Green oath:** Always `cd /work/Mash-installer` before running `cargo fmt`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test`; the forge only crowns green builds.
 - **Commits:** Keep them tight (KCS), back up your work (ABB), test everything (ABT), and ink the changes in `docs/mining-projects/maps*.md` plus this very README (ABD).
 
+## ⚠️ Sudo Password Note
+When running the TUI installer, sudo password prompts may not work properly due to terminal raw mode. To resolve this:
+
+1. **Recommended:** Configure sudo with NOPASSWD for the installer:
+   ```bash
+   echo "$USER ALL=(ALL) NOPASSWD: /path/to/mash-setup" | sudo tee /etc/sudoers.d/mash-installer
+   sudo chmod 440 /etc/sudoers.d/mash-installer
+   ```
+
+2. **Alternative:** Run in classic mode (no TUI):
+   ```bash
+   ./mash-setup --no-tui
+   ```
+
+This will use the progress-bar UI which allows sudo password prompts to work normally.
+
 ## 🖥️ TUI Layout
 ```
 ┌──────────────────────────────────────────┬──────────────────┐

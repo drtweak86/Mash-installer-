@@ -529,6 +529,7 @@ dependencies = [
  "installer-fedora",
  "nix",
  "num_cpus",
+ "once_cell",
  "serde",
  "serde_json",
  "signal-hook",

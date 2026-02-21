@@ -43,18 +43,12 @@ pub enum TuiMessage {
         prompt: String,
         reply: Sender<bool>,
     },
-<<<<<<< HEAD
-=======
     #[allow(dead_code)]
->>>>>>> ddc3885dfd9b45043e46295832538432e7c593a8
     PasswordPrompt {
         prompt: String,
         reply: Sender<String>,
     },
-<<<<<<< HEAD
-=======
 
->>>>>>> ddc3885dfd9b45043e46295832538432e7c593a8
     Done(Box<InstallationReport>),
     InstallError(String),
 }
@@ -71,10 +65,7 @@ pub enum Screen {
     SoftwareMode,
     SoftwareSelect,
     Confirm,
-<<<<<<< HEAD
-=======
     #[allow(dead_code)]
->>>>>>> ddc3885dfd9b45043e46295832538432e7c593a8
     Password,
     Installing,
     Done,
@@ -363,10 +354,7 @@ impl TuiApp {
             Screen::Password => {
                 // Password input is handled below in the password_state check
             }
-<<<<<<< HEAD
-=======
 
->>>>>>> ddc3885dfd9b45043e46295832538432e7c593a8
             Screen::SoftwareMode => self.handle_list_key(code, 2),
             Screen::SoftwareSelect => self.handle_software_key(code),
             Screen::Confirm => self.handle_confirm_key(code),
@@ -735,10 +723,7 @@ impl TuiApp {
                 });
                 self.screen = Screen::Password;
             }
-<<<<<<< HEAD
-=======
 
->>>>>>> ddc3885dfd9b45043e46295832538432e7c593a8
             TuiMessage::Done(report) => {
                 self.report = Some(report);
                 if self.error_msg.is_none() {

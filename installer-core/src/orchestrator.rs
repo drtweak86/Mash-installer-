@@ -20,12 +20,7 @@ use crate::{
     platform::detect as detect_platform,
     rollback::RollbackManager,
     signal::SignalGuard,
-<<<<<<< HEAD
-    sudo_password,
-    InstallContext,
-=======
     sudo_password, InstallContext,
->>>>>>> ddc3885dfd9b45043e46295832538432e7c593a8
 };
 
 pub fn run_with_driver(

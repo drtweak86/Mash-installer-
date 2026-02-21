@@ -42,7 +42,6 @@ pub enum TuiMessage {
     },
     Done(Box<InstallationReport>),
     InstallError(String),
-    Tick,
 }
 
 // ── Screen state machine ─────────────────────────────────────────────────────
@@ -63,6 +62,7 @@ pub enum Screen {
 
 #[derive(Debug, Clone)]
 pub enum PhaseStatus {
+    #[allow(dead_code)]
     Pending,
     Running,
     Done,
@@ -285,8 +285,8 @@ impl TuiApp {
             return;
         }
 
-        // Clone screen so we don't hold a borrow into self while calling &mut self methods
-        let screen = self.screen.clone();
+        // Copy screen so we don't hold a borrow into self while calling &mut self methods
+        let screen = self.screen;
         match screen {
             Screen::Welcome => {
                 if code == KeyCode::Enter || code == KeyCode::Char(' ') {
@@ -523,7 +523,6 @@ impl TuiApp {
                 self.screen = Screen::Error;
                 self.push_log(format!("ERROR: {msg}"), LogLevel::Error);
             }
-            TuiMessage::Tick => {}
         }
     }
 

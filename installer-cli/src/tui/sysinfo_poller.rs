@@ -58,7 +58,7 @@ fn read_disk_sectors() -> (u64, u64) {
             continue;
         }
         // Skip partition entries (only aggregate parent devices like sda, nvme0n1)
-        if device.chars().last().map_or(false, |c| c.is_ascii_digit())
+        if device.chars().last().is_some_and(|c| c.is_ascii_digit())
             && (device.starts_with("sd") || device.starts_with("hd"))
         {
             continue;

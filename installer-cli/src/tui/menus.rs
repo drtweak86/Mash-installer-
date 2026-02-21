@@ -62,7 +62,7 @@ fn list_item_line(label: impl Into<String>, selected: bool) -> ListItem<'static>
     }
 }
 
-fn hint_line(text: &str) -> Line {
+fn hint_line(text: &str) -> Line<'_> {
     Line::from(Span::styled(
         text,
         theme::dim_style().add_modifier(Modifier::ITALIC),

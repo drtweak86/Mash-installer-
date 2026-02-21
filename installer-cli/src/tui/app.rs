@@ -11,7 +11,9 @@ use crossterm::execute;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
-use installer_core::{DistroDriver, InstallOptions, InstallationReport, PhaseEvent, ProfileLevel};
+use installer_core::{
+    DistroDriver, InstallOptions, InstallationReport, PhaseEvent, ProfileLevel, SoftwareTierPlan,
+};
 use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
 
@@ -134,7 +136,10 @@ pub struct ModuleState {
 }
 
 pub const MODULE_LABELS: &[(&str, &str)] = &[
-    ("Argon One fan control", "Install Argon One scripts (Pi only)"),
+    (
+        "Argon One fan control",
+        "Install Argon One scripts (Pi only)",
+    ),
     ("Powerlevel10k prompt", "Enable p10k + zsh polish modules"),
     ("Docker data-root", "Manage Docker data-root inside staging"),
 ];
@@ -241,6 +246,7 @@ impl TuiApp {
             enable_p10k: self.modules.enable_p10k,
             docker_data_root: self.modules.docker_data_root,
             continue_on_error: self.continue_on_error,
+            software_plan: SoftwareTierPlan::default(),
         }
     }
 

@@ -6,7 +6,7 @@ use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::{Block, Borders, List, ListItem, Paragraph, Wrap};
 use ratatui::Frame;
 
-use crate::tui::app::{ModuleState, MODULE_LABELS, TuiApp};
+use crate::tui::app::{ModuleState, TuiApp, MODULE_LABELS};
 use crate::tui::theme;
 
 const WELCOME_BANNER: &str = r"
@@ -43,10 +43,7 @@ fn menu_block<'a>(title: &'a str) -> Block<'a> {
         .borders(Borders::ALL)
         .border_type(theme::outer_border_type())
         .border_style(theme::border_style())
-        .title(Span::styled(
-            format!(" {title} "),
-            theme::title_style(),
-        ))
+        .title(Span::styled(format!(" {title} "), theme::title_style()))
         .style(theme::default_style())
 }
 
@@ -113,9 +110,9 @@ pub fn draw_welcome(f: &mut Frame, area: Rect, _app: &TuiApp) {
     f.render_widget(prompt, chunks[2]);
 
     // Footer
-    let footer = Paragraph::new(Text::from(vec![
-        hint_line("  q = quit   ↑/↓ or j/k = navigate   Enter = select   Space = toggle"),
-    ]))
+    let footer = Paragraph::new(Text::from(vec![hint_line(
+        "  q = quit   ↑/↓ or j/k = navigate   Enter = select   Space = toggle",
+    )]))
     .alignment(Alignment::Center);
     f.render_widget(footer, chunks[3]);
 }
@@ -180,7 +177,14 @@ pub fn draw_module_select(f: &mut Frame, area: Rect, app: &TuiApp) {
             };
             let prefix = if selected { " > " } else { "   " };
             ListItem::new(Line::from(vec![
-                Span::styled(prefix, if selected { theme::selected_style() } else { theme::default_style() }),
+                Span::styled(
+                    prefix,
+                    if selected {
+                        theme::selected_style()
+                    } else {
+                        theme::default_style()
+                    },
+                ),
                 Span::styled(box_glyph, box_style),
                 Span::styled(format!(" {label} — {desc}"), label_style),
             ]))

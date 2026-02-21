@@ -3,9 +3,7 @@
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span, Text};
-use ratatui::widgets::{
-    Block, Borders, Gauge, List, ListItem, Paragraph, Wrap,
-};
+use ratatui::widgets::{Block, Borders, Gauge, List, ListItem, Paragraph, Wrap};
 use ratatui::Frame;
 
 use crate::tui::app::{LogLevel, PhaseStatus, Screen, TuiApp};
@@ -25,10 +23,7 @@ const BANNER: &str = r"
 
 pub fn draw(f: &mut Frame, app: &TuiApp) {
     // Fill background
-    f.render_widget(
-        Block::default().style(theme::default_style()),
-        f.area(),
-    );
+    f.render_widget(Block::default().style(theme::default_style()), f.area());
 
     match app.screen {
         Screen::Welcome => menus::draw_welcome(f, f.area(), app),
@@ -112,10 +107,10 @@ fn draw_main_pane(f: &mut Frame, area: Rect, app: &TuiApp) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(8),  // banner
-            Constraint::Length(1),  // elapsed
-            Constraint::Length(2),  // progress bar
-            Constraint::Min(0),     // phase list
+            Constraint::Length(8), // banner
+            Constraint::Length(1), // elapsed
+            Constraint::Length(2), // progress bar
+            Constraint::Min(0),    // phase list
         ])
         .split(inner);
 
@@ -150,7 +145,9 @@ fn draw_main_pane(f: &mut Frame, area: Rect, app: &TuiApp) {
         .percent(progress as u16)
         .label(Span::styled(
             format!("{}/{} phases", app.current_phase, app.total_phases),
-            Style::default().fg(theme::WHITE).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(theme::WHITE)
+                .add_modifier(Modifier::BOLD),
         ));
     f.render_widget(gauge, chunks[2]);
 
@@ -206,10 +203,7 @@ fn draw_action_log(f: &mut Frame, area: Rect, app: &TuiApp) {
         .skip(start)
         .take(visible_height)
         .map(|entry| {
-            let ts_span = Span::styled(
-                format!("[{}] ", entry.timestamp),
-                theme::dim_style(),
-            );
+            let ts_span = Span::styled(format!("[{}] ", entry.timestamp), theme::dim_style());
             let msg_style = match entry.level {
                 LogLevel::Success => theme::success_style(),
                 LogLevel::Warning => theme::warning_style(),
@@ -269,25 +263,16 @@ fn draw_sys_stats(f: &mut Frame, area: Rect, app: &TuiApp) {
         .block(Block::default())
         .gauge_style(Style::default().fg(theme::MAGENTA))
         .percent(ram_pct)
-        .label(format!(
-            "RAM {}/{} MB",
-            s.ram_used_mb, s.ram_total_mb
-        ));
+        .label(format!("RAM {}/{} MB", s.ram_used_mb, s.ram_total_mb));
     f.render_widget(ram_gauge, chunks[1]);
 
     // NET
-    let net_text = format!(
-        "NET ↓{:.1} ↑{:.1} kB/s",
-        s.net_rx_kbps, s.net_tx_kbps
-    );
+    let net_text = format!("NET ↓{:.1} ↑{:.1} kB/s", s.net_rx_kbps, s.net_tx_kbps);
     let net_para = Paragraph::new(net_text).style(theme::success_style());
     f.render_widget(net_para, chunks[2]);
 
     // I/O
-    let io_text = format!(
-        "I/O R:{:.1} W:{:.1} kB/s",
-        s.io_r_kbps, s.io_w_kbps
-    );
+    let io_text = format!("I/O R:{:.1} W:{:.1} kB/s", s.io_r_kbps, s.io_w_kbps);
     let io_para = Paragraph::new(io_text).style(theme::warning_style());
     f.render_widget(io_para, chunks[3]);
 }
@@ -386,8 +371,12 @@ pub fn draw_summary(f: &mut Frame, app: &TuiApp, is_error: bool) {
             "Post-install notes:",
             theme::title_style(),
         )));
-        lines.push(Line::from("  • Log out and back in for docker group to take effect."));
-        lines.push(Line::from("  • Run `mash-setup doctor` to verify everything."));
+        lines.push(Line::from(
+            "  • Log out and back in for docker group to take effect.",
+        ));
+        lines.push(Line::from(
+            "  • Run `mash-setup doctor` to verify everything.",
+        ));
         lines.push(Line::from(
             "  • Config lives at ~/.config/mash-installer/config.toml",
         ));

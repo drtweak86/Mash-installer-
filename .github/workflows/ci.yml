@@ -100,5 +100,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: ShellCheck bootstrap.sh
-        run: shellcheck bootstrap.sh
+      - name: ShellCheck install.sh
+        run: shellcheck install.sh

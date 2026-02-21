@@ -1,56 +1,18 @@
-# ⚒️ The Miner's Active Maps: Shafts & Sigils
-> **Current Session Work & Upcoming Tasks**  
-> *“Foundations before features, gates before gold!”* — Bard 🍺
+# ⚒️ The Miner's Active Maps: Current Shaft
+> *“Focus the mind, strike the vein. One rune at a time.”* — Bard 🍺
 
-## ✅ Completed Shafts (The Mithril is Piled High!)
-- **Block 1-5**: Core Purification & Hardening. 🟢
-- **Shaft A**: The Ratatui Forge. ✅
-- **Shaft B**: Retro Theme & Wallpaper Rituals. ✅ (Sealed)
-- **Shaft C**: The 1984 Retro-Station Aesthetic. ✅
+## 🔐 SHAFT I: The Sudo Plumbing <ACTIVE> ⛏️
+**Status**: Excavation Commencing.
+**Objective**: Fix the TUI sudo interaction failure by wiring `InteractionService` to the Ratatui message bus and implementing `sudo -S` credential injection.
 
-## 🔮 Shaft A: The Ratatui Forge <COMPLETED> ✅
-`mash-setup --tui` now summons a Ratatui-driven cockpit!
-
-## 🐉 Shaft B: Retro Theme & Wallpaper Rituals <COMPLETED> ✅
-**Status**: Sealed.
-
-## 📟 Shaft C: The 1984 Retro-Station Aesthetic <COMPLETED> ✅
-**Status**: Excavated and operational.
+### 🛠️ Execution Plan (Shaft I)
+1.  **The Wire**: Establish an mpsc channel between the `InteractionService` and the TuiApp to trigger the `PasswordPrompt` screen.
+2.  **Blocking Ritual**: Ensure the installation thread waits for the TUI to return the password rune.
+3.  **Credential Storage**: Utilize the `sudo_password` memory storage safely.
+4.  **Injection Logic**: Modify `cmd::run` to detect `sudo` requirements and inject the stored password via stdin.
+5.  **Security Masking**: Ensure password runes never hit the `tracing` logs or the stdout buffer.
+6.  **Verification**: Test against a local sudo-check to ensure the ritual holds.
 
 ---
-
-## 🚪 SHAFT D: The Gate & Guardian <NOT_COMPLETED> ⏳
-**Status**: Planned.
-**Focus**: Upgrade `install.sh`, architecture detection, and README signposts.
-
-## 📟 SHAFT E: The Station Interface <NOT_COMPLETED> ⏳
-**Status**: Planned.
-**Focus**: Hybrid Ratatui/Crossterm engine, KISS error handling, and the Ancient Manual.
-
-## 📼 SHAFT F: The Black Box <NOT_COMPLETED> ⏳
-**Status**: Planned.
-**Focus**: Persistent logging (`~/mash-install.log`) and a rigorous testing rig.
-
-## 🏗️ SHAFT G: The Foundation <NOT_COMPLETED> ⏳
-**Status**: Planned.
-**Focus**: Distro equality, refactoring, release automation, and branch hygiene.
-
-## 🚀 SHAFT H: The Expansion <NOT_COMPLETED> ⏳
-**Status**: Planned.
-**Focus**: AI Agents, Filesystem Snapshots, Python upgrades, and SBC hardware expansion.
-
-## 🔐 SHAFT I: The Sudo Plumbing <NOT_COMPLETED> ⏳
-**Status**: Planned.
-**Focus**: Wiring `InteractionService` to TUI and injecting credentials via `sudo -S`.
-
----
-
-## ⚒️ Guiding Principles of the Forge
-- **ABB**: Always Be Backing up! 💾
-- **ABT**: Always Be Testing! 🍺
-- **ABD**: Always Be Documenting! 📜
-- **KCS**: Keep Commits Small! 🔨
-
----
-**Last Updated**: 2026-02-22 (Day of the Great Expansion)  
+**Last Updated**: 2026-02-22  
 **Owner**: Bard, Drunken Dwarf Runesmith 🍺⚒️

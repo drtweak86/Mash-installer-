@@ -7,15 +7,18 @@
 ## ✅ SHAFT D: The Gate & Guardian <COMPLETED> 🚪
 **Result**: `install.sh` now smart-detects arch and dependencies. `--arch` flag implemented.
 
-## 📼 SHAFT F: The Black Box <ACTIVE> ⛏️
-**Status**: Excavation Commencing.
-**Objective**: Persistent logging to `~/mash-install.log` and a rigorous testing rig for ARM/x86 paths.
+## ✅ SHAFT F: The Black Box <COMPLETED> 📼
+**Result**: Persistent logging to `~/mash-install.log`. Rigorous ARM/x86 testing rig established.
 
-### 🛠️ Execution Plan (Shaft F)
-1.  **Persistent Runes**: Update `logging.rs` to output to a file in the user's home directory.
-2.  **Telemetry Audit**: Ensure all critical events are captured in the file log, even if hidden in the TUI.
-3.  **Testing Rig**: Create new integration tests in `tests/` that mock the architecture and verify logic paths.
-4.  **Script Validation**: Logic tests for `install.sh` to prevent regressions.
+## 📟 SHAFT E: The Station Interface <ACTIVE> ⛏️
+**Status**: Excavation Commencing.
+**Objective**: Implement Ratatui/Crossterm hybrid engine, KISS error handling, and the Ancient Manual.
+
+### 🛠️ Execution Plan (Shaft E)
+1.  **Hybrid Engine**: Refactor TUI loop to leverage Crossterm for raw input and alternate screens while keeping Ratatui for rendering.
+2.  **KISS Errors**: Update `InstallerError` formatting to be simple, actionable, and location-aware.
+3.  **The Manual**: Ink `MANUAL.md` in the root, written as an old BBS forum guide.
+4.  **Verification**: Manual UI audit to ensure 1984 aesthetic remains solid.
 
 ---
 **Last Updated**: 2026-02-22  

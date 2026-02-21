@@ -12,6 +12,8 @@ Run the following command to summon the installer directly from the forge:
 sh <(curl -L https://raw.githubusercontent.com/drtweak86/Mash-installer/main/install.sh)
 ```
 
+For detailed operating instructions and troubleshooting, see the [MANUAL.md](MANUAL.md).
+
 ## 🏗️ Technical Architecture
 The project is structured as a modular Rust workspace, ensuring separation of concerns between core logic, UI, and platform-specific implementations.
 

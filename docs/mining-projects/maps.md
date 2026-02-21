@@ -8,17 +8,21 @@
 **Result**: `install.sh` now smart-detects arch and dependencies. `--arch` flag implemented.
 
 ## ✅ SHAFT F: The Black Box <COMPLETED> 📼
-**Result**: Persistent logging to `~/mash-install.log`. Rigorous ARM/x86 testing rig established.
+**Result**: Persistent logging to `~/mash-install.log`. ARM/x86 testing rig established.
 
-## 📟 SHAFT E: The Station Interface <ACTIVE> ⛏️
+## ✅ SHAFT E: The Station Interface <COMPLETED> 📟
+**Result**: Hybrid Ratatui/Crossterm engine. KISS error handling. Ancient Manual inked.
+
+## 🏗️ SHAFT G: The Foundation <ACTIVE> ⛏️
 **Status**: Excavation Commencing.
-**Objective**: Implement Ratatui/Crossterm hybrid engine, KISS error handling, and the Ancient Manual.
+**Objective**: Ensure distro equality (Arch/Debian/Fedora), refactor docs, and automate release rituals.
 
-### 🛠️ Execution Plan (Shaft E)
-1.  **Hybrid Engine**: Refactor TUI loop to leverage Crossterm for raw input and alternate screens while keeping Ratatui for rendering.
-2.  **KISS Errors**: Update `InstallerError` formatting to be simple, actionable, and location-aware.
-3.  **The Manual**: Ink `MANUAL.md` in the root, written as an old BBS forum guide.
-4.  **Verification**: Manual UI audit to ensure 1984 aesthetic remains solid.
+### 🛠️ Execution Plan (Shaft G)
+1.  **Distro Equality Audit**: Verify phase parity between Arch, Debian, and Fedora.
+2.  **Release Automata**: Add `.deb`, `.rpm`, and `PKGBUILD` generation to the GitHub Release workflow.
+3.  **Branch Ritual**: Prune all branches except `main` and `forge`.
+4.  **Refactor**: Consolidate duplicated documentation in `docs/legacy`.
+5.  **Hardening**: Final clippy/fmt pass across the entire workspace.
 
 ---
 **Last Updated**: 2026-02-22  

@@ -30,7 +30,7 @@ impl ModuleSelection {
                 return true;
             }
         }
-        return false;
+        false
     }
 }
 

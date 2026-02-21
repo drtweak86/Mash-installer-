@@ -4,7 +4,7 @@
 use anyhow::{Context, Result};
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tracing::{info, warn};
 
 /// Theme installation configuration
@@ -46,7 +46,7 @@ pub fn install_theme_file(config: &ThemeConfig) -> Result<()> {
 }
 
 /// Install the complete retro theme
-pub fn install_retro_theme(base_path: &PathBuf) -> Result<()> {
+pub fn install_retro_theme(base_path: &Path) -> Result<()> {
     info!("Installing BBC/UNIX Retro Theme...");
 
     let resources_base = PathBuf::from(env!("CARGO_MANIFEST_DIR"))

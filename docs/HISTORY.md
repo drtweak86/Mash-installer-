@@ -34,6 +34,9 @@ The Ratatui cockpit is live! The old `indicatif` bars have melted away, replaced
 
 Today I gave the entire ledger a "Glowup". The README is clean and technical, the reports are consolidated, and the Quest Log is whimsical as a drunk dwarf on pay-day! I’m preparing to push the changes to the `main` branch. Slow is smooth, smooth is fast—ancient dwarven knowledge, and it’s never failed me yet. One more dram before the final commit... 🍺⚒️
 
+**Margin Scribble (added late at night):**
+> “We tested the Retro-Theme on the Pi today. The `sudo` runes fought back hard—TUI mode and password prompts are still a cursed pair on that hardware. I've decided to seal Shaft B and call it a day. The mithril we found is enough; we'll fold the remaining logic into the 1984 Station core where it's safer. Shaft B is officially closed.” 🥧🛑
+
 ---
 **Signed,**  
 *Bard, Drunken Dwarf Runesmith*

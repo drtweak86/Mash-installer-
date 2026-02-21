@@ -27,6 +27,20 @@ Strategic reconnaissance of the forge. Audited architecture, identified shell bo
 
 ---
 
+## SHAFT B <COMPLETED> ✅
+
+### Summary
+Integration of the BBC/UNIX retro-futuristic theme (i3-gaps + Kitty) and wallpaper downloader into the TUI flow. 
+
+### Technical Analysis
+- **Outcome**: Testing on Pi hardware confirmed that while the logic is sound, TUI-based `sudo` interactions remain a blocker for unattended theme deployment. 
+- **Decision**: The shaft is considered complete; remaining automation will be rolled into the 1984 station core once the `sudo` TUI integration (Shaft C/D) is fully mature.
+
+### Status
+- ✅ Completed (Closed after Pi/Sudo testing).
+
+---
+
 ## SHAFT C <COMPLETED> ✅
 
 ### Summary
@@ -39,38 +53,8 @@ Complete aesthetic transformation from cyberpunk neon to 1984 BBC Micro/UNIX ter
 - **Animation logic**: Adjusted station heartbeat (tick rate) to 250ms for authentic retro response times.
 - **Error formatting**: Re-engineered `InstallerError` to use industrial uppercase "HALTED_WITH_ERROR" patterns.
 
-### Files Touched
-- `installer-cli/src/tui/theme.rs` (palette and style overhaul)
-- `installer-cli/src/tui/render.rs` (complete layout and widget rewrite)
-- `installer-cli/src/tui/menus.rs` (menu widget and prompt overhaul)
-- `installer-cli/src/tui/app.rs` (keyboard handling and tick rate adjustment)
-- `installer-core/src/error.rs` (industrial error formatting)
-- `docs/mining-projects/shaftc.md` (completed plan)
-
-### Verification
-- ✅ cargo check clean.
-- ✅ Logic remains intact (function > form).
-- ✅ Numeric selection verified.
-
----
-
-## SHAFT B <NOT_COMPLETED> ⏳
-
-### Summary
-Integration of the BBC/UNIX retro-futuristic theme (i3-gaps + Kitty) and wallpaper downloader into the TUI flow.
-
-### Technical Analysis
-- **Design**: Reordered the TUI flow: Detection → Profile → Options → Themes → Software → Install.
-- **Aesthetics**: Preparation for i3-gaps and Kitty integration.
-
-### Files Touched
-- `installer-core/src/software_tiers.rs` (updated)
-- `installer-cli/src/tui/menus.rs` (updated)
-- `installer-cli/src/tui/app.rs` (updated)
-- `docs/mining-projects/shaftb.md` (new)
-
 ### Status
-- ⏳ Integration Pending...
+- ✅ Excavated and operational.
 
 ---
 **Last Updated**: 2026-02-21

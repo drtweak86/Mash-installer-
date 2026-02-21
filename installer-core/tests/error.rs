@@ -32,7 +32,7 @@ fn installer_error_exposes_user_and_developer_messages() {
     );
 
     assert_eq!(error.phase, "phase-one");
-    assert!(error.user_message().contains("phase-one failed"));
+    assert!(error.user_message().contains("PHASE_PHASE-ONE: HALTED_WITH_ERROR: BOOM"));
     assert!(error.developer_message().contains("boom"));
     assert_eq!(error.state.profile, ProfileLevel::Dev);
     assert_eq!(error.advice.as_deref(), Some("Try again"));

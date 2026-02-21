@@ -641,12 +641,14 @@ mod tests {
 
         let err = runner.run(&ctx, &mut observer, None).unwrap_err();
         assert_eq!(err.source.phase, "phase-error");
-        assert_eq!(err.source.user_message(), "phase-error failed: boom");
+        assert_eq!(
+            err.source.user_message(),
+            "PHASE_PHASE-ERROR: HALTED_WITH_ERROR: BOOM"
+        );
         assert_eq!(err.result.errors.len(), 1);
-        assert!(observer
-            .events
-            .iter()
-            .any(|evt| evt.starts_with("failure:2:phase-error:phase-error failed: boom")));
+        assert!(observer.events.iter().any(|evt| evt.starts_with(
+            "failure:2:phase-error:PHASE_PHASE-ERROR: HALTED_WITH_ERROR: BOOM"
+        )));
         assert!(observer
             .events
             .iter()
@@ -690,10 +692,9 @@ mod tests {
         );
         assert_eq!(result.errors.len(), 1);
         assert_eq!(result.errors[0].severity, ErrorSeverity::Recoverable);
-        assert!(observer
-            .events
-            .iter()
-            .any(|evt| evt.starts_with("failure:2:phase-error:phase-error failed: boom")));
+        assert!(observer.events.iter().any(|evt| evt.starts_with(
+            "failure:2:phase-error:PHASE_PHASE-ERROR: HALTED_WITH_ERROR: BOOM"
+        )));
         Ok(())
     }
 

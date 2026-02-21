@@ -1,50 +1,48 @@
 # Mash-Installer Improvement Plans
-> **Neon Chronicle (Technical polish)**: this ledger keeps the beats precise so readers can see the prioritized order, the deferred D-03 decision, and why each refinement follows the last. ⚙️
+> **Neon Chronicle (Technical polish)**: This ledger keeps Phase 2 clear, records the D-03 dry-run gate, and notes exactly which lanes closed before the Pi 4B saga begins. ⚙️🛡️
 
 ## Phase Overview
 | Phase | Focus | Status |
 | --- | --- | --- |
-| Phase 1 – Deduplication | Extract shared helpers, unify downloads, and remove duplicate system calls across the phases. | ✅ Completed (D-03 dry-run gate deferred until the new `PhaseContext` could document it). |
-| Phase 2 – Refactoring | Split `lib.rs`, formalize `PhaseRunner`, harden `PhaseContext`, standardize reporting, theory-craft a registry, and make the core library-grade. | ✅ Complete (module split, PhaseContext, PhaseRunner, registry, CLI wiring done) |
-| Phase 3 – Pi 4B HDD | Harden Pi 4B preflight, optimize USB 3.0 staging, and tune HDD/Rust homes for the blue ports. | ❄️ Pending Phase 2 stabilization. |
-| Phase 4 – Hardening | Add parking locks, TLS wiggles, signal handling, rollback safety, and lock files. | 🛡️ Blocked on Phase 2 API stability. |
+| Phase 1 – Deduplication | Shared helpers, downloads, and system calls were unified. D-03 waited until `PhaseContext` could hold the gate. | ✅ Complete |
+| Phase 2 – Refactoring | `lib.rs` split, `PhaseRunner` forged, `PhaseContext` hardened, `InstallationReport` shaped, registry and CLI wiring stabilized. | ✅ Complete |
+| Phase 3 – Pi 4B HDD | Preflight, USB 3.0, and HDD tuning; paused until this refactor stays calm. | ❄️ Paused |
+| Phase 4 – Hardening | TLS, rollback, locks, signal handling; gated on Phase 2 stability. | 🛡️ Blocked |
 
 ## Phase 2 Revised Priority (Decision + Order)
-The Phase 2 queue now honors a single source of truth: the dry-run gate must exist before anything else touches context, modules, or reporting. Each entry below lists why it runs when it does.
-1. **D-03 – Dry-run gating (`PhaseContext::run_or_record`)** — this gate is in place inside `PhaseRunner`. Recording the decision keeps the ledger honest and prevents duplicate `if dry_run` checks. 🛡️
-2. **R-02 – Split `lib.rs`** — creating module boundaries reduces coupling and lets the rest of Phase 2 work within scoped crates (orchestrator, runner, options, sudo). 🧱
-3. **R-01 – Harden `PhaseContext` helpers** — with the codebase split, the shared context can natively host downloader, package, and service helpers without dragging in the entire `lib.rs` monolith. 🔩
-4. **R-03 – Structured `PhaseOutput`** — a clear metadata schema (`actions_taken`, `rollback_registered`, `errors`, `dry_run`) must exist before registries or reports rely on what the runner produces. 🧾
-5. **R-08 – Typed `PackageSpec`** — packages signal whether they're required, optional, or profile-gated, so registry and phases can programmatically decide what to install. 📦
-6. **R-05 – `ConfigService` error fidelity** — richer configuration errors travel through `PhaseContext`, keeping failure stories visible before registries or drivers run. ⚠️
-7. **R-04 – PhaseRegistry** — with structured outputs, typed specs, and a hardened context, the registry can honor profiles, metadata, and feature gates without guessing. 🗂️
-8. **R-07 – Pi detection helpers** — PlatformContext earns clean helpers after the registry can accept the metadata it produces. 🐧
-9. **R-09 – Flatten `RunSummary` into `InstallationReport`** — once reporting pillars are solid, flattening removes duplication and simplifies CLI/TUI wiring. 📜
-10. **R-06 – DriverTestHarness** — tests can safely exercise each distro driver once the core runner/context/report contract is stable. 🧪
-11. **R-10 – CLI/TUI split** — defer until data contracts are stable and the driver harness has exercised the new surfaces. 🎛️
+The queue honors one gate: `PhaseContext::run_or_record()` in `PhaseRunner` handles every dry run. The entries below show why each lane fired when it did.
+1. **D-03 – Dry-run gate** — inserted in `PhaseRunner` to keep all helpers from scattering `if dry_run` checks. 🛡️  
+2. **R-02 – Split `lib.rs`** — `runner` and `registry` wrappers now isolate the execution loop from the orchestration helpers. 🧱  
+3. **R-01 – Harden `PhaseContext` helpers** — metadata (`record_action`, `register_rollback_action`, warnings, dry-run log) lives on the shared context without dragging the entire monolith. 🔩  
+4. **R-03 – Structured `PhaseOutput` & `InstallationReport`** — phases report `actions_taken`, `rollback_actions`, `dry_run`, and `status`; the runner emits `InstallationReport` for CLI/TUI consumers. 🧾  
+5. **R-08 – Typed `PackageSpec`** — packages carry intent and profile gates so registry wiring can make decisions without stringly tickets. 📦  
+6. **R-05 – ConfigService depth** — configuration errors keep path/context so `InstallerError` advice is rich. ⚠️  
+7. **R-04 – PhaseRegistry metadata** — each entry knows its gate (`Profile`, module alias, etc.), localization, and `PackageSpec` hooks after the contexts and reports settled. 🗂️  
+8. **R-07 – Pi detection helpers** — `PlatformContext` now exposes `is_pi`, `pi_generation`, `is_pi_4b`, and `supports_usb3` for the Argon/Hyprland flows. 🐧  
+9. **R-09 – Flatten RunSummary** — the runner now keeps completed-phase lists and errors inside `InstallationReport`, feeding the CLI/TUI without duplication. 📜  
+10. **R-06 – DriverTestHarness** — harness-style tests exercise each registry/runner combination once the API stabilized. 🧪  
+11. **R-10 – CLI/TUI contract** — the CLI listens to the structured report/event stream rather than printing from the core once the data flows are stable. 🎛️
 
 ## Reordered 10-Point Plan (with D-03)
-The 10 points from `docs/QA/PlanA.md` nest into the Phase 2 queue after `D-03` so long as dependency edges stay intact. Here is the practical execution order and the reasoning behind it:
-1. **D-03 – Dry-run gate** — run through `PhaseContext::run_or_record()` before anything touches the contexts or iterates phases so each helper bases dry-run behavior on one source of truth. 🛡️
-2. **Plan Point 1 – Refactor `InstallContext`** — split the god object into targeted context slices (`PlatformContext`, `UserOptionsContext`, `PhaseContext` helpers) so traits and runners only ask for what they need. 🔩
-3. **Plan Point 2 – Introduce a Phase trait** — trait objects built on the lean contexts describe the state machine (name, description, `execute`). That structure preps the runner for metadata capture. 🧭
-4. **Plan Point 4 – Build a more flexible PhaseRunner** — now the runner can iterate trait objects, enforce the dry-run gate, and return structured reports that the CLI/TUI and registry can trust. 🧱
-5. **Plan Point 7 – Centralize configuration management** — experience with the new contexts shows where config values belong; a `ConfigService` keeps defaults, validation, and error reporting consistent. ⚙️
-6. **Plan Point 8 – Abstract system operations** — shell commands, file ops, downloaders, and service helpers move into shared modules that respect dry-run, logging, and caching concerns. 🧰
-7. **Plan Point 5 – Enhance error handling** — rich `ConfigError` variants and phase-level contexts arrive once the helper surfaces settle so the runner can keep failures visible without stopping the entire program. ⚠️
-8. **Plan Point 9 – Externalize UI strings** — once core helpers stop printing, move labels and messaging into config so the CLI can reuse them with different renderers. 📘
-9. **Plan Point 3 – Decouple UI from core logic** — the CLI/TUI now react to events and reports instead of printing from `installer-core`, and the core runs cleanly even without a terminal. 🎛️
-10. **Plan Point 10 – Improve the library API design** — the core now returns structured `InstallationReport` data, and drivers observe outcomes through typed metadata instead of raw prints. 📜
-11. **Plan Point 6 – Implement a comprehensive test suite** — once the core API is stable, a harness exercises each distro driver to lock the refactor in place. 🧪
+The original PlanA ten points now ride this queue after D-03 so dependency edges stay intact.
+1. **D-03 – Dry-run gate first** — every action flows through `PhaseContext::run_or_record()` before we touch contexts or emit metadata.  
+2. **Plan Point 1 – Refactor `InstallContext`** — break the god object into focused contexts (`PlatformContext`, `UserOptionsContext`, trimmed `PhaseContext`).  
+3. **Plan Point 2 – Introduce a Phase trait** — the trait now lives on the lean contexts so the runner can parse metadata.  
+4. **Plan Point 4 – Forge a flexible PhaseRunner** — this runner iterates traits, enforces the gate, and returns structured outputs.  
+5. **Plan Point 7 – Centralize configuration** — `ConfigService` handles defaults, validation, and richer error context.  
+6. **Plan Point 8 – Abstract system operations** — commands, downloads, and services live in helper modules that observe dry runs and logging.  
+7. **Plan Point 5 – Enhance error handling** — once helpers stabilize, richer `InstallerError` variants surface to the report.  
+8. **Plan Point 9 – Externalize UI strings** — strings live in localization modules so CLI/TUI can reuse them.  
+9. **Plan Point 3 – Decouple UI** — the UI reacts to events/reports rather than forcing prints inside the core.  
+10. **Plan Point 10 – Improve the library API** — `installer-core` returns a fully formed `InstallationReport`; external interfaces orchestrate presentation.  
+11. **Plan Point 6 – Comprehensive tests** — once contracts are stable, the harness validates drivers without hitting real systems.
 
 ## D-03 Decision Record
-- **Why it was deferred:** Phase 1 lacked the consolidated `PhaseContext`, so early gate insertion would have scattered `dry_run` checks across helpers.
-- **Why it is now complete:** `PhaseContext::run_or_record()` lives in `PhaseRunner`, every new helper invokes it, and the dry-run visualizations go through one gate. Recording this decision in the improvement plan ensures future explorers know the gate went live once the context could sustain it.
+- **Why it was deferred:** Phase 1 lacked a consolidated `PhaseContext`, and early gate insertion risked scattering dry-run checks.  
+- **Why it is now live:** `PhaseContext::run_or_record()` sits in `PhaseRunner`, every helper calls it, and the ledger keeps the gate visible. Balanced docs, tests, and logging now reference this single portal.
 
-## What Remains / Next Steps
-1. Keep the Phase 2 ledger alive: every doc (README, HISTORY, improvement plans) retains its polish tag so readers know the Canon of Phase 2 is closed.  
-2. Stay on the new `PhaseOutput`/`InstallationReport` contract: every CLI/TUI/driver change must lean on those metadata surfaces, plus `PackageSpec` gating, before Phase 3 even prints a ticket.  
-3. Run `cargo fmt`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test` from `/work`, log the results in `.logs`, and only push to `main` after a green trilogy.  
-4. Once these signals stay calm, begin drafting Phase 3 (Pi 4B HDD planning) with this refactored base instead of reshuffling Phase 2 again.
-
-> The ledger notes that Phase 2 still breathes fire. Keep the rustfmt/clippy flames alive and the `sccache` cache warm. 
+## Next Steps
+1. Keep `docs/HISTORY.md`, `docs/QA/PlanA.md`, and the README in sync with this ledger; every change earns a Whimsical or Technical polish note.  
+2. Trust the `InstallationReport`/`PhaseOutput` contract for CLI, TUI, and registry wiring before touching Phase 3.  
+3. Run `cargo fmt`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test` from `/work/Mash-installer`, log the runs in `.logs`, and only promote green builds to `main`.  
+4. Phase 3 (Pi 4B HDD tuning) waits until these signals stay calm; the ledger will flip when the forge is ready.

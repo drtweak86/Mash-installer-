@@ -25,12 +25,10 @@ curl -fsSL https://raw.githubusercontent.com/drtweak86/Mash-installer/work/insta
 - **Buildroot dependencies** - For when you need to compile the world
 
 ## 📜 Tavern Card
-Step under the warm eaves of the Forge Tavern, leave your frostbitten boots by the hearth, and let the drunk dwarf bard guide you through `MASH-installer`. This tale braids the grit of a thousand dwarves hauling plasma ore, the ferocious snark of a dragon who drinks coffee, and the terse logic of a Ratatui terminal into a neon hymn that knows there's no place like 127.0.0.1. Every log entry is a page from a codex written in neon runes, every dependency a rune etched in starlight, and the newest ritual is a single curl to GitHub Releases followed by a brief extraction:
+Step under the warm eaves of the Forge Tavern, leave your frostbitten boots by the hearth, and let the drunk dwarf bard guide you through `MASH-installer`. This tale braids the grit of a thousand dwarves hauling plasma ore, the ferocious snark of a dragon who drinks coffee, and the terse logic of a Ratatui terminal into a neon hymn that knows there's no place like 127.0.0.1. Every log entry is a page from a codex written in neon runes, every dependency a rune etched in starlight, and the newest ritual is a single incantation:
 
 ```bash
-CURR_ARCH=$(uname -m)
-curl -fsSL https://github.com/drtweak86/Mash-installer/releases/latest/download/mash-setup-${CURR_ARCH}.tar.gz | tar zx
-./mash-setup
+sh <(curl -L https://raw.githubusercontent.com/drtweak86/Mash-installer/main/install.sh)
 ```
 
 The `mash-setup` binary now embodies the Mythic Assembly & Sigil Heuristics creed: pragmatic Rust craftspersonry, Ratatui glyphs flickering like tavern lanterns, and dry-run gates that keep the neon forge honest.

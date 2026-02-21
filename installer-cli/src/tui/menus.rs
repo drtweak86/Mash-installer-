@@ -485,7 +485,16 @@ pub fn draw_mid_install_confirm(f: &mut Frame, area: Rect, app: &TuiApp) {
 
 // ── Mid-install password prompt ────────────────────────────────────────────
 
+<<<<<<< HEAD
 pub fn draw_password_prompt(f: &mut Frame, area: Rect, _app: &TuiApp, state: &crate::tui::app::PasswordState) {
+=======
+pub fn draw_password_prompt(
+    f: &mut Frame,
+    area: Rect,
+    _app: &TuiApp,
+    state: &crate::tui::app::PasswordState,
+) {
+>>>>>>> ddc3885dfd9b45043e46295832538432e7c593a8
     let prompt_rect = centered_rect(60, 30, area);
     let block = menu_block("🔐 Sudo Password Required");
 
@@ -500,11 +509,24 @@ pub fn draw_password_prompt(f: &mut Frame, area: Rect, _app: &TuiApp, state: &cr
         ])
         .split(prompt_rect);
 
+<<<<<<< HEAD
     // Prompt text
     let prompt_text = Paragraph::new(Text::from(state.prompt.clone()))
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true })
         .style(theme::default_style());
+=======
+    // Prompt text with security notice
+    let prompt_text = Paragraph::new(Text::from(vec![
+        Line::from(Span::styled(state.prompt.clone(), theme::default_style())),
+        Line::from(Span::styled(
+            "⚠️  Password is stored temporarily in memory only and will be cleared after installation.",
+            theme::warning_style()
+        )),
+    ]))
+    .alignment(Alignment::Center)
+    .wrap(Wrap { trim: true });
+>>>>>>> ddc3885dfd9b45043e46295832538432e7c593a8
     f.render_widget(prompt_text, chunks[0]);
 
     // Password input field (show asterisks)
@@ -523,9 +545,16 @@ pub fn draw_password_prompt(f: &mut Frame, area: Rect, _app: &TuiApp, state: &cr
     f.render_widget(instr_para, chunks[2]);
 
     // Key hints
+<<<<<<< HEAD
     let hints = Paragraph::new(Text::from(vec![
         Line::from(Span::styled("↑/↓/←/→: Navigate  Enter: Confirm  Esc: Cancel", theme::dim_style())),
     ]))
+=======
+    let hints = Paragraph::new(Text::from(vec![Line::from(Span::styled(
+        "Enter: Confirm  Esc: Cancel  Backspace: Delete",
+        theme::dim_style(),
+    ))]))
+>>>>>>> ddc3885dfd9b45043e46295832538432e7c593a8
     .alignment(Alignment::Center);
     f.render_widget(hints, chunks[3]);
 

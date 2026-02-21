@@ -45,6 +45,10 @@ pub fn draw(f: &mut Frame, app: &TuiApp) {
                 menus::draw_password_prompt(f, f.area(), app, state);
             }
         }
+<<<<<<< HEAD
+=======
+
+>>>>>>> ddc3885dfd9b45043e46295832538432e7c593a8
         Screen::Installing => draw_installing(f, app),
         Screen::Done => draw_summary(f, app, false),
         Screen::Error => draw_summary(f, app, true),

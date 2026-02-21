@@ -30,7 +30,7 @@ pub fn ensure_sudo_access() -> bool {
     test_cmd.args(["-v"]);
     // Use a pipe for stdin to avoid issues with TUI raw mode
     test_cmd.stdin(std::process::Stdio::piped());
-    
+
     match cmd::run(&mut test_cmd) {
         Ok(_) => {
             debug!("sudo access verified successfully");

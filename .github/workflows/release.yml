@@ -4,6 +4,11 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -14,63 +19,49 @@ env:
 jobs:
   build-release:
     name: Build release (${{ matrix.target }})
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
           - target: x86_64-unknown-linux-gnu
-            runner: ubuntu-latest
           - target: aarch64-unknown-linux-gnu
-            runner: ubuntu-latest
             cross: true
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Ensure git is in a clean, reachable state before cache actions run.
-      # fetch-depth: 0 above handles most cases; this catches transient issues.
-      - name: Verify git state
-        run: |
-          git fetch --all --tags || true
-          git log -1 --format="%H %D" || true
-
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
 
-      # cargo-zigbuild cross-compiles without Docker, so there is no GLIBC
-      # mismatch between the ubuntu-latest host (GLIBC 2.39) and a container.
       - name: Install cargo-zigbuild (aarch64)
         if: matrix.cross
         run: |
           pip install ziglang
           cargo install cargo-zigbuild
-          rustup target add aarch64-unknown-linux-gnu
+          rustup target add ${{ matrix.target }}
 
-      - name: Build (native)
-        if: "!matrix.cross"
-        run: cargo build --release --target ${{ matrix.target }}
-
-      - name: Build (zigbuild cross-compile)
-        if: matrix.cross
-        run: cargo zigbuild --release --target ${{ matrix.target }}
-
-      - name: Rename binary
+      - name: Build
         run: |
-          cp target/${{ matrix.target }}/release/mash-setup \
-             mash-setup-${{ matrix.target }}
+          if [ "${{ matrix.cross }}" = "true" ]; then
+            cargo zigbuild --release --target ${{ matrix.target }}
+          else
+            cargo build --release --target ${{ matrix.target }}
+          fi
 
-      - name: Generate sha256
+      - name: Prepare Assets
         run: |
+          cp target/${{ matrix.target }}/release/mash-setup mash-setup-${{ matrix.target }}
           sha256sum mash-setup-${{ matrix.target }} > mash-setup-${{ matrix.target }}.sha256
 
-      - name: Upload artifacts
+      - name: Upload Binaries
         uses: actions/upload-artifact@v4
         with:
-          name: release-${{ matrix.target }}
+          name: binaries-${{ matrix.target }}
           path: |
             mash-setup-${{ matrix.target }}
             mash-setup-${{ matrix.target }}.sha256
+            target/${{ matrix.target }}/release/mash-setup
 
   package-deb:
     name: Package .deb (${{ matrix.target }})
@@ -81,34 +72,27 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
           - target: aarch64-unknown-linux-gnu
-            cross: true
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-
       - name: Install cargo-deb
         run: cargo install cargo-deb
+      
+      - name: Download Binary
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries-${{ matrix.target }}
+          path: .
 
-      - name: Install cargo-zigbuild (aarch64)
-        if: matrix.cross
+      - name: Restore Binary Structure
         run: |
-          pip install ziglang
-          cargo install cargo-zigbuild
-          rustup target add aarch64-unknown-linux-gnu
-
-      - name: Build (native)
-        if: "!matrix.cross"
-        run: cargo build --release --target ${{ matrix.target }}
-
-      - name: Build (zigbuild cross-compile)
-        if: matrix.cross
-        run: cargo zigbuild --release --target ${{ matrix.target }}
+          mkdir -p target/${{ matrix.target }}/release
+          cp mash-setup target/${{ matrix.target }}/release/mash-setup
 
       - name: Package .deb
         run: cargo deb -p installer-cli --no-build --target ${{ matrix.target }}
 
-      - name: Upload .deb artifact
+      - name: Upload .deb
         uses: actions/upload-artifact@v4
         with:
           name: deb-${{ matrix.target }}
@@ -123,34 +107,27 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
           - target: aarch64-unknown-linux-gnu
-            cross: true
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-
       - name: Install cargo-generate-rpm
         run: cargo install cargo-generate-rpm
 
-      - name: Install cargo-zigbuild (aarch64)
-        if: matrix.cross
+      - name: Download Binary
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries-${{ matrix.target }}
+          path: .
+
+      - name: Restore Binary Structure
         run: |
-          pip install ziglang
-          cargo install cargo-zigbuild
-          rustup target add aarch64-unknown-linux-gnu
-
-      - name: Build (native)
-        if: "!matrix.cross"
-        run: cargo build --release --target ${{ matrix.target }}
-
-      - name: Build (zigbuild cross-compile)
-        if: matrix.cross
-        run: cargo zigbuild --release --target ${{ matrix.target }}
+          mkdir -p target/${{ matrix.target }}/release
+          cp mash-setup target/${{ matrix.target }}/release/mash-setup
 
       - name: Package .rpm
         run: cargo generate-rpm -p installer-cli --target ${{ matrix.target }}
 
-      - name: Upload .rpm artifact
+      - name: Upload .rpm
         uses: actions/upload-artifact@v4
         with:
           name: rpm-${{ matrix.target }}

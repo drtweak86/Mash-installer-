@@ -3,32 +3,33 @@ target/
 debug/
 release/
 
-# Common editor/IDE temporary files
+# Editor & IDE files
+.idea/
+.vscode/
 *.swp
 *.swo
 *~
-.DS_Store
-.vscode/
-.idea/
-*.log
+*.bak
 *.tmp
 **/*.rs.bk
-*.bak
+.DS_Store
 
-# Claude Code
+# Logs
+*.log
+.logs/
+
+# AI Agent Context
 .claude/
 .gemini/
 
-# Node/NPM artifacts
+# Dependency directories
 node_modules/
 package-lock.json
 
-# Installer specifics
-.logs/
+# Project specifics
 mash-installer.lock
-{}
 
-# Sensitive or temporary files
+# Sensitive credentials
 .env
 *.key
 *.pem

@@ -2,11 +2,10 @@
 
 use reqwest::Client;
 use serde_json::Value;
-use std::collections::HashSet;
 use std::time::Duration;
 
 use crate::error::{DownloadError, Result};
-use crate::types::{ApiResponse, Wallpaper};
+use crate::types::Wallpaper;
 
 /// Wallhaven API client
 #[derive(Debug, Clone)]
@@ -39,11 +38,11 @@ impl ApiClient {
         let mut page = 1;
 
         // Wallhaven API parameters
-        let mut params = vec![
-            ("categories", "111"),  // General, Anime, People
-            ("purity", "100"),      // SFW only
+        let params = vec![
+            ("categories", "111"), // General, Anime, People
+            ("purity", "100"),     // SFW only
             ("sorting", "relevance"),
-            ("atleast", "1920x1080"),  // Minimum resolution
+            ("atleast", "1920x1080"), // Minimum resolution
             ("apikey", &self.api_key),
             ("q", query),
         ];
@@ -54,7 +53,8 @@ impl ApiClient {
             let mut page_params = params.clone();
             page_params.push(("page", page_str.as_str()));
 
-            let response = self.client
+            let response = self
+                .client
                 .get(&self.base_url)
                 .query(&page_params)
                 .header("User-Agent", &self.user_agent)
@@ -102,22 +102,44 @@ impl ApiClient {
     /// Parse a wallpaper from JSON
     fn parse_wallpaper(&self, item: &Value) -> Result<Wallpaper> {
         Ok(Wallpaper {
-            id: item.get("id").and_then(|i| i.as_str()).unwrap_or("").to_string(),
-            url: item.get("path").and_then(|p| p.as_str()).unwrap_or("").to_string(),
-            thumbnail: item.get("thumbs")
+            id: item
+                .get("id")
+                .and_then(|i| i.as_str())
+                .unwrap_or("")
+                .to_string(),
+            url: item
+                .get("path")
+                .and_then(|p| p.as_str())
+                .unwrap_or("")
+                .to_string(),
+            thumbnail: item
+                .get("thumbs")
                 .and_then(|t| t.get("large"))
                 .and_then(|l| l.as_str())
                 .unwrap_or("")
                 .to_string(),
-            resolution: item.get("resolution").and_then(|r| r.as_str()).unwrap_or("").to_string(),
+            resolution: item
+                .get("resolution")
+                .and_then(|r| r.as_str())
+                .unwrap_or("")
+                .to_string(),
             views: item.get("views").and_then(|v| v.as_u64()).unwrap_or(0) as u32,
             favorites: item.get("favorites").and_then(|f| f.as_u64()).unwrap_or(0) as u32,
-            category: item.get("category").and_then(|c| c.as_str()).unwrap_or("").to_string(),
+            category: item
+                .get("category")
+                .and_then(|c| c.as_str())
+                .unwrap_or("")
+                .to_string(),
         })
     }
 
     /// Get all wallpapers for a category
-    pub async fn get_category_wallpapers(&self, _category: &str, queries: &[String], count: usize) -> Result<Vec<Wallpaper>> {
+    pub async fn get_category_wallpapers(
+        &self,
+        _category: &str,
+        queries: &[String],
+        count: usize,
+    ) -> Result<Vec<Wallpaper>> {
         let mut all_images = Vec::new();
         let images_per_query = std::cmp::max(1, count / queries.len());
 

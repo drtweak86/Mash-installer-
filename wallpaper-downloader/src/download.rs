@@ -3,17 +3,16 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use tokio::fs;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
 
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 
+use crate::api::ApiClient;
 use crate::config::Config;
 use crate::error::{DownloadError, Result};
-use crate::types::{Category, DownloadStats, Wallpaper};
-use crate::api::ApiClient;
+use crate::types::{Category, DownloadStats};
 
 /// Wallpaper downloader
 #[derive(Debug)]
@@ -29,7 +28,7 @@ impl Downloader {
     /// Create a new downloader
     pub fn new(config: &Config) -> Result<Self> {
         let api_client = ApiClient::new(config.get_api_key());
-        
+
         let mut downloader = Self {
             config: config.clone(),
             api_client,
@@ -50,9 +49,13 @@ impl Downloader {
             log::info!("🔍 Scanning for existing files...");
         }
 
-        let output_dir = self.config.output_dir.clone().unwrap_or_else(crate::types::default_output_dir);
+        let output_dir = self
+            .config
+            .output_dir
+            .clone()
+            .unwrap_or_else(crate::types::default_output_dir);
         let mut count = 0;
-        
+
         // Get all category directories
         for category in &*crate::types::CATEGORIES {
             let category_dir = output_dir.join(&category.name);
@@ -72,7 +75,11 @@ impl Downloader {
         }
 
         if count > 0 && !self.config.first_boot {
-            log::info!("✓ Loaded {} existing files ({} unique)", count, self.downloaded_hashes.len());
+            log::info!(
+                "✓ Loaded {} existing files ({} unique)",
+                count,
+                self.downloaded_hashes.len()
+            );
         }
 
         Ok(())
@@ -82,24 +89,28 @@ impl Downloader {
     fn compute_file_hash(&self, filepath: &Path) -> Result<String> {
         let mut file = std::fs::File::open(filepath)?;
         let mut hasher = Sha256::new();
-        
+
         std::io::copy(&mut file, &mut hasher)?;
-        
+
         Ok(format!("{:x}", hasher.finalize()))
     }
 
     /// Create output directories
     async fn create_directories(&self) -> Result<()> {
-        let output_dir = self.config.output_dir.clone().unwrap_or_else(crate::types::default_output_dir);
+        let output_dir = self
+            .config
+            .output_dir
+            .clone()
+            .unwrap_or_else(crate::types::default_output_dir);
         for category in &*crate::types::CATEGORIES {
             let category_dir = output_dir.join(&category.name);
             tokio::fs::create_dir_all(&category_dir).await?;
         }
-        
+
         if !self.config.first_boot {
             log::info!("📁 Created directories in {}", output_dir.display());
         }
-        
+
         Ok(())
     }
 
@@ -122,7 +133,12 @@ impl Downloader {
 
         // Download the image
         let client = reqwest::Client::new();
-        let response = match client.get(&url).timeout(std::time::Duration::from_secs(self.config.timeout)).send().await {
+        let response = match client
+            .get(&url)
+            .timeout(std::time::Duration::from_secs(self.config.timeout))
+            .send()
+            .await
+        {
             Ok(r) => r,
             Err(e) => {
                 log::error!("✗ Error downloading {}: {}", url, e);
@@ -179,7 +195,12 @@ impl Downloader {
 
         // Rename temp file to final location
         if let Err(e) = tokio::fs::rename(&temp_path, &filepath).await {
-            log::error!("✗ Error renaming {} to {}: {}", temp_path.display(), filepath.display(), e);
+            log::error!(
+                "✗ Error renaming {} to {}: {}",
+                temp_path.display(),
+                filepath.display(),
+                e
+            );
             return false;
         }
 
@@ -197,7 +218,11 @@ impl Downloader {
         self.create_directories().await?;
 
         // Log start message
-        let output_dir = self.config.output_dir.clone().unwrap_or_else(crate::types::default_output_dir);
+        let output_dir = self
+            .config
+            .output_dir
+            .clone()
+            .unwrap_or_else(crate::types::default_output_dir);
         let total_target = std::cmp::min(self.config.limit, 6000);
         if !self.config.first_boot {
             log::info!("🚀 Starting download of {} wallpapers...", total_target);
@@ -218,7 +243,8 @@ impl Downloader {
             if !self.config.first_boot {
                 println!("\n📊 Category Summary:");
                 for (category, count) in results {
-                    let display_name = crate::types::CATEGORIES.iter()
+                    let display_name = crate::types::CATEGORIES
+                        .iter()
                         .find(|c| c.name == category)
                         .map(|c| c.display_name.as_str())
                         .unwrap_or(&category);
@@ -227,21 +253,29 @@ impl Downloader {
             }
         } else {
             // Download specific category
-            let category = crate::types::CATEGORIES.iter()
+            let category = crate::types::CATEGORIES
+                .iter()
                 .find(|c| c.name == self.config.category)
-                .ok_or_else(|| DownloadError::InvalidCategory(
-                    self.config.category.clone(),
-                    crate::types::CATEGORIES.iter()
-                        .map(|c| c.name.as_str())
-                        .collect::<Vec<_>>()
-                        .join(", "),
-                ))?;
+                .ok_or_else(|| {
+                    DownloadError::InvalidCategory(
+                        self.config.category.clone(),
+                        crate::types::CATEGORIES
+                            .iter()
+                            .map(|c| c.name.as_str())
+                            .collect::<Vec<_>>()
+                            .join(", "),
+                    )
+                })?;
 
             let _ = self.download_category(category).await?;
         }
 
         // Summary
-        let output_dir = self.config.output_dir.clone().unwrap_or_else(crate::types::default_output_dir);
+        let output_dir = self
+            .config
+            .output_dir
+            .clone()
+            .unwrap_or_else(crate::types::default_output_dir);
         let elapsed = self.stats.elapsed();
         if !self.config.first_boot {
             log::info!("\n📊 Download Complete!");
@@ -259,7 +293,8 @@ impl Downloader {
 
     /// Download a specific category
     async fn download_category(&mut self, category: &Category) -> Result<usize> {
-        let images = self.api_client
+        let images = self
+            .api_client
             .get_category_wallpapers(&category.name, &category.queries, category.count)
             .await?;
 
@@ -273,7 +308,11 @@ impl Downloader {
         for (i, wallpaper) in images_to_download.iter().enumerate() {
             let permit = semaphore.clone().acquire_owned().await?;
             let url = wallpaper.url.clone();
-            let output_dir = self.config.output_dir.clone().unwrap_or_else(crate::types::default_output_dir);
+            let output_dir = self
+                .config
+                .output_dir
+                .clone()
+                .unwrap_or_else(crate::types::default_output_dir);
             let filename = format!("{}_{:04}", category.name, i);
             let filepath = output_dir.join(&category.name).join(filename);
 
@@ -302,7 +341,11 @@ impl Downloader {
         }
 
         if !self.config.first_boot {
-            log::info!("✓ Downloaded {} images for category '{}'", downloaded, category.name);
+            log::info!(
+                "✓ Downloaded {} images for category '{}'",
+                downloaded,
+                category.name
+            );
         }
 
         Ok(downloaded)
@@ -324,13 +367,18 @@ impl Downloader {
             }
 
             content.push_str("\n# Auto-generated wallpaper setting\n");
-            content.push_str("exec_always feh --bg-scale --randomize ");
-            
-            let output_dir = self.config.output_dir.clone().unwrap_or_else(crate::types::default_output_dir);
+            content.push('e');
+            content.push_str("xec_always feh --bg-scale --randomize ");
+
+            let output_dir = self
+                .config
+                .output_dir
+                .clone()
+                .unwrap_or_else(crate::types::default_output_dir);
             for category in &*crate::types::CATEGORIES {
                 content.push_str(&format!("{}/* ", output_dir.join(&category.name).display()));
             }
-            content.push_str("\n");
+            content.push('\n');
 
             if let Err(e) = tokio::fs::write(&config_file, content).await {
                 log::warn!("⚠️  Could not update i3 config: {}", e);
@@ -342,7 +390,11 @@ impl Downloader {
         // For GNOME
         #[cfg(target_os = "linux")]
         {
-            let output_dir = self.config.output_dir.clone().unwrap_or_else(crate::types::default_output_dir);
+            let output_dir = self
+                .config
+                .output_dir
+                .clone()
+                .unwrap_or_else(crate::types::default_output_dir);
             if let Err(e) = std::process::Command::new("gsettings")
                 .args([
                     "set",
@@ -350,10 +402,7 @@ impl Downloader {
                     "picture-uri",
                     &format!(
                         "file://{}",
-                        output_dir
-                            .join("retro")
-                            .join("retro_0001.jpg")
-                            .display()
+                        output_dir.join("retro").join("retro_0001.jpg").display()
                     ),
                 ])
                 .status()

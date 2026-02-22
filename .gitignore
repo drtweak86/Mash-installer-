@@ -33,3 +33,4 @@ mash-installer.lock
 .env
 *.key
 *.pem
+.aider*

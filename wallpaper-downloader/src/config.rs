@@ -1,9 +1,9 @@
 //! Configuration handling for the wallpaper downloader
 
-use clap::Parser;
-use std::path::PathBuf;
 use crate::error::{DownloadError, Result};
 use crate::types::default_output_dir;
+use clap::Parser;
+use std::path::PathBuf;
 
 /// Command-line configuration
 #[derive(Debug, Parser, Clone)]
@@ -43,24 +43,27 @@ impl Config {
     /// Parse command-line arguments
     pub fn parse() -> Self {
         let mut config = <Self as Parser>::parse();
-        
+
         // Read API key from environment variable if not provided
         if config.api_key.is_none() {
             if let Ok(api_key) = std::env::var("WALLHAVEN_API_KEY") {
                 config.api_key = Some(api_key);
             }
         }
-        
+
         config
     }
 
     /// Validate the configuration
     pub fn validate(&self) -> Result<()> {
         // Validate category
-        if self.category != "all" && !crate::types::CATEGORIES.iter()
-            .any(|c| c.name == self.category)
+        if self.category != "all"
+            && !crate::types::CATEGORIES
+                .iter()
+                .any(|c| c.name == self.category)
         {
-            let valid_categories = crate::types::CATEGORIES.iter()
+            let valid_categories = crate::types::CATEGORIES
+                .iter()
                 .map(|c| c.name.as_str())
                 .collect::<Vec<_>>()
                 .join(", ");
@@ -80,11 +83,9 @@ impl Config {
         // Validate output directory
         let output_dir = self.output_dir.clone().unwrap_or_else(default_output_dir);
         if !output_dir.exists() {
-            std::fs::create_dir_all(&output_dir)
-                .map_err(|e| DownloadError::Config(format!(
-                    "Could not create output directory: {}",
-                    e
-                )))?;
+            std::fs::create_dir_all(&output_dir).map_err(|e| {
+                DownloadError::Config(format!("Could not create output directory: {}", e))
+            })?;
         }
 
         // Validate API key
@@ -97,7 +98,8 @@ impl Config {
 
     /// Get the API key, using a placeholder if not provided
     pub fn get_api_key(&self) -> String {
-        self.api_key.clone()
+        self.api_key
+            .clone()
             .unwrap_or_else(|| "YOUR_API_KEY_HERE".to_string())
     }
 }

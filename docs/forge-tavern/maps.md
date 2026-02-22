@@ -1,80 +1,121 @@
 # ⚒️ The Miner's Active Maps: Current Shaft
-> *“The forge is ready. The blade is forged. Final marks are being struck.”* — Bard 🍺
-
-## ✅ SHAFT I: The Sudo Plumbing <COMPLETED> 🛡️
-## ✅ SHAFT D: The Gate & Guardian <COMPLETED> 🚪
-## ✅ SHAFT F: The Black Box <COMPLETED> 📼
-## ✅ SHAFT E: The Station Interface <COMPLETED> 📟
-## ✅ SHAFT G: The Foundation <COMPLETED> 🏗️
-## ✅ SHAFT H: The Expansion <COMPLETED> 🚀
-
-## 🏁 FINAL RITUAL: Release & Verification <ACTIVE> ⛏️
-**Status**: Final pass.
-**Objective**: Final build verification, version bump to `v0.1.8`, and merge to `main`.
-
-### 🛠️ Execution Plan (Final)
-1.  **Refactor Pass**: Final clippy/fmt check.
-2.  **Version Bump**: Update all `Cargo.toml` to `0.1.8`.
-3.  **Release Automata**: Prepare for the tag ritual.
-4.  **Merge**: Create PR from `forge` to `main`, merge, and release.
-
-## 🗺️ SHAFT J: WALLPAPER DOWNLOADER RUST CONVERSION <ACTIVE> ⛏️
-**Objective**: Convert Python wallpaper downloader to Rust, eliminating Python dependencies.
-
-**Status**: ✅ Phase 1 Complete | 🔨 Phase 2 Pending
-
-**Timeline**: 7 days (2024-02-23 to 2024-02-29)
-
-**Risk Level**: MEDIUM (mitigated with phased approach)
-
-**Reward Level**: HIGH (long-term maintainability, performance, alignment)
-
-### 📜 Phase 1: Analysis and Preparation <COMPLETED> ✅
-
-#### 1.1 Analyze Current Python Implementation
-- ✅ Documented current functionality (8 categories, 5999 wallpapers)
-- ✅ Identified all API endpoints (Wallhaven API)
-- ✅ Mapped Python libraries to Rust equivalents
-- ✅ Documented error handling patterns
-- ✅ Documented configuration options
-
-#### 1.2 Set Up Rust Project Structure
-- ✅ Created workspace member `wallpaper-downloader`
-- ✅ Set up dependencies (reqwest, tokio, serde, clap, thiserror, etc.)
-- ✅ Configured build settings
-- ✅ Created module structure (lib.rs, config.rs, api.rs, download.rs, error.rs, types.rs, main.rs)
-- ✅ All code compiles successfully
-- ✅ Tests pass
-
-### 📊 Progress Summary
-- **Lines of Code**: 961 new lines
-- **Files Created**: 8 new files
-- **Compilation Status**: ✅ Success
-- **Test Status**: ✅ Pass
-- **Documentation**: ✅ Complete
-
-### 🎯 Next Steps (Phase 2)
-1. **Core Implementation** (Days 2-4)
-   - Implement configuration handling
-   - Build API client
-   - Implement download logic
-   - Add error handling
-
-2. **Testing** (Day 5)
-   - Unit tests
-   - Integration tests
-   - End-to-end tests
-
-3. **Integration** (Day 6)
-   - Add to software catalog
-   - Update installation logic
-   - Add configuration options
-
-4. **Documentation** (Day 7)
-   - Update user documentation
-   - Update developer documentation
-   - Add migration guide
+> *"Two shafts remain. One to harden the blade. One to ship it."* — Bard 🍺
 
 ---
-**Last Updated**: 2026-02-22  
+
+## ✅ SHAFT J: WALLPAPER DOWNLOADER RUST CONVERSION — COMPLETE
+
+All previous shafts (A through J) are complete. See `maps-explored.md` for full history.
+
+---
+
+## ⛏️ SHAFT K: FORGE HARDENING — ACTIVE
+> *Branch*: `work-shaftj-phase1` → new `work-shaftk-hardening`
+> *Detailed plan*: `docs/scratch/shaft-k.md`
+
+**Objective**: Structural cleanup — commit baseline, purge legacy artifacts, fold thin shims,
+consolidate duplicate crate logic, align deps.
+
+### PHASE 1: BASELINE COMMIT ← START HERE
+- [ ] K1.1 Run build trinity: `cargo fmt --all` + `cargo clippy` + `cargo test --workspace`
+- [ ] K1.2 Stage and commit all Shaft J + scripts/ work (tracked changes + new files)
+- [ ] K1.3 Open PR on `work-shaftj-phase1` → CI green → merge
+
+### PHASE 2: LEGACY ARTIFACT PURGE
+- [ ] K2.1 Delete `resources/themes/retro-bbc/wallpaper_downloader_final.py`
+- [ ] K2.2 Delete `docs/incoming-files/wallpaper_downloader_final.py`
+- [ ] K2.3 Delete `docs/incoming-files/eza-aliases.sh` (staging duplicate)
+- [ ] K2.4 Confirm `resources/shell/eza_aliases.sh` is kept as resource (not a build tool)
+
+### PHASE 3: THIN SHIM ELIMINATION
+- [ ] K3.1 Delete `installer-core/src/registry.rs` (1-line re-export)
+- [ ] K3.2 Update `lib.rs` to use `phase_registry::PhaseRegistry` directly
+- [ ] K3.3 Delete `installer-core/src/runner.rs` (4-line re-export)
+- [ ] K3.4 Update `lib.rs` to use `phase_runner::*` directly
+- [ ] K3.5 Build check after each deletion
+
+### PHASE 4: CRATE CONSOLIDATION
+- [ ] K4.1 Fold `wallpaper-downloader/` as thin CLI over `installer-core/src/wallpaper/`
+  - [ ] K4.1.a Add `installer-core` dep to wallpaper-downloader/Cargo.toml
+  - [ ] K4.1.b Replace duplicate src/*.rs with thin wrappers
+  - [ ] K4.1.c Slim main.rs to ~50 lines (parse args → call installer_core::wallpaper API)
+  - [ ] K4.1.d Bump wallpaper-downloader version to 0.2.3 (match workspace)
+- [ ] K4.2 Delete `.github/workflows/rust.yml` (fully subsumed by ci.yml)
+
+### PHASE 5: DEPENDENCY HYGIENE
+- [ ] K5.1 Align `indicatif`: 0.17 → 0.18 everywhere
+- [ ] K5.2 Align `which`: v4 (cli) + v7 (core) → pick one
+- [ ] K5.3 Align `once_cell`: evaluate → migrate to `std::sync::OnceLock` (stable since 1.70)
+- [ ] K5.4 Assess toolchain upgrade: 1.93.1 → 1.85.0
+- [ ] K5.5 `cargo update` + `cargo audit` — confirm zero vulnerabilities
+- [ ] K5.6 Run build trinity — confirm green
+
+### PHASE 6: SHAFT K COMMIT
+- [ ] K6.1 Commit per phase (atomic commits, descriptive messages)
+- [ ] K6.2 Open PR `work-shaftk-hardening` → CI green → merge
+
+**Risk**: LOW | **Reward**: HIGH
+
+---
+
+## ⬜ SHAFT L: FINAL RELEASE CLEARANCE — PENDING
+> *Starts after Shaft K is merged*
+> *Detailed plan*: `docs/scratch/shaft-l.md`
+
+**Objective**: Code quality pass + UX improvements + docs + release gate → v1.0.0 tag.
+
+### PHASE 1: CODE QUALITY
+- [ ] L1.1 Audit `verify.rs` (marked `#[allow(dead_code)]`) — connect or delete
+- [ ] L1.2 Audit `ai_agents.rs` — confirm purpose, add doc comment or refactor gate
+- [ ] L1.3 Migrate `once_cell` usages to `std::sync::OnceLock` (if K5.3 deferred)
+- [ ] L1.4 Clarify boundary between `installer-cli/src/software_tiers.rs` (UI)
+       and `installer-core/src/software_tiers.rs` (data) with doc comments
+
+### PHASE 2: UX IMPROVEMENTS
+- [ ] L2.1 Wallpaper API key env var support (MASH_WALLHAVEN_KEY, MASH_PEXELS_KEY, MASH_PIXABAY_KEY)
+- [ ] L2.2 Doctor mode wallpaper API key check (PASS/WARN + setup URLs)
+- [ ] L2.3 `include_str!()` eza_aliases.sh into zsh.rs (embed resource, remove .sh from flow)
+
+### PHASE 3: DOCUMENTATION
+- [ ] L3.1 HISTORY.md — bardic entry for Shaft J (wallpaper downloader Rust conversion)
+- [ ] L3.2 HISTORY.md — bardic entry for Shaft K (forge hardening)
+- [ ] L3.3 MANUAL.md — refresh for current feature set (wallpapers, Pi tuning, TUI, API keys)
+- [ ] L3.4 Run `check_docs.rs` — fix all broken links
+
+### PHASE 4: FINAL RELEASE GATE
+- [ ] L4.1 Run `release_checklist.rs` — all gates green
+- [ ] L4.2 `cargo audit` — zero vulnerabilities
+- [ ] L4.3 `shellcheck install.sh` — clean
+- [ ] L4.4 Version consistency: all crates at 0.2.3 (or bump to 1.0.0)
+- [ ] L4.5 Merge to main — CI green
+- [ ] L4.6 Run `auto_bump.rs major` → 1.0.0 (0.x.x → 1.0.0)
+- [ ] L4.7 `git tag v1.0.0 && git push --tags`
+- [ ] L4.8 GitHub Actions release pipeline fires → .deb, .rpm, PKGBUILD published
+
+**Risk**: LOW | **Reward**: MAXIMUM (v1.0.0 shipped)
+
+---
+
+## DEFERRED (Post v1.0.0)
+- reqwest 0.11 → 0.12 upgrade (HIGH RISK, medium reward)
+- scripts/*.rs → `xtask` crate (LOW RISK, medium reward, quality-of-life)
+- cargo-release integration (replaces auto_bump.rs)
+- Dependabot configuration for automated dep updates
+- Multi-distro parallel CI test matrix
+- BBS message bank expansion (44 → 60+)
+- mash-setup status subcommand
+- mdBook documentation expansion
+
+---
+
+## CRITICAL PATH
+
+```
+SHAFT K ──► SHAFT L ──► v1.0.0 TAG
+(hardening)  (quality)   (ship it)
+```
+
+---
+
+**Last Updated**: 2026-02-22
 **Owner**: Bard, Drunken Dwarf Runesmith 🍺⚒️

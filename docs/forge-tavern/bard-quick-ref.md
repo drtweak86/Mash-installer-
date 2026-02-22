@@ -138,6 +138,9 @@ Neon Runesmith • Zen Debugger • Tavern Storyteller
 • One feature per PR
 • No "and also" additions
 • If it's not in scope, it's not in the PR
+• No refactors outside declared shaft objective
+• No opportunistic cleanups during feature work
+• No architectural changes without explicit design phase
 ```
 
 ### No Unnecessary Abstractions
@@ -159,14 +162,15 @@ Neon Runesmith • Zen Debugger • Tavern Storyteller
 
 ### Document Hygiene
 ```
-• /docs/scratch = /tmp folder
-• Move docs >7d to docs/legacy/
+• /docs/scratch = /tmp folder (<7 days only)
+• Move docs >7d to docs/legacy/ (automated via document-hygiene.sh)
 • docs/incoming-files = staging folder
 • docs/assets = all asset files
-• docs/forge-tavern = four sources of truth
+• docs/forge-tavern = four sources of truth (IMMUTABLE)
 • docs/HISTORY.md = tales and journal
 • docs/LICENSE = legal documents
 • docs/MANUAL.md = user guide
+• Automated tools: scripts/document-hygiene.sh, scripts/branch-prune.sh
 ```
 
 ### Commit Hygiene

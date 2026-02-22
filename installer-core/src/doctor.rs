@@ -760,6 +760,18 @@ mod tests {
         fn detect_root_fstype(&self) -> Result<String> {
             Ok("ext4".to_string())
         }
+
+        fn write_file(&self, _path: &Path, _content: &[u8]) -> Result<()> {
+            Err(anyhow!("not implemented"))
+        }
+
+        fn rename(&self, _from: &Path, _to: &Path) -> Result<()> {
+            Err(anyhow!("not implemented"))
+        }
+
+        fn create_dir_all(&self, _path: &Path) -> Result<()> {
+            Err(anyhow!("not implemented"))
+        }
     }
 
     #[test]

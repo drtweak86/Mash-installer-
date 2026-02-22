@@ -25,6 +25,7 @@ mod package_manager;
 mod package_spec;
 mod phase_registry;
 mod phase_runner;
+pub mod phases;
 mod pi4b_hdd;
 mod pkg;
 mod platform;
@@ -44,6 +45,7 @@ mod systemd;
 mod theme;
 #[allow(dead_code)]
 mod verify;
+mod wallpaper;
 mod zsh;
 
 use crate::{dry_run::DryRunLog, localization::Localization};
@@ -83,6 +85,7 @@ pub use theme::{
     command_exists, ensure_i3_installed, ensure_kitty_installed, ensure_retro_theme_dependencies,
     install_retro_theme, install_theme_file, ThemeConfig,
 };
+pub use wallpaper::{download_wallpapers, WallpaperConfig, WallpaperError};
 
 /// Central context threaded through every install phase.
 pub struct InstallContext {

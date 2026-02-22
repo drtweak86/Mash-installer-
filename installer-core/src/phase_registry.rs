@@ -8,6 +8,7 @@ use crate::github;
 use crate::localization::Localization;
 use crate::options::ProfileLevel;
 use crate::phase_runner::{FunctionPhase, Phase};
+use crate::phases::wallpapers;
 use crate::pi4b_hdd;
 use crate::pkg;
 use crate::rclone;
@@ -44,6 +45,13 @@ impl PhaseRegistry {
 impl Default for PhaseRegistry {
     fn default() -> Self {
         Self::new(vec![
+            PhaseEntry::new(
+                "wallpapers",
+                "Wallpapers",
+                "Retro-futuristic wallpapers installed",
+                wallpapers::install_phase,
+                PhaseGate::SoftwareTiers,
+            ),
             PhaseEntry::new(
                 "fonts",
                 "Fonts",

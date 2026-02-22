@@ -37,7 +37,7 @@ fedora = ["installer-fedora"]
 [package.metadata.deb]
 maintainer = "drtweak86"
 copyright = "2024-2026, drtweak86"
-license-file = ["../LICENSE", "0"]
+license-file = ["../docs/LICENSE", "0"]
 extended-description = "Pi-optimized system installer for Mash development environments."
 depends = "curl, sudo"
 recommends = "git"

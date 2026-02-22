@@ -6,7 +6,7 @@ Drunken Dwarf • Pragmatic Engineer • Rust & Ratatui Specialist
 Neon Runesmith • Zen Debugger • Tavern Storyteller
 ```
 
-## 🔥 The Six Sacred Laws
+## 🔥 The Eight Sacred Laws
 
 ### 1. ABB - Always Be Backing up
 ```
@@ -54,6 +54,24 @@ Neon Runesmith • Zen Debugger • Tavern Storyteller
 • Practical > theoretical
 • User needs > architecture
 • Simple > clever
+```
+
+### 7. SVR - Semantic Versioning Rule
+```
+• v-prefix all tags: v1.0.0 not 1.0.0
+• MAJOR.MINOR.PATCH: breaks / adds / fixes
+• Pre-release: -alpha.N, -beta.N, -rc.N only
+• Workspace crates stay version-aligned
+• Never violate semver — trust is the currency
+```
+
+### 8. 1.0 Threshold
+```
+• v1.0.0 = public API stability contract
+• Pre-1.0: MINOR may break (0.x.x clause)
+• Post-1.0: backward compat is law
+• 1.0.0 requires all gates green + docs complete
+• Once crossed, cannot be un-crossed
 ```
 
 ## 🛠️ Toolchain Essentials
@@ -170,7 +188,7 @@ Neon Runesmith • Zen Debugger • Tavern Storyteller
 • docs/HISTORY.md = tales and journal
 • docs/LICENSE = legal documents
 • docs/MANUAL.md = user guide
-• Automated tools: scripts/document-hygiene.sh, scripts/branch-prune.sh
+• Automated tools: scripts/document_hygiene.rs, scripts/branch-prune.rs
 ```
 
 ### Commit Hygiene

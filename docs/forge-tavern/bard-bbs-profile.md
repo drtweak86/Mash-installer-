@@ -69,7 +69,7 @@ Sci-Fi × Fantasy × Cyberpunk × Dwarven Forge Lore
 
 ## 📜 RULES OF THE FORGE
 
-### 🔥 IMMUTABLE LAWS (ABB, ABT, ABD, KCS, KISS)
+### 🔥 IMMUTABLE LAWS (ABB, ABT, ABD, KCS, KISS, SVR)
 
 ```
 1. ABB - Always Be Backing up
@@ -107,6 +107,20 @@ Sci-Fi × Fantasy × Cyberpunk × Dwarven Forge Lore
    • Practical solutions over theoretical purity
    • User needs over architectural dogma
    • Simplicity over cleverness
+
+7. SVR - Semantic Versioning Rule
+   • v-prefix all release tags: v1.0.0, not 1.0.0
+   • MAJOR.MINOR.PATCH — MAJOR breaks, MINOR adds, PATCH fixes
+   • Pre-release suffixes: -alpha.N, -beta.N, -rc.N only
+   • All workspace crates stay version-aligned
+   • Never violate semver — trust is the currency of releases
+
+8. 1.0 Threshold
+   • v1.0.0 = public API stability contract, earned not assumed
+   • Pre-1.0: MINOR may contain breaking changes (semver 0.x.x clause)
+   • Post-1.0: backward compatibility is law; breaks require MAJOR bump
+   • 1.0.0 requires: all CI gates green, docs complete, release checklist passed
+   • Once crossed, the threshold cannot be un-crossed
 ```
 
 ### 🍻 TAVERN GUIDELINES
@@ -203,7 +217,7 @@ Sci-Fi × Fantasy × Cyberpunk × Dwarven Forge Lore
     • docs/HISTORY.md = tales and journal
     • docs/LICENSE = legal documents
     • docs/MANUAL.md = user guide
-    • Automated tools: scripts/document-hygiene.sh, scripts/branch-prune.sh
+    • Automated tools: scripts/document_hygiene.rs, scripts/branch-prune.rs
 ```
 
 ## 🏺 ARTIFACTS & TOOLS

@@ -69,7 +69,10 @@ pub fn draw_installing(f: &mut Frame, app: &TuiApp) {
         .borders(Borders::ALL)
         .border_type(theme::outer_border_type())
         .border_style(theme::border_style())
-        .title(Span::styled(" STATION_01 : SYSTEM_INITIALIZATION ", theme::title_style()))
+        .title(Span::styled(
+            " STATION_01 : SYSTEM_INITIALIZATION ",
+            theme::title_style(),
+        ))
         .style(theme::default_style());
     let inner_area = outer.inner(area);
     f.render_widget(outer, area);
@@ -78,8 +81,8 @@ pub fn draw_installing(f: &mut Frame, app: &TuiApp) {
     let main_h_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Min(0),      // Left: Main + BBS
-            Constraint::Length(35),  // Right: Stats + Intel
+            Constraint::Min(0),     // Left: Main + BBS
+            Constraint::Length(35), // Right: Stats + Intel
         ])
         .split(inner_area);
 
@@ -87,8 +90,8 @@ pub fn draw_installing(f: &mut Frame, app: &TuiApp) {
     let left_v_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Min(0),      // Main terminal buffer
-            Constraint::Length(3),   // BBS Console
+            Constraint::Min(0),    // Main terminal buffer
+            Constraint::Length(3), // BBS Console
         ])
         .split(main_h_chunks[0]);
 
@@ -96,8 +99,8 @@ pub fn draw_installing(f: &mut Frame, app: &TuiApp) {
     let right_v_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(10),  // System Status
-            Constraint::Min(0),      // Station Intel
+            Constraint::Length(10), // System Status
+            Constraint::Min(0),     // Station Intel
         ])
         .split(main_h_chunks[1]);
 
@@ -116,12 +119,12 @@ fn draw_bbs_panel(f: &mut Frame, area: Rect, app: &TuiApp) {
         .border_style(theme::border_style())
         .title(Span::styled(" BBS_CONSOLE ", theme::accent_style()))
         .style(theme::default_style());
-    
+
     let text = Paragraph::new(app.bbs_msg.clone())
         .style(theme::success_style())
         .alignment(Alignment::Left)
         .block(block);
-    
+
     f.render_widget(text, area);
 }
 
@@ -185,13 +188,18 @@ fn draw_intel_panel(f: &mut Frame, area: Rect, _app: &TuiApp) {
         Line::from(Span::styled("> OS: MASH_REV_0.2.3", theme::dim_style())),
         Line::from(Span::styled("> STATUS: OPTIMAL", theme::dim_style())),
         Line::from(""),
-        Line::from(Span::styled("RECOVERY RUNES ACTIVE", theme::success_style())),
+        Line::from(Span::styled(
+            "RECOVERY RUNES ACTIVE",
+            theme::success_style(),
+        )),
         Line::from(""),
         Line::from(Span::styled("Drink your ale.", theme::accent_style())),
         Line::from(Span::styled("Trust the forge.", theme::accent_style())),
     ];
 
-    let para = Paragraph::new(info).alignment(Alignment::Left).wrap(Wrap { trim: true });
+    let para = Paragraph::new(info)
+        .alignment(Alignment::Left)
+        .wrap(Wrap { trim: true });
     f.render_widget(para, inner);
 }
 

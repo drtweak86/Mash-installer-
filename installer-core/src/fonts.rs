@@ -1,7 +1,7 @@
-use anyhow::{Context, Result};
-use std::process::Command;
-use std::fs;
 use crate::{cmd, package_manager, PhaseContext};
+use anyhow::{Context, Result};
+use std::fs;
+use std::process::Command;
 
 pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
     // 1. Install base terminus fonts via package manager
@@ -36,14 +36,19 @@ fn install_terminess_nerd_font(ctx: &mut PhaseContext) -> Result<()> {
         "Install Terminess Nerd Font",
         Some("Downloading from GitHub Nerd Fonts release".into()),
         |_| {
-            if ctx.options.dry_run { return Ok(()); }
+            if ctx.options.dry_run {
+                return Ok(());
+            }
 
             fs::create_dir_all(&font_dir).context("Failed to create font directory")?;
 
             let version = "v3.2.1";
             let font_name = "Terminus.zip";
-            let url = format!("https://github.com/ryanoasis/nerd-fonts/releases/download/{}/{}", version, font_name);
-            
+            let url = format!(
+                "https://github.com/ryanoasis/nerd-fonts/releases/download/{}/{}",
+                version, font_name
+            );
+
             let tmp_dir = tempfile::tempdir()?;
             let zip_path = tmp_dir.path().join(font_name);
 
@@ -74,6 +79,6 @@ fn install_terminess_nerd_font(ctx: &mut PhaseContext) -> Result<()> {
             let _ = cmd::run(&mut fc_cache); // Don't fail if fc-cache missing
 
             Ok(())
-        }
+        },
     )
 }

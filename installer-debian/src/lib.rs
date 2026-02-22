@@ -26,11 +26,11 @@ impl DistroDriver for DebianDriver {
             // Debian 13 (Trixie) and newer may not need/have software-properties-common
             // It's often for add-apt-repository which is less common on pure Debian
             "software-properties-common" => {
-                // Return None to skip it on Debian if it's failing, 
+                // Return None to skip it on Debian if it's failing,
                 // or just keep it as is if we want to try.
                 // The log showed it failing to locate.
-                None 
-            },
+                None
+            }
             "fd-find" => Some("fd-find".to_string()), // Keep as is, but some distros use 'fd'
             _ => Some(canonical.to_string()),
         }

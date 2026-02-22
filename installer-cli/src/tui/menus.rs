@@ -556,21 +556,33 @@ pub fn draw_font_prep(f: &mut Frame, area: Rect, _app: &TuiApp) {
 
     let mut lines: Vec<Line> = vec![
         Line::from(""),
-        Line::from(Span::styled("STATION_01: FONT_SIGIL VERIFICATION:", theme::title_style())),
+        Line::from(Span::styled(
+            "STATION_01: FONT_SIGIL VERIFICATION:",
+            theme::title_style(),
+        )),
         Line::from(""),
         Line::from("This station recommends Nerd Fonts (Terminess) for optimal glyph rendering."),
         Line::from("If emojis or runes are not rendering, this is required."),
         Line::from(""),
         Line::from(vec![
             Span::styled("CAUTION: ", theme::warning_style()),
-            Span::styled("Installing fonts may take several minutes.", theme::default_style()),
+            Span::styled(
+                "Installing fonts may take several minutes.",
+                theme::default_style(),
+            ),
         ]),
         Line::from(""),
-        Line::from(Span::styled("PROCEED WITH FONT INITIALIZATION? (Y/N)", theme::accent_style())),
+        Line::from(Span::styled(
+            "PROCEED WITH FONT INITIALIZATION? (Y/N)",
+            theme::accent_style(),
+        )),
         Line::from(""),
         Line::from(vec![
             Span::styled("COMMAND > ", theme::success_style()),
-            Span::styled("_", theme::success_style().add_modifier(Modifier::SLOW_BLINK)),
+            Span::styled(
+                "_",
+                theme::success_style().add_modifier(Modifier::SLOW_BLINK),
+            ),
         ]),
     ];
 

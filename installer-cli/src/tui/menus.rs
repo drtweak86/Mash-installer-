@@ -554,7 +554,7 @@ pub fn draw_font_prep(f: &mut Frame, area: Rect, _app: &TuiApp) {
     let inner = block.inner(popup);
     f.render_widget(block, popup);
 
-    let mut lines: Vec<Line> = vec![
+    let lines: Vec<Line> = vec![
         Line::from(""),
         Line::from(Span::styled(
             "STATION_01: FONT_SIGIL VERIFICATION:",

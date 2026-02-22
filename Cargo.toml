@@ -6,6 +6,7 @@ members = [
   "installer-arch",
   "installer-fedora",
   "installer-debian",
+  "wallpaper-downloader",
 ]
 
 [profile.release]

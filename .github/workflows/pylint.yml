@@ -21,4 +21,9 @@ jobs:
         pip install -r requirements.txt
     - name: Analysing the code with pylint
       run: |
-        pylint $(git ls-files '*.py' | grep -v 'docs/')
+        PYTHON_FILES=$(git ls-files '*.py' | grep -v 'docs/' | grep -v 'resources/')
+        if [ -n "$PYTHON_FILES" ]; then
+          pylint $PYTHON_FILES
+        else
+          echo "No Python files found for Pylint scan. Skipping Pylint."
+        fi

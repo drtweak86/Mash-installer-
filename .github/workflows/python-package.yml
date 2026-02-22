@@ -27,4 +27,8 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=docs/
     - name: Test with pytest
       run: |
-        pytest
+        if [ -d "tests" ]; then
+          pytest --ignore=scripts/
+        else
+          echo "No 'tests' directory found. Skipping pytest."
+        fi

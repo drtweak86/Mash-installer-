@@ -46,11 +46,13 @@ cargo test --all --all-features
 shellcheck install.sh
 ```
 
+For comprehensive quality assurance details, including the CI/CD pipeline, code coverage requirements, Docker image builds, integration tests, nightly checks, and documentation validation, see [Mining Projects - Maps Explored](docs/scratch/maps-explored.md).
+
 ## 📜 Documentation
-- 🍺 [Bard's BBS Profile](docs/scratch/bard-bbs-profile.md) — The engineer's persona and rules of the forge.
+- 🍺 [Bard's BBS Profile](docs/forge-tavern/bard-bbs-profile.md) — The engineer's persona and rules of the forge.
 - 📖 [History & Journal](docs/HISTORY.md) — The chronicle of the installer's evolution.
-- 🗺️ [Mining Maps](docs/mining-projects/maps.md) — Current session work and future shafts.
-- 🛡️ [Sudo Technical Report](docs/scratch/SUDO_TECHNICAL_REPORT.md) — Technical details on TUI password handling.
+- 🗺️ [Mining Maps](docs/forge-tavern/maps-explored.md) — Current session work and future shafts.
+- 🛡️ [Sudo Technical Report](docs/SUDO_TECHNICAL_REPORT.md) — Technical details on TUI password handling.
 
 ## ⚖️ License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

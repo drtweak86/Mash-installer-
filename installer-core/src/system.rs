@@ -11,6 +11,15 @@ pub trait SystemOps {
     fn command_output(&self, cmd: &mut Command) -> Result<Output>;
     fn connect(&self, host: &str, port: u16, timeout: Duration) -> Result<TcpStream>;
     fn detect_root_fstype(&self) -> Result<String>;
+
+    /// Write file contents
+    fn write_file(&self, path: &Path, content: &[u8]) -> Result<()>;
+
+    /// Rename a file
+    fn rename(&self, from: &Path, to: &Path) -> Result<()>;
+
+    /// Create directory and all parent directories
+    fn create_dir_all(&self, path: &Path) -> Result<()>;
 }
 
 /// Real implementation of `SystemOps` that delegates to the OS.
@@ -42,5 +51,19 @@ impl SystemOps for RealSystem {
         cmd.args(["-n", "-o", "FSTYPE", "/"]);
         let output = cmd::run(&mut cmd)?;
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+    }
+
+    fn write_file(&self, path: &Path, content: &[u8]) -> Result<()> {
+        std::fs::write(path, content).with_context(|| format!("writing file {}", path.display()))
+    }
+
+    fn rename(&self, from: &Path, to: &Path) -> Result<()> {
+        std::fs::rename(from, to)
+            .with_context(|| format!("renaming {} to {}", from.display(), to.display()))
+    }
+
+    fn create_dir_all(&self, path: &Path) -> Result<()> {
+        std::fs::create_dir_all(path)
+            .with_context(|| format!("creating directory {}", path.display()))
     }
 }

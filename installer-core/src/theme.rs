@@ -87,13 +87,8 @@ pub fn install_retro_theme(base_path: &Path) -> Result<()> {
         is_executable: false,
     })?;
 
-    // Install wallpaper downloader
-    install_theme_file(&ThemeConfig {
-        name: "wallpaper-downloader",
-        resource_path: resources_base.join("wallpaper_downloader_final.py"),
-        target_path: base_path.join(".local/bin/wallpaper_downloader_final.py"),
-        is_executable: true,
-    })?;
+    // Note: wallpaper downloader is now the Rust `wallpaper-downloader` crate;
+    // the legacy wallpaper_downloader_final.py was removed in Shaft K Phase 2.
 
     info!("✅ BBC/UNIX Retro Theme installed successfully!");
     Ok(())

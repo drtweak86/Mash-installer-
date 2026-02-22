@@ -212,6 +212,41 @@ pub fn run_doctor(format: DoctorOutput, out: &mut dyn Write) -> Result<()> {
     }
     writeln!(out)?;
 
+    // ── Wallpaper API keys ──
+    write_section(out, "Wallpaper API keys")?;
+    let wallpaper_keys: &[(&str, &str, &str)] = &[
+        (
+            "MASH_WALLHAVEN_KEY",
+            "Wallhaven",
+            "https://wallhaven.cc/settings/account",
+        ),
+        (
+            "MASH_PEXELS_KEY",
+            "Pexels",
+            "https://www.pexels.com/api/new/",
+        ),
+        (
+            "MASH_PIXABAY_KEY",
+            "Pixabay",
+            "https://pixabay.com/api/docs/#api_key",
+        ),
+    ];
+    for (env_var, label, setup_url) in wallpaper_keys {
+        match std::env::var(env_var) {
+            Ok(v) if !v.trim().is_empty() => {
+                writeln!(out, "  {label:<12} PASS  ({env_var} set)")?;
+            }
+            _ => {
+                writeln!(
+                    out,
+                    "  {label:<12} WARN  ({env_var} not set — wallpapers from this source will be skipped)"
+                )?;
+                writeln!(out, "               Setup: {setup_url}")?;
+            }
+        }
+    }
+    writeln!(out)?;
+
     Ok(())
 }
 
@@ -759,6 +794,18 @@ mod tests {
 
         fn detect_root_fstype(&self) -> Result<String> {
             Ok("ext4".to_string())
+        }
+
+        fn write_file(&self, _path: &Path, _content: &[u8]) -> Result<()> {
+            Err(anyhow!("not implemented"))
+        }
+
+        fn rename(&self, _from: &Path, _to: &Path) -> Result<()> {
+            Err(anyhow!("not implemented"))
+        }
+
+        fn create_dir_all(&self, _path: &Path) -> Result<()> {
+            Err(anyhow!("not implemented"))
         }
     }
 

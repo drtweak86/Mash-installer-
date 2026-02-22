@@ -25,13 +25,12 @@ mod package_manager;
 mod package_spec;
 mod phase_registry;
 mod phase_runner;
+pub mod phases;
 mod pi4b_hdd;
 mod pkg;
 mod platform;
 mod rclone;
-mod registry;
 mod rollback;
-mod runner;
 mod rust;
 mod signal;
 mod snapshots;
@@ -42,8 +41,8 @@ mod sudo_password;
 mod system;
 mod systemd;
 mod theme;
-#[allow(dead_code)]
-mod verify;
+pub mod verify;
+mod wallpaper;
 mod zsh;
 
 use crate::{dry_run::DryRunLog, localization::Localization};
@@ -63,6 +62,11 @@ pub use logging::init as init_logging;
 pub use options::{InstallOptions, ProfileLevel};
 pub use orchestrator::run_with_driver;
 pub use package_spec::{PackageIntent, PackageSpec};
+pub use phase_registry::PhaseRegistry;
+pub use phase_runner::{
+    Phase, PhaseErrorPolicy, PhaseEvent, PhaseObserver, PhaseOutput, PhaseRunError, PhaseRunResult,
+    PhaseRunner,
+};
 pub use pi4b_hdd::{
     analyze_partition_layout, check_hdd_health, configure_swap, detect_usb3_controllers,
     get_io_scheduler, is_raspberry_pi_4b, optimize_io_scheduler, optimize_mount_options,
@@ -70,12 +74,7 @@ pub use pi4b_hdd::{
     IoScheduler, KernelParam, MountOptimization, PartitionLayout, SwapConfig, Usb3Controller,
 };
 pub use platform::{detect as detect_platform, PlatformInfo};
-pub use registry::PhaseRegistry;
 pub use rollback::RollbackManager;
-pub use runner::{
-    Phase, PhaseErrorPolicy, PhaseEvent, PhaseObserver, PhaseOutput, PhaseRunError, PhaseRunResult,
-    PhaseRunner,
-};
 pub use software_tiers::SoftwareTierPlan;
 pub use software_tiers::ThemePlan;
 pub use system::SystemOps;
@@ -83,6 +82,7 @@ pub use theme::{
     command_exists, ensure_i3_installed, ensure_kitty_installed, ensure_retro_theme_dependencies,
     install_retro_theme, install_theme_file, ThemeConfig,
 };
+pub use wallpaper::{download_wallpapers, WallpaperConfig, WallpaperError};
 
 /// Central context threaded through every install phase.
 pub struct InstallContext {

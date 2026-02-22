@@ -1,3 +1,11 @@
+//! Software tier **UI** — menu rendering and user selection.
+//!
+//! This module owns the CLI-layer half of software tiers: it presents menus,
+//! collects user choices, and returns a [`SoftwareTierPlan`] to the caller.
+//!
+//! **Boundary note**: All install logic and data model types live in
+//! `installer-core/src/software_tiers.rs`. Nothing in this module installs packages.
+
 use super::menu::run_theme_menu;
 use crate::software_catalog::{SoftwareOption, SOFTWARE_CATEGORIES};
 use anyhow::Result;

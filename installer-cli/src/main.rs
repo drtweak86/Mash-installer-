@@ -18,8 +18,9 @@ mod ui_legacy;
 
 #[derive(Parser)]
 #[command(
-    name = "installer-cli",
-    about = "Workspace-aware mash installer entrypoint"
+    name = "mash-setup",
+    version,
+    about = "MASH — Mythic Assembly & Sigil Heuristics system installer"
 )]
 struct Cli {
     #[command(subcommand)]

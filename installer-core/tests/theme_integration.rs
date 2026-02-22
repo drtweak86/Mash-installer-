@@ -36,26 +36,8 @@ fn test_full_theme_workflow() -> Result<()> {
         base_path.join(".config/conky/retro-bbc.conkyrc").exists(),
         "Conky config should be installed"
     );
-    assert!(
-        base_path
-            .join(".local/bin/wallpaper_downloader_final.py")
-            .exists(),
-        "Wallpaper downloader should be installed"
-    );
-
-    // Verify wallpaper downloader is executable
-    let wallpaper_path = base_path.join(".local/bin/wallpaper_downloader_final.py");
-    let metadata = std::fs::metadata(&wallpaper_path)?;
-    let permissions = metadata.permissions();
-
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        assert!(
-            permissions.mode() & 0o111 != 0,
-            "Wallpaper downloader should be executable"
-        );
-    }
+    // Note: wallpaper_downloader_final.py was removed in Shaft K Phase 2;
+    // wallpapers are now handled by the Rust wallpaper-downloader crate.
 
     Ok(())
 }

@@ -1,5 +1,0 @@
-pylint
-flake8
-pytest
-wheel
-setuptools

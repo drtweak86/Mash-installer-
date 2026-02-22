@@ -5,6 +5,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: '0 0 * * *'  # Nightly runs at midnight UTC
 
 env:
   CARGO_TERM_COLOR: always
@@ -46,6 +48,107 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+  code-coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install tarpaulin
+        run: cargo install cargo-tarpaulin
+
+      - name: Generate coverage report
+        run: cargo tarpaulin --all-features --out Xml
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./cobertura.xml
+          fail_ci_if_error: true
+
+  docker-build:
+    name: Docker Image Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: drtweak86/mash-installer:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build release binary
+        run: cargo build --release --bin mash-setup
+
+      - name: Smoke test — version
+        run: ./target/release/mash-setup --version
+
+      - name: Smoke test — dry-run (no-tui)
+        run: ./target/release/mash-setup --no-tui --dry-run || true
+
+  nightly-rust-checks:
+    name: Nightly Rust Checks
+    runs-on: ubuntu-latest
+    needs: [check, audit]
+    if: github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build with nightly toolchain
+        run: cargo build --all --all-features
+
+      - name: Run tests with nightly
+        run: cargo test --all --all-features
+
+  documentation-build:
+    name: Documentation Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install mdBook
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          ~/.cargo/bin/rustup component add rust-src
+          ~/.cargo/bin/cargo install mdbook
+          ~/.cargo/bin/cargo install mdbook-linkcheck
+
+      - name: Build documentation
+        run: |
+          cd docs
+          mdbook build
+
+      - name: Check links
+        run: |
+          cd docs
+          mdbook-linkcheck build
+
   build:
     name: Build (${{ matrix.target }})
     runs-on: ubuntu-latest
@@ -68,18 +171,16 @@ jobs:
           rustup target add aarch64-unknown-linux-gnu
 
       - name: Build
+        env:
+          # Vendor OpenSSL so openssl-sys doesn't require a system library.
+          # Zig (via cargo-zigbuild) provides the C cross-compiler for vendored build.
+          OPENSSL_VENDORED: "1"
         run: |
           if [ "${{ matrix.cross }}" = "true" ]; then
             cargo zigbuild --release --target ${{ matrix.target }}
           else
             cargo build --release --target ${{ matrix.target }}
           fi
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: mash-setup-${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/mash-setup
 
   shellcheck:
     name: ShellCheck

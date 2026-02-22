@@ -3,8 +3,7 @@ use std::sync::{Arc, Mutex};
 /// Global sudo password storage
 /// This is used to temporarily store the sudo password entered by the user
 /// and make it available to sudo commands
-static SUDO_PASSWORD: once_cell::sync::OnceCell<Arc<Mutex<Option<String>>>> =
-    once_cell::sync::OnceCell::new();
+static SUDO_PASSWORD: std::sync::OnceLock<Arc<Mutex<Option<String>>>> = std::sync::OnceLock::new();
 
 /// Initialize the sudo password storage
 pub fn init_sudo_password() {

@@ -53,12 +53,12 @@ The MASH-installer project now enforces a comprehensive quality assurance pipeli
 ## 📜 Documentation Updates
 
 ### Bard's BBS Profile
-- **Location**: `docs/scratch/bard-bbs-profile.md`
+- **Location**: `docs/forge-tavern/bard-bbs-profile.md`
 - **Section**: Quality Assurance (lines 182-192)
 - **Content**: All new QA components documented
 
 ### Maps Explored
-- **Location**: `docs/scratch/maps-explored.md`
+- **Location**: `docs/forge-tavern/maps-explored.md`
 - **Session**: Block 5: Quality Assurance Forging (lines 289-350)
 - **Content**:
   - Comprehensive session summary
@@ -121,10 +121,10 @@ CI Workflow (.github/workflows/ci.yml)
 
 ## 📚 References
 
-- [Bard's BBS Profile](docs/scratch/bard-bbs-profile.md) - QA section
-- [Maps Explored](docs/scratch/maps-explored.md) - Full session details
-- [CI Workflow](.github/workflows/ci.yml) - Pipeline definition
-- [Dockerfile](Dockerfile) - Image build specification
+- [Bard's BBS Profile](forge-tavern/bard-bbs-profile.md) - QA section
+- [Maps Explored](forge-tavern/maps-explored.md) - Full session details
+- [CI Workflow](../.github/workflows/ci.yml) - Pipeline definition
+- [Dockerfile](../Dockerfile) - Image build specification
 
 ---
 

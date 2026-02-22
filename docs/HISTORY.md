@@ -47,6 +47,16 @@ Today I gave the entire ledger a "Glowup". The README is clean and technical, th
 **Margin Scribble (added late at night):**
 > “We tested the Retro-Theme on the Pi today. The `sudo` runes fought back hard—TUI mode and password prompts are still a cursed pair on that hardware. I've decided to seal Shaft B and call it a day. The mithril we found is enough; we'll fold the remaining logic into the 1984 Station core where it's safer. Shaft B is officially closed.” 🥧🛑
 
+### ⚙️ 1st of Void-Thaw, Year of the Rusted Circuit
+**Location: The Copper Coil Cantina, Forge District**
+
+The Python wyrm has been slain! Shaft J saw me rip the wallpaper downloader from its serpentine coils and reforge it in pure Rust. What was once a `wallpaper_downloader_final.py`—a name that always lied, for nothing named "final" ever is—is now a proper `wallpaper-downloader` crate with typed API clients for Wallhaven, Pexels, and Pixabay, concurrent download management, and deterministic error handling that doesn't silently drop failures into the void. The `scripts/` directory was also purged of its `.py` and `.sh` relics: every maintenance tool now compiles with `rustc --edition 2021`. Only `install.sh` keeps its POSIX shell—and rightly so, for you cannot pull yourself up by your bootstraps if the bootstrap itself requires pulling first. The forge is 100% Rust-centric now. I raised a tankard, and the wyvern compiler raised no objections. 🦀⚒️
+
+### 🏗️ 22nd of Void-Thaw, Year of the Rusted Circuit
+**Location: The Forge Tavern, Neon District**
+
+Shaft K: six phases of forge hardening, and the runes have never been cleaner. I deleted the one-line `registry.rs` shim and the four-line `runner.rs` shim—dead scaffolding from the early days when we weren't sure where things lived. `lib.rs` now points directly at `phase_registry` and `phase_runner` like a dwarf who knows exactly which tunnel leads to the mithril. I purged three legacy Python artifacts that had no business living in a Rust forge, aligned `indicatif` across the workspace (0.17 → 0.18), evicted the dead `which = "4"` dependency from installer-cli, and traded `once_cell::sync::OnceCell` for `std::sync::OnceLock`—stable since Rust 1.70, no external crate required. The deferred crate consolidation for `wallpaper-downloader` was correctly quarantined: `download_wallpapers()` takes a `&mut PhaseContext`, which a standalone CLI cannot construct without an architectural decree. That decree is written for Shaft L. The cron forge now runs nightly: `mash-doc-hygiene` sweeps scratch docs to legacy at 03:00, `mash-branch-prune` shears stale branches every Sunday at 02:00. Two new Immutable Laws were etched into the forge-tavern: SVR (Semantic Versioning Rule) and the 1.0 Threshold. v1.0.0 is within reach of a dwarf's outstretched pickaxe. 🍺⚒️
+
 ---
-**Signed,**  
+**Signed,**
 *Bard, Drunken Dwarf Runesmith*

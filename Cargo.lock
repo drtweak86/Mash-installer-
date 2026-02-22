@@ -720,15 +720,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc0fef456e4baa96da950455cd02c081ca953b141298e41db3fc7e36b1da849c"
 
 [[package]]
-name = "home"
-version = "0.5.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc627f471c528ff0c4a49e1d5e60450c8f6461dd6d10ba9dcd3a61d3dff7728d"
-dependencies = [
- "windows-sys 0.61.2",
-]
-
-[[package]]
 name = "http"
 version = "0.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1072,7 +1063,6 @@ dependencies = [
  "sysinfo",
  "tracing",
  "tracing-subscriber",
- "which 4.4.2",
 ]
 
 [[package]]
@@ -1083,7 +1073,7 @@ dependencies = [
  "async-trait",
  "clap",
  "dirs",
- "indicatif 0.17.11",
+ "indicatif 0.18.3",
  "installer-arch",
  "installer-debian",
  "installer-fedora",
@@ -1100,7 +1090,7 @@ dependencies = [
  "toml",
  "tracing",
  "tracing-subscriber",
- "which 7.0.3",
+ "which",
 ]
 
 [[package]]
@@ -2380,7 +2370,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "wallpaper-downloader"
-version = "0.1.0"
+version = "0.2.3"
 dependencies = [
  "anyhow",
  "clap",
@@ -2556,18 +2546,6 @@ checksum = "5a6580f308b1fad9207618087a65c04e7a10bc77e02c8e84e9b00dd4b12fa0bb"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
-]
-
-[[package]]
-name = "which"
-version = "4.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87ba24419a2078cd2b0f2ede2691b6c66d8e47836da3b6db8265ebad47afbfc7"
-dependencies = [
- "either",
- "home",
- "once_cell",
- "rustix 0.38.44",
 ]
 
 [[package]]

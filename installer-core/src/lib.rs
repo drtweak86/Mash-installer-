@@ -30,9 +30,7 @@ mod pi4b_hdd;
 mod pkg;
 mod platform;
 mod rclone;
-mod registry;
 mod rollback;
-mod runner;
 mod rust;
 mod signal;
 mod snapshots;
@@ -65,6 +63,11 @@ pub use logging::init as init_logging;
 pub use options::{InstallOptions, ProfileLevel};
 pub use orchestrator::run_with_driver;
 pub use package_spec::{PackageIntent, PackageSpec};
+pub use phase_registry::PhaseRegistry;
+pub use phase_runner::{
+    Phase, PhaseErrorPolicy, PhaseEvent, PhaseObserver, PhaseOutput, PhaseRunError, PhaseRunResult,
+    PhaseRunner,
+};
 pub use pi4b_hdd::{
     analyze_partition_layout, check_hdd_health, configure_swap, detect_usb3_controllers,
     get_io_scheduler, is_raspberry_pi_4b, optimize_io_scheduler, optimize_mount_options,
@@ -72,12 +75,7 @@ pub use pi4b_hdd::{
     IoScheduler, KernelParam, MountOptimization, PartitionLayout, SwapConfig, Usb3Controller,
 };
 pub use platform::{detect as detect_platform, PlatformInfo};
-pub use registry::PhaseRegistry;
 pub use rollback::RollbackManager;
-pub use runner::{
-    Phase, PhaseErrorPolicy, PhaseEvent, PhaseObserver, PhaseOutput, PhaseRunError, PhaseRunResult,
-    PhaseRunner,
-};
 pub use software_tiers::SoftwareTierPlan;
 pub use software_tiers::ThemePlan;
 pub use system::SystemOps;

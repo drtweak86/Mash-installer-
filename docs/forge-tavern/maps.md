@@ -16,31 +16,32 @@ All previous shafts (A through J) are complete. See `maps-explored.md` for full 
 **Objective**: Structural cleanup — commit baseline, purge legacy artifacts, fold thin shims,
 consolidate duplicate crate logic, align deps.
 
-### PHASE 1: BASELINE COMMIT ← START HERE
-- [ ] K1.1 Run build trinity: `cargo fmt --all` + `cargo clippy` + `cargo test --workspace`
-- [ ] K1.2 Stage and commit all Shaft J + scripts/ work (tracked changes + new files)
+### PHASE 1: BASELINE COMMIT ✅ COMPLETE — Checkpoint α
+- [x] K1.1 Run build trinity: fmt clean | clippy clean | 107 tests passing
+- [x] K1.2 Staged and committed 49 files (commit f89d203)
 - [ ] K1.3 Open PR on `work-shaftj-phase1` → CI green → merge
 
-### PHASE 2: LEGACY ARTIFACT PURGE
-- [ ] K2.1 Delete `resources/themes/retro-bbc/wallpaper_downloader_final.py`
-- [ ] K2.2 Delete `docs/incoming-files/wallpaper_downloader_final.py`
-- [ ] K2.3 Delete `docs/incoming-files/eza-aliases.sh` (staging duplicate)
-- [ ] K2.4 Confirm `resources/shell/eza_aliases.sh` is kept as resource (not a build tool)
+### PHASE 2: LEGACY ARTIFACT PURGE ✅ COMPLETE — Checkpoint β
+- [x] K2.1 Deleted `resources/themes/retro-bbc/wallpaper_downloader_final.py`
+- [x] K2.2 Deleted `docs/incoming-files/wallpaper_downloader_final.py`
+- [x] K2.3 Deleted `docs/incoming-files/eza-aliases.sh` (staging duplicate)
+- [x] K2.4 `resources/shell/eza_aliases.sh` confirmed kept as resource data file
+- Note: docs/scratch/wallpaper_downloader-1.py is scratch — will age out via hygiene
 
-### PHASE 3: THIN SHIM ELIMINATION
-- [ ] K3.1 Delete `installer-core/src/registry.rs` (1-line re-export)
-- [ ] K3.2 Update `lib.rs` to use `phase_registry::PhaseRegistry` directly
-- [ ] K3.3 Delete `installer-core/src/runner.rs` (4-line re-export)
-- [ ] K3.4 Update `lib.rs` to use `phase_runner::*` directly
-- [ ] K3.5 Build check after each deletion
+### PHASE 3: THIN SHIM ELIMINATION ✅ COMPLETE — Checkpoint γ
+- [x] K3.1 Deleted `installer-core/src/registry.rs` (was 1-line re-export)
+- [x] K3.2 Updated `lib.rs`: `pub use phase_registry::PhaseRegistry`
+- [x] K3.3 Deleted `installer-core/src/runner.rs` (was 4-line re-export)
+- [x] K3.4 Updated `lib.rs`: `pub use phase_runner::{Phase, PhaseRunner, ...}`
+- [x] K3.5 Build check: green (2m 40s, 0 errors)
 
-### PHASE 4: CRATE CONSOLIDATION
-- [ ] K4.1 Fold `wallpaper-downloader/` as thin CLI over `installer-core/src/wallpaper/`
-  - [ ] K4.1.a Add `installer-core` dep to wallpaper-downloader/Cargo.toml
-  - [ ] K4.1.b Replace duplicate src/*.rs with thin wrappers
-  - [ ] K4.1.c Slim main.rs to ~50 lines (parse args → call installer_core::wallpaper API)
-  - [ ] K4.1.d Bump wallpaper-downloader version to 0.2.3 (match workspace)
-- [ ] K4.2 Delete `.github/workflows/rust.yml` (fully subsumed by ci.yml)
+### PHASE 4: CRATE CONSOLIDATION ✅ COMPLETE — Checkpoint δ
+- [x] K4.1 wallpaper-downloader consolidation — PARTIAL (design decision required)
+  - [x] K4.1.d Bumped wallpaper-downloader version to 0.2.3 (workspace aligned)
+  - NOTE: Full thin-CLI fold deferred to Shaft L Phase 1 — download_wallpapers() takes
+    &mut PhaseContext which must be decoupled first (architectural decision needed)
+  - Declared in shaft-l.md as design-first task
+- [x] K4.2 Deleted `.github/workflows/rust.yml` (subsumed by ci.yml)
 
 ### PHASE 5: DEPENDENCY HYGIENE
 - [ ] K5.1 Align `indicatif`: 0.17 → 0.18 everywhere

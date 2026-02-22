@@ -1,0 +1,7 @@
+[advisories]
+# once_cell (RUSTSEC-2024-0381) is flagged as "unmaintained" because the
+# author considers it feature-complete and recommends std::sync::OnceLock for
+# new code. We no longer depend on it directly; it remains only as a transitive
+# dependency pulled in by tracing-core, tempfile, and console (indicatif).
+# Ignoring until those upstream crates drop the dep.
+ignore = ["RUSTSEC-2024-0381"]

@@ -155,9 +155,8 @@ impl PhaseObserver for CliPhaseObserver {
     }
 
     fn sudo_password(&mut self) -> anyhow::Result<String> {
-        self.mp.suspend(|| {
-            read_password_crossterm("Enter sudo password: ")
-        })
+        self.mp
+            .suspend(|| read_password_crossterm("Enter sudo password: "))
     }
 }
 
@@ -205,13 +204,15 @@ fn read_password_crossterm(prompt: &str) -> anyhow::Result<String> {
 }
 
 pub fn print_banner() {
-    println!(r#"
+    println!(
+        r#"
   __  __    _    ____  _   _ 
  |  \/  |  / \  / ___|| | | |
  | |\/| | / _ \ \___ \| |_| |
  | |  | |/ ___ \ ___) |  _  |
  |_|  |_/_/   \_\____/|_| |_|
-"#);
+"#
+    );
     println!(" ╔══════════════════════════════════════════════╗");
     println!(" ║       mash-setup · mega installer            ║");
     println!(" ╚══════════════════════════════════════════════╝");

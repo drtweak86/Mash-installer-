@@ -96,32 +96,19 @@ jobs:
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
-    container: ubuntu:latest
     steps:
-      - name: Install dependencies
-        run: |
-          apt-get update && apt-get install -y \
-            curl \
-            bash \
-            ca-certificates \
-            git \
-            && rm -rf /var/lib/apt/lists/*
-
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
 
-      - name: Run integration test script
-        run: |
-          # Simulate a dry-run installation
-          bash install.sh --dry-run || true
-          
-          # Verify the binary exists
-          if [ -f target/release/mash-setup ]; then
-            echo "✓ Binary built successfully"
-            ./target/release/mash-setup --version
-          else
-            echo "✗ Binary not found"
-            exit 1
-          fi
+      - name: Build release binary
+        run: cargo build --release --bin mash-setup
+
+      - name: Smoke test — version
+        run: ./target/release/mash-setup --version
+
+      - name: Smoke test — dry-run (no-tui)
+        run: ./target/release/mash-setup --no-tui --dry-run || true
 
   nightly-rust-checks:
     name: Nightly Rust Checks
@@ -176,12 +163,19 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install cargo-zigbuild (aarch64)
+      - name: Install cargo-zigbuild + arm64 OpenSSL (aarch64)
         if: matrix.cross
         run: |
           pip install ziglang
           cargo install cargo-zigbuild
           rustup target add aarch64-unknown-linux-gnu
+          sudo dpkg --add-architecture arm64
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev:arm64
+          echo "PKG_CONFIG_ALLOW_CROSS=1" >> "$GITHUB_ENV"
+          echo "PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig" >> "$GITHUB_ENV"
+          echo "OPENSSL_INCLUDE_DIR=/usr/include/aarch64-linux-gnu" >> "$GITHUB_ENV"
+          echo "OPENSSL_LIB_DIR=/usr/lib/aarch64-linux-gnu" >> "$GITHUB_ENV"
 
       - name: Build
         run: |

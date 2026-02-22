@@ -28,17 +28,28 @@ alias clean='sudo pacman -Rns $(pacman -Qdtq)'
 alias myip='curl ifconfig.me'
 alias ports='ss -tulnp'
 alias psg='ps aux | grep -i'
-alias killport='sudo kill -9 $(lsof -i :$1 -t) 2>/dev/null'
+
+killport() {
+    sudo kill -9 $(lsof -i :"$1" -t) 2>/dev/null
+}
 
 # File ops
 alias cp='cp -iv'
 alias mv='mv -iv'
 alias rm='trash-put'
-alias mkcd='mkdir -p "$1" && cd "$1"'
+
+mkcd() {
+    mkdir -p "$1" && cd "$1"
+}
+
 alias edit='helix'
 
 # Fun
 alias weather='curl wttr.in'
-alias cheat='curl cht.sh/:$1'
+
+cheat() {
+    curl cht.sh/:"$1"
+}
+
 alias goblin='cmatrix -a'
 alias motd='fortune | cowsay'

@@ -1041,14 +1041,14 @@ dependencies = [
 
 [[package]]
 name = "installer-arch"
-version = "0.2.3"
+version = "1.0.0"
 dependencies = [
  "installer-core",
 ]
 
 [[package]]
 name = "installer-cli"
-version = "0.2.3"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -1067,7 +1067,7 @@ dependencies = [
 
 [[package]]
 name = "installer-core"
-version = "0.2.3"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1094,7 +1094,7 @@ dependencies = [
 
 [[package]]
 name = "installer-debian"
-version = "0.2.3"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "installer-core",
@@ -1102,7 +1102,7 @@ dependencies = [
 
 [[package]]
 name = "installer-fedora"
-version = "0.2.3"
+version = "1.0.0"
 dependencies = [
  "installer-core",
 ]
@@ -2369,7 +2369,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "wallpaper-downloader"
-version = "0.2.3"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "clap",

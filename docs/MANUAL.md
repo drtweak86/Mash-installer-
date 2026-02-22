@@ -1,8 +1,8 @@
-# 📟 MASH INSTALLER — OFFICIAL USER MANUAL
+# 📟 MASH INSTALLER v1.0.0 — OFFICIAL USER MANUAL
 > **STATION:** FORGE_TAVERN_BBS
 > **DATE:** 22-FEB-1984 (RE-SYNCED 2026)
 > **FROM:** BARD (RUNESMITH_STATION_01)
-> **VERSION:** 0.2.3 (pre-release; v1.0.0 imminent)
+> **VERSION:** 1.0.0
 
 ---
 
@@ -205,7 +205,7 @@ If you encounter a **HALTED** status:
 ```
    _______________________________________
   /                                       \
-  |  MASH INSTALLER v0.2.3 — (C) 1984     |
+  |  MASH INSTALLER v1.0.0 — (C) 1984     |
   |  SYSTEM READY.                        |
   |  > _                                  |
   \_______________________________________/

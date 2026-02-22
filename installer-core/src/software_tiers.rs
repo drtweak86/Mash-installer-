@@ -1,3 +1,13 @@
+//! Software tier data model and installation phase.
+//!
+//! This module owns two concerns that belong in the **core** crate:
+//! - **Data model**: [`SoftwareTierPlan`] and [`ThemePlan`] — the user's selections,
+//!   constructed by the CLI layer and threaded into every install phase via [`PhaseContext`].
+//! - **Install logic**: [`install_phase`] — consumes the plan and actually installs packages.
+//!
+//! **Boundary note**: UI rendering (menus, prompts, selection) lives exclusively in
+//! `installer-cli/src/software_tiers.rs`. Nothing in this module should touch stdio.
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::os::unix::fs::PermissionsExt;

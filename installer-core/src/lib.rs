@@ -41,8 +41,7 @@ mod sudo_password;
 mod system;
 mod systemd;
 mod theme;
-#[allow(dead_code)]
-mod verify;
+pub mod verify;
 mod wallpaper;
 mod zsh;
 

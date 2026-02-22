@@ -1,6 +1,6 @@
 [package]
 name = "installer-cli"
-version = "0.1.9"
+version = "0.2.0"
 edition = "2021"
 description = "Command-line entry point for the mash installer workspace"
 license = "MIT"

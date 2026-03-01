@@ -8,6 +8,28 @@ use crate::{PhaseEvent, PhaseOutput};
 use anyhow::Error;
 use std::fmt;
 use std::path::PathBuf;
+use thiserror::Error as ThisError;
+
+#[derive(ThisError, Debug)]
+pub enum CoreError {
+    #[error("Platform detection failed: {0}")]
+    PlatformDetection(String),
+
+    #[error("System operation failed: {0}")]
+    SystemOp(String),
+
+    #[error("Validation failed: {0}")]
+    Validation(String),
+
+    #[error("Requirement not met: {0}")]
+    Requirement(String),
+
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("Command failed: {0}")]
+    Command(#[from] cmd::CommandExecutionError),
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ErrorSeverity {
@@ -76,7 +98,8 @@ impl fmt::Display for InstallerStateSnapshot {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, ThisError)]
+#[error("{phase} ({message})")]
 pub struct InstallerError {
     pub phase: String,
     pub description: String,
@@ -140,18 +163,6 @@ impl InstallerError {
     }
 }
 
-impl fmt::Display for InstallerError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} ({})", self.phase, self.message)
-    }
-}
-
-impl std::error::Error for InstallerError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        None
-    }
-}
-
 #[derive(Clone, Debug)]
 pub struct DriverInfo {
     pub name: String,
@@ -180,22 +191,12 @@ impl InstallationReport {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, ThisError)]
+#[error("{source}")]
 pub struct InstallerRunError {
     pub report: Box<InstallationReport>,
+    #[source]
     pub source: InstallerError,
-}
-
-impl fmt::Display for InstallerRunError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.source.message)
-    }
-}
-
-impl std::error::Error for InstallerRunError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        Some(&self.source)
-    }
 }
 
 impl From<Error> for InstallerRunError {

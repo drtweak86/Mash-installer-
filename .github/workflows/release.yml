@@ -32,7 +32,8 @@ jobs:
           fetch-depth: 0
 
       - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.8.2
 
       - name: Install cargo-zigbuild (aarch64)
         if: matrix.cross

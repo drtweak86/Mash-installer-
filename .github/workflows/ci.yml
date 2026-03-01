@@ -28,7 +28,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.8.2
 
       - name: cargo fmt
         run: cargo fmt --all -- --check
@@ -54,7 +55,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.8.2
 
       - name: Install tarpaulin
         run: cargo install cargo-tarpaulin
@@ -99,7 +101,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.8.2
 
       - name: Build release binary
         run: cargo build --release --bin mash-setup
@@ -118,7 +121,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@nightly
-      - uses: Swatinem/rust-cache@v2
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.8.2
 
       - name: Build with nightly toolchain
         run: cargo build --all --all-features
@@ -154,7 +158,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.8.2
 
       - name: Install cargo-zigbuild (aarch64)
         if: matrix.cross
@@ -177,7 +182,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.8.2
 
       - name: Build release binary
         run: cargo build --release --bin mash-setup

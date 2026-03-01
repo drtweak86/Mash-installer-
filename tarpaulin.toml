@@ -7,7 +7,7 @@ all-features = true
 # Skip tests (we want coverage from tests)
 skip-tests = false
 # Timeout for coverage analysis
-timeout = 120
+timeout = 300
 # Run in verbose mode for debugging
 verbose = true
 

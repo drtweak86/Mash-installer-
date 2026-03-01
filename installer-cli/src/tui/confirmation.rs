@@ -20,6 +20,7 @@ pub struct LongProcessState {
 }
 
 impl LongProcessState {
+    #[allow(dead_code)]
     pub fn new(operation_name: String, estimated_duration: Duration) -> Self {
         Self {
             operation_name,
@@ -181,11 +182,13 @@ fn centered_rect(width: u16, height: u16, area: Rect) -> Rect {
 }
 
 /// Check if an operation should trigger long process confirmation
+#[allow(dead_code)]
 pub fn should_show_long_confirmation(estimated_duration: Duration) -> bool {
     estimated_duration.as_secs() > 120 // > 2 minutes
 }
 
 /// Get advisory message for long operations
+#[allow(dead_code)]
 pub fn get_long_operation_advisory(operation_name: &str, duration: Duration) -> String {
     let minutes = duration.as_secs() / 60;
     format!(

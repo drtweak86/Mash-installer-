@@ -1086,6 +1086,7 @@ pub fn run(
 
 impl TuiApp {
     /// Start a long process confirmation
+    #[allow(dead_code)]
     pub fn start_long_process_confirmation(
         &mut self,
         operation_name: String,
@@ -1100,11 +1101,13 @@ impl TuiApp {
     }
 
     /// Cancel long process confirmation
+    #[allow(dead_code)]
     pub fn cancel_long_process_confirmation(&mut self) {
         self.long_process_state = None;
     }
 
     /// Navigate to a new screen with history tracking
+    #[allow(dead_code)]
     pub fn navigate_to(&mut self, new_screen: Screen, context: &str) {
         // Push current screen to history before navigating away
         if self.screen != new_screen {
@@ -1295,6 +1298,7 @@ impl TuiApp {
     }
 
     /// Check if long process is confirmed
+    #[allow(dead_code)]
     pub fn is_long_process_confirmed(&self) -> bool {
         self.long_process_state
             .as_ref()

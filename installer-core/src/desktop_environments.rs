@@ -276,6 +276,7 @@ pub fn get_pi_recommendations(is_pi: bool) -> Vec<DesktopEnvironment> {
 
 #[cfg(test)]
 mod tests {
+    #[allow(unused_imports)]
     use super::testing::MockDriver;
     use super::*;
 
@@ -335,6 +336,7 @@ mod testing {
     use super::*;
     use crate::{PkgBackend, PlatformInfo};
 
+    #[allow(dead_code)]
     pub struct MockDriver;
 
     impl DistroDriver for MockDriver {

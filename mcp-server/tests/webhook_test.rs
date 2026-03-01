@@ -37,6 +37,7 @@ fn test_server_starts_and_responds() {
 
     // Clean up
     server.kill().expect("Failed to kill server");
+    server.wait().expect("Failed to wait for server");
 }
 
 #[test]
@@ -71,4 +72,5 @@ fn test_webhook_validation() {
     assert_eq!(response.status().as_u16(), 400);
 
     server.kill().expect("Failed to kill server");
+    server.wait().expect("Failed to wait for server");
 }

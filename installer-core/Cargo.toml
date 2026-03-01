@@ -20,11 +20,19 @@ nix = { version = "0.29", features = ["fs"] }
 signal-hook = "0.3"
 which = "7"
 tempfile = "3"
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream"] }
 num_cpus = "1"
 tokio = { version = "1.0", features = ["full"] }
 async-trait = "0.1"
 thiserror = "1.0"
+rusqlite = { version = "0.31", features = ["bundled"] }
+serde_urlencoded = "0.7"
+sha2 = "0.10"
+slog = { version = "2.7", features = ["max_level_trace", "release_max_level_debug"] }
+slog-term = "2.9"
+slog-async = "2.7"
+futures-util = "0.3"
+bytes = "1.11.1"
 
 [dev-dependencies]
 tempfile = "3"

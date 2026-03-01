@@ -11,11 +11,11 @@ This document establishes the canonical order in which shafts should be explored
 **Dependencies**: None
 **Next Action**: None - complete
 
-### 2. 🏗️ SHAFT H: Installer Experience Overhaul — PLANNING COMPLETE
-**Status**: Planning complete, implementation pending
+### 2. 🏗️ SHAFT H: Installer Experience Overhaul — PHASE 7 COMPLETE
+**Status**: Phases 1-7 complete, Phase 8 pending
 **Priority**: HIGH (user experience improvements)
 **Dependencies**: None
-**Next Action**: Begin implementation
+**Next Action**: Begin Phase 8 - Testing & Documentation
 
 ### 3. 🏗️ SHAFT I: Software Catalog & Installation Flow Overhaul — PLANNING COMPLETE
 **Status**: Planning complete, implementation pending
@@ -58,15 +58,33 @@ This document establishes the canonical order in which shafts should be explored
    - Unit testing
    - Complete documentation
 
+### Phase 4: Structural Integrity & Hardening
+7. **Shaft U** - The Great Refactor
+   - Codebase-wide deduplication
+   - Idiomatic Rust refactoring
+   - Input validation and hardening
+
+### Phase 5: Living Installations
+8. **Shaft V** - The Interactive Forge
+   - Dependency-first orchestration
+   - Interactive authorizations (gh, ssh, git)
+   - Post-install verification
+
+### Phase 6: Aesthetic Mastery
+9. **Shaft W** - The Aesthetic Guild
+   - Intelligent preset engine
+   - Dotfile and theme management
+   - TUI "Wardrobe" selection screen
+
 ## 🎯 STRATEGIC RATIONALE
 
-1. **Shaft H first**: Improves the core installer experience and adds foundational features like font management and desktop environment support that Shaft I can build upon.
+1. **Shaft H & I first**: Establishes the core user experience and software catalog.
 
-2. **Shaft I second**: Restructures the software catalog and installation flow, which benefits from the improved UI/UX foundation established in Shaft H.
+2. **Shaft U follows**: Purifies the codebase before adding complex interactive and aesthetic features. Hardening the foundation is critical for the "Living Installation" phase.
 
-3. **Integration phases**: Wallpaper and Pi Overlord integration come after the core systems are stable and tested.
+3. **Shaft V next**: Building on a hardened core, it enables the installer to fully configure the user's environment through interactive authorizations.
 
-4. **Testing last**: Comprehensive testing and documentation ensure quality before considering the shafts complete.
+4. **Shaft W last**: The final layer of polish, providing high-quality aesthetic presets and dotfile management to create a beautiful, ready-to-use system.
 
 ## 📝 EXPLORATION GUIDELINES
 

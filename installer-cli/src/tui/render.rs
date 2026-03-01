@@ -6,6 +6,8 @@ use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
 use ratatui::Frame;
 
 use crate::tui::app::{LogLevel, Screen, TuiApp};
+use crate::tui::confirmation;
+use crate::tui::info_box;
 use crate::tui::menus;
 use crate::tui::theme;
 
@@ -29,25 +31,94 @@ pub fn draw(f: &mut Frame, app: &TuiApp) {
     // Fill background with pure black
     f.render_widget(Block::default().style(theme::default_style()), f.area());
 
+    // Outer Chrome
+    let outer = Block::default()
+        .borders(Borders::ALL)
+        .border_type(theme::outer_border_type())
+        .border_style(theme::border_style())
+        .title(Span::styled(
+            " STATION_01 : SYSTEM_INITIALIZATION ",
+            theme::title_style(),
+        ))
+        .style(theme::default_style());
+    let chrome_area = f.area();
+    f.render_widget(&outer, chrome_area);
+    let inner_chrome = outer.inner(chrome_area);
+
+    // Draw info box and get remaining area
+    let main_layout_area = info_box::draw_info_box(f, inner_chrome, app);
+
+    // ── 4-Tile Layout Implementation ──────────────────────────────────────────
+
+    // Split Vertical: (Top Content + Sidebars) and (Bottom BBS)
+    let root_v_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Min(0),    // Top section
+            Constraint::Length(3), // BBS Console (Panel 4) - Spans width
+        ])
+        .split(main_layout_area);
+
+    // Split Horizontal: (Main Content) and (Stats + Intel)
+    let top_h_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Min(0),     // Left: Main Content (Panel 1)
+            Constraint::Length(35), // Right: Stats + Intel
+        ])
+        .split(root_v_chunks[0]);
+
+    // Split Right Vertical: (Stats) and (Intel)
+    let right_v_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(8), // System Status (Panel 2)
+            Constraint::Min(0),    // Station Intel (Panel 3)
+        ])
+        .split(top_h_chunks[1]);
+
+    let main_area = top_h_chunks[0];
+    let stats_area = right_v_chunks[0];
+    let intel_area = right_v_chunks[1];
+    let bbs_area = root_v_chunks[1];
+
+    // ── Render Panels ─────────────────────────────────────────────────────────
+
+    // Panel 1: Main Content
     match app.screen {
-        Screen::Welcome => menus::draw_welcome(f, f.area(), app),
-        Screen::ArchDetected => menus::draw_arch_detected(f, f.area(), app),
-        Screen::DistroSelect => menus::draw_distro_select(f, f.area(), app),
-        Screen::ProfileSelect => menus::draw_profile_select(f, f.area(), app),
-        Screen::ModuleSelect => menus::draw_module_select(f, f.area(), app),
-        Screen::ThemeSelect => menus::draw_theme_select(f, f.area(), app),
-        Screen::SoftwareMode => menus::draw_software_mode_select(f, f.area(), app),
-        Screen::SoftwareSelect => menus::draw_software_select(f, f.area(), app),
-        Screen::Confirm => menus::draw_pre_install_confirm(f, f.area(), app),
-        Screen::FontPrep => menus::draw_font_prep(f, f.area(), app),
-        Screen::Installing => draw_installing(f, app),
+        Screen::Welcome => menus::draw_welcome(f, main_area, app),
+        Screen::ArchDetected => menus::draw_arch_detected(f, main_area, app),
+        Screen::DistroSelect => menus::draw_distro_select(f, main_area, app),
+        Screen::ProfileSelect => menus::draw_profile_select(f, main_area, app),
+        Screen::ModuleSelect => menus::draw_module_select(f, main_area, app),
+        Screen::ThemeSelect => menus::draw_theme_select(f, main_area, app),
+        Screen::SoftwareMode => menus::draw_software_mode_select(f, main_area, app),
+        Screen::SoftwareSelect => menus::draw_software_select(f, main_area, app),
+        Screen::DeSelect => menus::draw_de_select(f, main_area, app),
+        Screen::ProtocolSelect => menus::draw_protocol_select(f, main_area, app),
+        Screen::DeConfirm => menus::draw_de_confirm(f, main_area, app),
+        Screen::Confirm => menus::draw_pre_install_confirm(f, main_area, app),
+        Screen::FontPrep => menus::draw_font_prep(f, main_area, app),
+        Screen::Installing | Screen::Password => draw_terminal_buffer(f, main_area, app),
         Screen::Done => draw_summary(f, app, false),
         Screen::Error => draw_summary(f, app, true),
-        // Password state is now handled as an overlay below
-        Screen::Password => draw_installing(f, app),
     }
 
+    // Panel 2: System Status
+    draw_stats_panel(f, stats_area, app);
+
+    // Panel 3: Station Intel
+    draw_intel_panel(f, intel_area, app);
+
+    // Panel 4: BBS Console
+    draw_bbs_panel(f, bbs_area, app);
+
     // ── Overlay Modals (Visible on any screen) ────────────────────────────────
+
+    // Long process confirmation (highest priority overlay)
+    if app.long_process_state.is_some() {
+        confirmation::draw_long_process_confirm(f, f.area(), app);
+    }
 
     if let Some(state) = &app.password_state {
         menus::draw_password_prompt(f, f.area(), app, state);
@@ -60,53 +131,9 @@ pub fn draw(f: &mut Frame, app: &TuiApp) {
     }
 }
 
-pub fn draw_installing(f: &mut Frame, app: &TuiApp) {
-    let area = f.area();
-
-    // Outer Chrome
-    let outer = Block::default()
-        .borders(Borders::ALL)
-        .border_type(theme::outer_border_type())
-        .border_style(theme::border_style())
-        .title(Span::styled(
-            " STATION_01 : SYSTEM_INITIALIZATION ",
-            theme::title_style(),
-        ))
-        .style(theme::default_style());
-    let inner_area = outer.inner(area);
-    f.render_widget(outer, area);
-
-    // Split into Horizontal: (Main + BBS) and (Stats + Intel)
-    let main_h_chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Min(0),     // Left: Main + BBS
-            Constraint::Length(35), // Right: Stats + Intel
-        ])
-        .split(inner_area);
-
-    // Left side: Main buffer (top) and BBS (bottom)
-    let left_v_chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Min(0),    // Main terminal buffer
-            Constraint::Length(3), // BBS Console
-        ])
-        .split(main_h_chunks[0]);
-
-    // Right side: Stats (top) and Intel (bottom)
-    let right_v_chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(10), // System Status
-            Constraint::Min(0),     // Station Intel
-        ])
-        .split(main_h_chunks[1]);
-
-    draw_terminal_buffer(f, left_v_chunks[0], app);
-    draw_bbs_panel(f, left_v_chunks[1], app);
-    draw_stats_panel(f, right_v_chunks[0], app);
-    draw_intel_panel(f, right_v_chunks[1], app);
+#[allow(dead_code)]
+pub fn draw_installing(_f: &mut Frame, _app: &TuiApp) {
+    // Deprecated in favor of universal 4-tile draw
 }
 
 // ── BBS Panel (Panel 4) ──────────────────────────────────────────────────────
@@ -119,7 +146,7 @@ fn draw_bbs_panel(f: &mut Frame, area: Rect, app: &TuiApp) {
         .title(Span::styled(" BBS_CONSOLE ", theme::accent_style()))
         .style(theme::default_style());
 
-    let text = Paragraph::new(app.bbs_msg.clone())
+    let text = Paragraph::new(format!(" > {}", app.bbs_msg))
         .style(theme::success_style())
         .alignment(Alignment::Left)
         .block(block);
@@ -171,7 +198,7 @@ fn draw_stats_panel(f: &mut Frame, area: Rect, app: &TuiApp) {
 
 // ── Intel Panel (Panel 3) ─────────────────────────────────────────────────────
 
-fn draw_intel_panel(f: &mut Frame, area: Rect, _app: &TuiApp) {
+fn draw_intel_panel(f: &mut Frame, area: Rect, app: &TuiApp) {
     let block = Block::default()
         .borders(Borders::ALL)
         .border_type(theme::inner_border_type())
@@ -181,20 +208,44 @@ fn draw_intel_panel(f: &mut Frame, area: Rect, _app: &TuiApp) {
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    // Random bits of lore / info
-    let info = vec![
-        Line::from(Span::styled("> TARGET: PI_4B", theme::dim_style())),
-        Line::from(Span::styled("> OS: MASH_REV_0.2.3", theme::dim_style())),
-        Line::from(Span::styled("> STATUS: OPTIMAL", theme::dim_style())),
-        Line::from(""),
-        Line::from(Span::styled(
-            "RECOVERY RUNES ACTIVE",
-            theme::success_style(),
-        )),
-        Line::from(""),
-        Line::from(Span::styled("Drink your ale.", theme::accent_style())),
-        Line::from(Span::styled("Trust the forge.", theme::accent_style())),
+    let p = &app.platform_info;
+
+    // Scrying the machine's true pedigree
+    let mut info = vec![
+        Line::from(vec![
+            Span::styled("> ARCH: ", theme::dim_style()),
+            Span::styled(p.arch.to_uppercase(), theme::success_style()),
+        ]),
+        Line::from(vec![
+            Span::styled("> OS:   ", theme::dim_style()),
+            Span::styled(p.distro.to_uppercase(), theme::success_style()),
+        ]),
     ];
+
+    info.push(Line::from(vec![
+        Span::styled("> VER:  ", theme::dim_style()),
+        Span::styled(p.distro_version.to_uppercase(), theme::success_style()),
+    ]));
+
+    info.push(Line::from(""));
+
+    // Hardware Identity
+    let hardware = if p.arch == "aarch64" {
+        "RASPBERRY_PI_GENERIC"
+    } else {
+        "X86_64_STATION"
+    };
+
+    info.push(Line::from(vec![
+        Span::styled("> HW:   ", theme::dim_style()),
+        Span::styled(hardware, theme::accent_style()),
+    ]));
+
+    info.push(Line::from(""));
+    info.push(Line::from(Span::styled(
+        "RECOVERY RUNES ACTIVE",
+        theme::success_style(),
+    )));
 
     let para = Paragraph::new(info)
         .alignment(Alignment::Left)
@@ -273,6 +324,9 @@ fn draw_terminal_buffer(f: &mut Frame, area: Rect, app: &TuiApp) {
 pub fn draw_summary(f: &mut Frame, app: &TuiApp, is_error: bool) {
     let area = f.area();
 
+    // Get main area (excluding info box)
+    let (main_area, _info_area) = info_box::get_main_area_with_info_box(area);
+
     let title = if is_error {
         " ! ABORTED ! "
     } else {
@@ -290,8 +344,8 @@ pub fn draw_summary(f: &mut Frame, app: &TuiApp, is_error: bool) {
         .border_style(theme::border_style())
         .title(Span::styled(title, title_style))
         .style(theme::default_style());
-    let inner = outer.inner(area);
-    f.render_widget(outer, area);
+    let inner = outer.inner(main_area);
+    f.render_widget(outer, main_area);
 
     let mut lines: Vec<Line> = Vec::new();
 

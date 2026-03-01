@@ -1,0 +1,25 @@
+# Tarpaulin configuration for MASH installer
+[tarpaulin]
+# Output coverage report in XML format for Codecov
+output-type = "Xml"
+# Include all features
+all-features = true
+# Skip tests (we want coverage from tests)
+skip-tests = false
+# Timeout for coverage analysis
+timeout = 300
+# Run in verbose mode for debugging
+verbose = true
+
+# Ignore specific files that don't need coverage
+ignore-tests = [
+    "installer-cli/src/main.rs",
+    "installer-core/src/lib.rs",
+    "xtask/src/main.rs"
+]
+
+# Coverage thresholds (informational, not enforced)
+[thresholds]
+line = 80
+branch = 70
+function = 70

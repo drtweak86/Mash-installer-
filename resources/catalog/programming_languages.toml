@@ -1,0 +1,155 @@
+# 📜 MASH PROGRAMMING LANGUAGES CATALOG
+# Comprehensive list of languages, version managers, and build tools.
+
+[[categories]]
+name = "development"
+display_name = "Development & Programming"
+description = "Programming languages, tools, and development environments"
+icon = "💻"
+
+[[categories.subcategories]]
+name = "languages"
+description = "Programming languages and runtimes"
+
+[[categories.subcategories.programs]]
+id = "rust"
+name = "Rust"
+description = "Systems programming language focused on safety and performance"
+tier = "S"
+packages = { fedora = ["rust", "cargo"], debian = ["rustc", "cargo"], arch = ["rust"] }
+post_install = "rustup default stable && rustup update"
+
+[[categories.subcategories.programs]]
+id = "python"
+name = "Python"
+description = "Interpreted, high-level programming language"
+tier = "S"
+packages = { fedora = ["python3", "python3-pip"], debian = ["python3", "python3-pip"], arch = ["python", "python-pip"] }
+
+[[categories.subcategories.programs]]
+id = "go"
+name = "Go"
+description = "Statically typed, compiled programming language"
+tier = "S"
+packages = { fedora = ["golang"], debian = ["golang"], arch = ["go"] }
+
+[[categories.subcategories.programs]]
+id = "nodejs"
+name = "Node.js"
+description = "JavaScript runtime built on Chrome's V8 engine"
+tier = "S"
+packages = { fedora = ["nodejs", "npm"], debian = ["nodejs", "npm"], arch = ["nodejs", "npm"] }
+
+[[categories.subcategories.programs]]
+id = "java"
+name = "Java (OpenJDK)"
+description = "Cross-platform, object-oriented programming language"
+tier = "S"
+packages = { fedora = ["java-latest-openjdk"], debian = ["default-jdk"], arch = ["jdk-openjdk"] }
+
+[[categories.subcategories.programs]]
+id = "clang"
+name = "C/C++ (LLVM/Clang)"
+description = "C and C++ compiler toolchain"
+tier = "S"
+packages = { fedora = ["clang", "llvm"], debian = ["clang", "llvm"], arch = ["clang", "llvm"] }
+
+[[categories.subcategories.programs]]
+id = "gcc"
+name = "C/C++ (GNU/GCC)"
+description = "GNU Compiler Collection"
+tier = "S"
+packages = { fedora = ["gcc", "gcc-c++"], debian = ["gcc", "g++"], arch = ["gcc"] }
+
+[[categories.subcategories.programs]]
+id = "zig"
+name = "Zig"
+description = "General-purpose programming language and toolchain"
+tier = "A"
+packages = { fedora = ["zig"], debian = ["zig"], arch = ["zig"] }
+
+[[categories.subcategories.programs]]
+id = "elixir"
+name = "Elixir"
+description = "Dynamic, functional language for scalable applications"
+tier = "A"
+packages = { fedora = ["elixir"], debian = ["elixir"], arch = ["elixir"] }
+
+[[categories.subcategories.programs]]
+id = "ruby"
+name = "Ruby"
+description = "Dynamic, open source programming language"
+tier = "A"
+packages = { fedora = ["ruby"], debian = ["ruby-full"], arch = ["ruby"] }
+
+[[categories.subcategories]]
+name = "version_managers"
+description = "Tools to manage multiple language versions"
+
+[[categories.subcategories.programs]]
+id = "rustup"
+name = "rustup"
+description = "The Rust toolchain installer"
+tier = "S"
+packages = { fedora = ["rustup"], debian = ["rustup"], arch = ["rustup"] }
+
+[[categories.subcategories.programs]]
+id = "nvm"
+name = "nvm"
+description = "Node Version Manager"
+tier = "S"
+packages = { fedora = ["nvm"], debian = ["nvm"], arch = ["nvm"] }
+post_install = "source /usr/share/nvm/init-nvm.sh"
+
+[[categories.subcategories.programs]]
+id = "pyenv"
+name = "pyenv"
+description = "Simple Python version management"
+tier = "S"
+packages = { fedora = ["pyenv"], debian = ["pyenv"], arch = ["pyenv"] }
+
+[[categories.subcategories.programs]]
+id = "asdf"
+name = "asdf"
+description = "Extendable version manager"
+tier = "A"
+packages = { fedora = ["asdf"], debian = ["asdf"], arch = ["asdf-vm"] }
+
+[[categories.subcategories]]
+name = "build_tools"
+description = "Tools for building and managing projects"
+
+[[categories.subcategories.programs]]
+id = "cmake"
+name = "CMake"
+description = "Cross-platform build system generator"
+tier = "S"
+packages = { fedora = ["cmake"], debian = ["cmake"], arch = ["cmake"] }
+
+[[categories.subcategories.programs]]
+id = "ninja"
+name = "Ninja"
+description = "Small build system with a focus on speed"
+tier = "S"
+packages = { fedora = ["ninja-build"], debian = ["ninja-build"], arch = ["ninja"] }
+
+[[categories.subcategories.programs]]
+id = "make"
+name = "GNU Make"
+description = "Tool which controls the generation of executables"
+tier = "S"
+packages = { fedora = ["make"], debian = ["make"], arch = ["make"] }
+
+[[categories.subcategories.programs]]
+id = "sccache"
+name = "sccache"
+description = "Shared Compilation Cache"
+tier = "S"
+packages = { fedora = ["sccache"], debian = ["sccache"], arch = ["sccache"] }
+
+[[categories.subcategories.programs]]
+id = "ccache"
+name = "ccache"
+description = "Compiler cache"
+tier = "S"
+packages = { fedora = ["ccache"], debian = ["ccache"], arch = ["ccache"] }

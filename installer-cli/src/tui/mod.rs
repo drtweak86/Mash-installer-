@@ -2,6 +2,8 @@
 
 pub mod app;
 pub mod bbs;
+pub mod confirmation;
+pub mod info_box;
 pub mod menus;
 pub mod observer;
 pub mod render;

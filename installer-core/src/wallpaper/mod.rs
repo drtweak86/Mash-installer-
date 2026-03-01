@@ -6,6 +6,7 @@ pub mod api;
 pub mod config;
 pub mod download;
 pub mod error;
+pub mod harvest;
 pub mod types;
 
 #[cfg(test)]
@@ -14,3 +15,4 @@ mod tests;
 pub use config::WallpaperConfig;
 pub use download::download_wallpapers;
 pub use error::WallpaperError;
+pub use harvest::HarvestConfig;

@@ -1,0 +1,513 @@
+# 📜 MASH S-TIER CATALOG
+# Curated by Bard, the Drunken Dwarf Runesmith
+# High-quality, opinionated recommendations for the ultimate forge experience.
+
+[[categories]]
+name = "internet"
+display_name = "Internet & Web"
+description = "Web browsers, email clients, and networking tools"
+icon = "🌐"
+
+[[categories.subcategories]]
+name = "browsers"
+description = "Web browsers for browsing the internet"
+
+[[categories.subcategories.programs]]
+id = "brave"
+name = "Brave Browser"
+description = "Privacy-focused browser with ad-blocking and Tor support"
+tier = "S"
+reasoning = "Best balance of privacy, speed, and modern features. Built-in ad-blocker and Tor integration make it ideal for security-conscious users. Promoted to S-Tier for MASH v1.x."
+packages = { fedora = ["brave-browser"], debian = ["brave-browser"], arch = ["brave-bin"] }
+recommended = true
+
+[[categories.subcategories.programs]]
+id = "librewolf"
+name = "LibreWolf"
+description = "Firefox-based browser focused on privacy and freedom"
+tier = "S"
+reasoning = "The Shielded Eye. Firefox, but forged for privacy and freedom. No tracking runes here. Preferred for purists."
+packages = { fedora = ["librewolf"], debian = ["librewolf"], arch = ["librewolf-bin"] }
+
+[[categories.subcategories.programs]]
+id = "thunderbird"
+name = "Thunderbird"
+description = "Powerful, open-source email client"
+tier = "S"
+reasoning = "The reliable messenger. Extensive plugin support and rock-solid stability."
+packages = { fedora = ["thunderbird"], debian = ["thunderbird"], arch = ["thunderbird"] }
+
+[[categories.subcategories.programs]]
+id = "signal"
+name = "Signal"
+description = "Secure, private messaging"
+tier = "S"
+reasoning = "The whisper in the dark. State-of-the-art end-to-end encryption for the security-conscious smith."
+packages = { fedora = ["signal-desktop"], debian = ["signal-desktop"], arch = ["signal-desktop"] }
+
+[[categories.subcategories.programs]]
+id = "wireguard"
+name = "WireGuard"
+description = "Modern, high-performance VPN"
+tier = "S"
+reasoning = "The invisible tunnel. Extremely fast and simple compared to older VPN runes."
+packages = { fedora = ["wireguard-tools"], debian = ["wireguard"], arch = ["wireguard-tools"] }
+
+[[categories]]
+name = "development"
+display_name = "Development & Programming"
+description = "Programming languages, tools, and development environments"
+icon = "💻"
+
+[[categories.subcategories]]
+name = "languages"
+description = "Programming languages and runtimes"
+
+[[categories.subcategories.programs]]
+id = "rust"
+name = "Rust"
+description = "Systems programming language focused on safety and performance"
+tier = "S"
+reasoning = "The Master's Hammer. Memory safety without garbage collection. Essential for modern runesmiths."
+packages = { fedora = ["rust", "cargo"], debian = ["rustc", "cargo"], arch = ["rust"] }
+post_install = "rustup default stable && rustup update"
+
+[[categories.subcategories.programs]]
+id = "python"
+name = "Python"
+description = "Versatile, interpreted programming language"
+tier = "S"
+reasoning = "The flexible vine. Ideal for scripting, AI, and quick prototypes. Massive ecosystem."
+packages = { fedora = ["python3", "python3-pip"], debian = ["python3", "python3-pip"], arch = ["python", "python-pip"] }
+
+[[categories.subcategories]]
+name = "editors"
+description = "Where the code is carved"
+
+[[categories.subcategories.programs]]
+id = "neovim"
+name = "Neovim"
+description = "Hyperextensible Vim-based text editor"
+tier = "S"
+reasoning = "The Eternal Forge. Infinite power and total control for the seasoned smith."
+packages = { fedora = ["neovim"], debian = ["neovim"], arch = ["neovim"] }
+
+[[categories.subcategories.programs]]
+id = "vscode"
+name = "VS Code"
+description = "Popular, feature-rich code editor"
+tier = "S"
+reasoning = "The Magic Workshop. Heavy, but has a tool for every possible quest."
+packages = { fedora = ["code"], debian = ["code"], arch = ["visual-studio-code-bin"] }
+
+[[categories.subcategories.programs]]
+id = "git"
+name = "Git"
+description = "Distributed version control system"
+tier = "S"
+reasoning = "The Ledger of Time. Invaluable for tracking every strike of the hammer."
+packages = { fedora = ["git"], debian = ["git"], arch = ["git"] }
+
+[[categories]]
+name = "multimedia"
+display_name = "Multimedia & Graphics"
+description = "Graphics, audio, and video tools"
+icon = "🎨"
+
+[[categories.subcategories]]
+name = "graphics"
+description = "Image editing and 3D modeling"
+
+[[categories.subcategories.programs]]
+id = "gimp"
+name = "GIMP"
+description = "Powerful image manipulation program"
+tier = "S"
+reasoning = "The versatile brush. Excellent for all image editing needs."
+packages = { fedora = ["gimp"], debian = ["gimp"], arch = ["gimp"] }
+
+[[categories.subcategories.programs]]
+id = "blender"
+name = "Blender"
+description = "3D creation suite"
+tier = "S"
+reasoning = "The grand sculptor. Professional grade 3D modeling and rendering."
+packages = { fedora = ["blender"], debian = ["blender"], arch = ["blender"] }
+
+[[categories.subcategories]]
+name = "video_audio"
+description = "Video editing and audio production"
+
+[[categories.subcategories.programs]]
+id = "mpv"
+name = "MPV"
+description = "Lightweight, high-performance media player"
+tier = "S"
+reasoning = "The Crystal Lens. Plays anything with zero bloat."
+packages = { fedora = ["mpv"], debian = ["mpv"], arch = ["mpv"] }
+
+[[categories.subcategories.programs]]
+id = "obs-studio"
+name = "OBS Studio"
+description = "Professional video recording and live streaming"
+tier = "S"
+reasoning = "The Bard's Stage. Perfect for capturing and sharing your exploits."
+packages = { fedora = ["obs-studio"], debian = ["obs-studio"], arch = ["obs-studio"] }
+
+[[categories.subcategories.programs]]
+id = "audacity"
+name = "Audacity"
+description = "Open-source multi-track audio editor"
+tier = "S"
+reasoning = "The sound smithy. Reliable for all audio recording and editing needs."
+packages = { fedora = ["audacity"], debian = ["audacity"], arch = ["audacity"] }
+
+[[categories]]
+name = "games"
+display_name = "Games & Emulation"
+description = "Native games and emulation tools"
+icon = "🎮"
+
+[[categories.subcategories]]
+name = "tools"
+description = "Game launchers and compatibility layers"
+
+[[categories.subcategories.programs]]
+id = "steam"
+name = "Steam"
+description = "The ultimate gaming platform"
+tier = "S"
+reasoning = "The Great Library. Access to thousands of titles with Proton support."
+packages = { fedora = ["steam"], debian = ["steam"], arch = ["steam"] }
+
+[[categories.subcategories.programs]]
+id = "lutris"
+name = "Lutris"
+description = "Open gaming platform for Linux"
+tier = "S"
+reasoning = "The Unified Tavern. Manages games from all sources in one place."
+packages = { fedora = ["lutris"], debian = ["lutris"], arch = ["lutris"] }
+
+[[categories.subcategories.programs]]
+id = "retroarch"
+name = "RetroArch"
+description = "Frontend for emulators, game engines, and media players"
+tier = "S"
+reasoning = "The Time Machine. Essential for revisiting the classics of old."
+packages = { fedora = ["retroarch"], debian = ["retroarch"], arch = ["retroarch"] }
+
+[[categories.subcategories.programs]]
+id = "dolphin-emu"
+name = "Dolphin Emulator"
+description = "GameCube and Wii emulator"
+tier = "S"
+reasoning = "The Silver Disk. High-performance emulation for classic console titles."
+packages = { fedora = ["dolphin-emu"], debian = ["dolphin-emu"], arch = ["dolphin-emu"] }
+
+[[categories.subcategories.programs]]
+id = "mangohud"
+name = "MangoHud"
+description = "Vulkan and OpenGL overlay for monitoring"
+tier = "S"
+reasoning = "The Smith's Gauge. Track your FPS and frame times with precision."
+packages = { fedora = ["mangohud"], debian = ["mangohud"], arch = ["mangohud"] }
+
+[[categories]]
+name = "office"
+display_name = "Office & Productivity"
+description = "Documentation and collaboration tools"
+icon = "📂"
+
+[[categories.subcategories]]
+name = "productivity"
+description = "Writing and spreadsheets"
+
+[[categories.subcategories.programs]]
+id = "libreoffice"
+name = "LibreOffice"
+description = "Full-featured office suite"
+tier = "S"
+reasoning = "The Standard Wagon. Reliable and powerful for all office needs."
+packages = { fedora = ["libreoffice"], debian = ["libreoffice"], arch = ["libreoffice-fresh"] }
+
+[[categories.subcategories.programs]]
+id = "marktext"
+name = "MarkText"
+description = "Simple and elegant markdown editor"
+tier = "S"
+reasoning = "The clean scroll. Real-time preview and beautiful interface for writers."
+packages = { fedora = ["marktext"], debian = ["marktext"], arch = ["marktext-bin"] }
+
+[[categories.subcategories.programs]]
+id = "zotero"
+name = "Zotero"
+description = "Reference management and research tool"
+tier = "S"
+reasoning = "The Scholar's Ledger. Invaluable for managing research papers and citations."
+packages = { fedora = ["zotero"], debian = ["zotero"], arch = ["zotero-bin"] }
+
+[[categories.subcategories.programs]]
+id = "nextcloud-client"
+name = "Nextcloud Client"
+description = "File synchronization and collaboration"
+tier = "S"
+reasoning = "The Shared Tavern. Sync your files across all your devices securely."
+packages = { fedora = ["nextcloud-client"], debian = ["nextcloud-desktop"], arch = ["nextcloud-client"] }
+
+[[categories.subcategories.programs]]
+id = "pandoc"
+name = "Pandoc"
+description = "Universal document converter"
+tier = "S"
+reasoning = "The Great Translator. Converts documents between any format with ease."
+packages = { fedora = ["pandoc"], debian = ["pandoc"], arch = ["pandoc"] }
+
+[[categories]]
+name = "system"
+display_name = "System & Utilities"
+description = "Monitoring, backup, and terminal tools"
+icon = "⚙️"
+
+[[categories.subcategories]]
+name = "monitoring"
+description = "Watch the pulse of the machine"
+
+[[categories.subcategories.programs]]
+id = "btm"
+name = "Bottom"
+description = "Graphical system monitor for the terminal"
+tier = "S"
+reasoning = "The Neon Pulse. Beautiful and functional monitoring for the modern smith."
+packages = { fedora = ["bottom"], debian = ["bottom"], arch = ["bottom"] }
+
+[[categories.subcategories.programs]]
+id = "htop"
+name = "Htop"
+description = "Interactive process viewer"
+tier = "S"
+reasoning = "The Reliable Gauge. The classic way to see what's eating your CPU's plasma."
+packages = { fedora = ["htop"], debian = ["htop"], arch = ["htop"] }
+
+[[categories.subcategories.programs]]
+id = "ncdu"
+name = "ncdu"
+description = "NCurses disk usage analyzer"
+tier = "S"
+reasoning = "The Deep Well. Fast and simple way to find what's hogging your disk space."
+packages = { fedora = ["ncdu"], debian = ["ncdu"], arch = ["ncdu"] }
+
+[[categories.subcategories.programs]]
+id = "timeshift"
+name = "Timeshift"
+description = "System restore utility"
+tier = "S"
+reasoning = "The Time Anchor. Create system snapshots to recover from any disaster."
+packages = { fedora = ["timeshift"], debian = ["timeshift"], arch = ["timeshift"] }
+
+[[categories.subcategories.programs]]
+id = "rclone"
+name = "Rclone"
+description = "Command line program to manage files on cloud storage"
+tier = "S"
+reasoning = "The Cloud Bridge. Sync your hoard to almost any cloud provider."
+packages = { fedora = ["rclone"], debian = ["rclone"], arch = ["rclone"] }
+
+[[categories]]
+name = "themes"
+display_name = "Themes & Aesthetics"
+description = "Icons, cursors, and visual polish"
+icon = "🎭"
+
+[[categories.subcategories]]
+name = "icons"
+description = "Visual identity for your apps"
+
+[[categories.subcategories.programs]]
+id = "papirus-icon-theme"
+name = "Papirus Icon Theme"
+description = "Comprehensive and modern icon theme"
+tier = "S"
+reasoning = "The Polished Gem. Consistent and beautiful across all desktop environments."
+packages = { fedora = ["papirus-icon-theme"], debian = ["papirus-icon-theme"], arch = ["papirus-icon-theme"] }
+
+[[categories.subcategories.programs]]
+id = "tela-icon-theme"
+name = "Tela Icon Theme"
+description = "Colorful and vibrant icon theme"
+tier = "S"
+reasoning = "The Radiant Prism. Perfect for those who want a splash of color."
+packages = { fedora = ["tela-icon-theme"], debian = ["tela-icon-theme-git"], arch = ["tela-icon-theme"] }
+
+[[categories.subcategories.programs]]
+id = "bibata-cursor-theme"
+name = "Bibata Cursor Theme"
+description = "Modern and sleek cursor theme"
+tier = "S"
+reasoning = "The Sharp Pointer. Clean and stylish cursors for a modern feel."
+packages = { fedora = ["bibata-cursor-theme"], debian = ["bibata-cursor-theme"], arch = ["bibata-cursor-theme-bin"] }
+
+[[categories.subcategories.programs]]
+id = "nordic-theme"
+name = "Nordic Theme"
+description = "Arctic, north-bluish color palette for GTK"
+tier = "S"
+reasoning = "The Arctic Breeze. Clean, focused, and easy on the eyes."
+packages = { fedora = ["nordic-theme"], debian = ["nordic-theme"], arch = ["nordic-theme-git"] }
+
+[[categories.subcategories.programs]]
+id = "catppuccin-gtk"
+name = "Catppuccin GTK"
+description = "Soothing pastel theme for GTK"
+tier = "S"
+reasoning = "The Soothing Mist. Extremely popular and highly customizable pastel aesthetic."
+packages = { fedora = ["catppuccin-gtk-theme"], debian = ["catppuccin-gtk-theme"], arch = ["catppuccin-gtk-theme-git"] }
+
+[[categories]]
+name = "virtualization"
+display_name = "Virtualization & Clouds"
+description = "Containers, VMs, and cloud tools"
+icon = "☁️"
+
+[[categories.subcategories]]
+name = "containers"
+description = "Sealed crates for your apps"
+
+[[categories.subcategories.programs]]
+id = "docker"
+name = "Docker"
+description = "Platform for developing, shipping, and running applications"
+tier = "S"
+reasoning = "The Sealed Crate. Industry standard for containerization."
+packages = { fedora = ["docker", "docker-compose"], debian = ["docker.io", "docker-compose"], arch = ["docker", "docker-compose"] }
+
+[[categories.subcategories.programs]]
+id = "podman"
+name = "Podman"
+description = "Daemonless container engine"
+tier = "S"
+reasoning = "The Ghost Crate. Secure, rootless alternative to Docker. Preferred for security."
+packages = { fedora = ["podman"], debian = ["podman"], arch = ["podman"] }
+
+[[categories.subcategories.programs]]
+id = "qemu"
+name = "QEMU"
+description = "Generic and open source machine emulator and virtualizer"
+tier = "S"
+reasoning = "The Pocket Dimension. High performance virtualization for all architectures."
+packages = { fedora = ["qemu", "virt-manager"], debian = ["qemu-kvm", "virt-manager"], arch = ["qemu", "virt-manager"] }
+
+[[categories.subcategories.programs]]
+id = "ansible"
+name = "Ansible"
+description = "Automation and orchestration tool"
+tier = "S"
+reasoning = "The Puppet Master. Simple yet powerful automation for your whole fleet."
+packages = { fedora = ["ansible"], debian = ["ansible"], arch = ["ansible"] }
+
+[[categories.subcategories.programs]]
+id = "terraform"
+name = "Terraform"
+description = "Infrastructure as Code tool"
+tier = "S"
+reasoning = "The Grand Blueprint. Manage your cloud infrastructure with declarative code."
+packages = { fedora = ["terraform"], debian = ["terraform"], arch = ["terraform"] }
+
+[[categories]]
+name = "science"
+display_name = "Science & Math"
+description = "Math, data, and research tools"
+icon = "🧪"
+
+[[categories.subcategories]]
+name = "tools"
+description = "Data analysis and mathematics"
+
+[[categories.subcategories.programs]]
+id = "r-base"
+name = "R"
+description = "Language and environment for statistical computing"
+tier = "S"
+reasoning = "The Statistician's Scroll. Essential for data analysis and visualization."
+packages = { fedora = ["R"], debian = ["r-base"], arch = ["r"] }
+
+[[categories.subcategories.programs]]
+id = "jupyterlab"
+name = "JupyterLab"
+description = "Web-based interactive development environment"
+tier = "S"
+reasoning = "The Interactive Grimoire. Perfect for data science and reproducible research."
+packages = { fedora = ["python3-jupyterlab"], debian = ["jupyter-lab"], arch = ["jupyterlab"] }
+
+[[categories.subcategories.programs]]
+id = "octave"
+name = "GNU Octave"
+description = "High-level language for numerical computations"
+tier = "S"
+reasoning = "The Number Cruncher. Excellent open-source alternative to MATLAB."
+packages = { fedora = ["octave"], debian = ["octave"], arch = ["octave"] }
+
+[[categories.subcategories.programs]]
+id = "julia"
+name = "Julia"
+description = "High-performance programming language for technical computing"
+tier = "S"
+reasoning = "The Swift Savant. Combines the ease of Python with the speed of C."
+packages = { fedora = ["julia"], debian = ["julia"], arch = ["julia"] }
+
+[[categories.subcategories.programs]]
+id = "inkscape"
+name = "Inkscape"
+description = "Professional vector graphics editor"
+tier = "S"
+reasoning = "The Precise Pen. Invaluable for creating scientific diagrams and vector art."
+packages = { fedora = ["inkscape"], debian = ["inkscape"], arch = ["inkscape"] }
+
+[[categories]]
+name = "accessibility"
+display_name = "Accessibility & Utilities"
+description = "Tools for accessibility and system ease"
+icon = "♿"
+
+[[categories.subcategories]]
+name = "tools"
+description = "Assistive technologies"
+
+[[categories.subcategories.programs]]
+id = "orca"
+name = "Orca"
+description = "Screen reader and magnifier"
+tier = "S"
+reasoning = "The Attentive Ear. Essential for visually impaired smiths."
+packages = { fedora = ["orca"], debian = ["orca"], arch = ["orca"] }
+
+[[categories.subcategories.programs]]
+id = "onboard"
+name = "Onboard"
+description = "On-screen keyboard"
+tier = "S"
+reasoning = "The Digital Keys. Helpful for touchscreens or limited input devices."
+packages = { fedora = ["onboard"], debian = ["onboard"], arch = ["onboard"] }
+
+[[categories.subcategories.programs]]
+id = "florence"
+name = "Florence"
+description = "Extensible on-screen keyboard"
+tier = "S"
+reasoning = "The Flexible Keyboard. A great alternative on-screen keyboard."
+packages = { fedora = ["florence"], debian = ["florence"], arch = ["florence"] }
+
+[[categories.subcategories.programs]]
+id = "espeak-ng"
+name = "eSpeak NG"
+description = "Multi-lingual software speech synthesizer"
+tier = "S"
+reasoning = "The Synthetic Voice. Lightweight and powerful text-to-speech engine."
+packages = { fedora = ["espeak-ng"], debian = ["espeak-ng"], arch = ["espeak-ng"] }
+
+[[categories.subcategories.programs]]
+id = "mousetweaks"
+name = "MouseTweaks"
+description = "Enhancements for pointing devices"
+tier = "S"
+reasoning = "The Steady Hand. Provides various mouse accessibility features."
+packages = { fedora = ["mousetweaks"], debian = ["mousetweaks"], arch = ["mousetweaks"] }

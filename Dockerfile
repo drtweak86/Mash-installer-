@@ -42,8 +42,10 @@ COPY installer-fedora/src/ installer-fedora/src/
 COPY wallpaper-downloader/src/ wallpaper-downloader/src/
 COPY resources/ resources/
 
-# Build release binary
-RUN cargo build --release --bin mash-setup
+# Build release binary with network retry
+RUN apt-get update && apt-get install -y --no-install-recommends pkg-config libssl-dev \
+    && apt-get install -y --no-install-recommends libsqlite3-dev \
+    && cargo build --release --bin mash-setup
 
 # Stage 2: Create runtime image
 FROM debian:bookworm-slim as runtime

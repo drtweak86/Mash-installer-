@@ -1,0 +1,402 @@
+# 📜 MASH FULL SOFTWARE CATALOG
+# Comprehensive database of all supported artifacts across 10 categories.
+# Categorized by Tier (S, A, B, C) for informed decision making.
+
+[[categories]]
+name = "internet"
+display_name = "Internet & Web"
+description = "Web browsers, email clients, and networking tools"
+icon = "🌐"
+
+[[categories.subcategories]]
+name = "browsers"
+description = "Web browsers for browsing the internet"
+
+[[categories.subcategories.programs]]
+id = "brave"
+name = "Brave Browser"
+description = "Privacy-focused browser with ad-blocking and Tor support"
+tier = "S"
+packages = { fedora = ["brave-browser"], debian = ["brave-browser"], arch = ["brave-bin"] }
+recommended = true
+
+[[categories.subcategories.programs]]
+id = "librewolf"
+name = "LibreWolf"
+description = "Firefox-based browser focused on privacy and freedom"
+tier = "S"
+packages = { fedora = ["librewolf"], debian = ["librewolf"], arch = ["librewolf-bin"] }
+
+[[categories.subcategories.programs]]
+id = "firefox"
+name = "Mozilla Firefox"
+description = "Open-source, highly customizable browser"
+tier = "A"
+packages = { fedora = ["firefox"], debian = ["firefox"], arch = ["firefox"] }
+
+[[categories.subcategories.programs]]
+id = "falkon"
+name = "Falkon"
+description = "Lightweight Qt-based browser"
+tier = "B"
+packages = { fedora = ["falkon"], debian = ["falkon"], arch = ["falkon"] }
+
+[[categories.subcategories.programs]]
+id = "chromium"
+name = "Chromium"
+description = "Open-source base for modern browsers"
+tier = "C"
+packages = { fedora = ["chromium"], debian = ["chromium"], arch = ["chromium"] }
+
+[[categories.subcategories]]
+name = "messaging"
+description = "Chat and communication tools"
+
+[[categories.subcategories.programs]]
+id = "signal"
+name = "Signal"
+description = "Private, secure messaging"
+tier = "S"
+packages = { fedora = ["signal-desktop"], debian = ["signal-desktop"], arch = ["signal-desktop"] }
+
+[[categories.subcategories.programs]]
+id = "discord"
+name = "Discord"
+description = "All-in-one voice and text chat"
+tier = "A"
+packages = { fedora = ["discord"], debian = ["discord"], arch = ["discord"] }
+
+[[categories.subcategories.programs]]
+id = "slack"
+name = "Slack"
+description = "Business communication platform"
+tier = "A"
+packages = { fedora = ["slack"], debian = ["slack-desktop"], arch = ["slack-desktop"] }
+
+[[categories.subcategories.programs]]
+id = "element"
+name = "Element"
+description = "Secure messenger for the Matrix protocol"
+tier = "B"
+packages = { fedora = ["element-desktop"], debian = ["element-desktop"], arch = ["element-desktop"] }
+
+[[categories.subcategories.programs]]
+id = "telegram"
+name = "Telegram"
+description = "Cloud-based mobile and desktop messaging app"
+tier = "B"
+packages = { fedora = ["telegram-desktop"], debian = ["telegram-desktop"], arch = ["telegram-desktop"] }
+
+[[categories]]
+name = "development"
+display_name = "Development & Programming"
+description = "Languages, editors, and build tools"
+icon = "💻"
+
+[[categories.subcategories]]
+name = "editors"
+description = "Where the code is carved"
+
+[[categories.subcategories.programs]]
+id = "neovim"
+name = "Neovim"
+description = "Hyperextensible Vim-based editor"
+tier = "S"
+packages = { fedora = ["neovim"], debian = ["neovim"], arch = ["neovim"] }
+
+[[categories.subcategories.programs]]
+id = "vscode"
+name = "VS Code"
+description = "Modern Magic Workshop"
+tier = "S"
+packages = { fedora = ["code"], debian = ["code"], arch = ["visual-studio-code-bin"] }
+
+[[categories.subcategories.programs]]
+id = "helix"
+name = "Helix"
+description = "Post-modern modal text editor"
+tier = "A"
+packages = { fedora = ["helix"], debian = ["helix"], arch = ["helix"] }
+
+[[categories.subcategories.programs]]
+id = "emacs"
+name = "Emacs"
+description = "The extensible, self-documenting editor"
+tier = "B"
+packages = { fedora = ["emacs"], debian = ["emacs"], arch = ["emacs"] }
+
+[[categories.subcategories.programs]]
+id = "nano"
+name = "Nano"
+description = "Simple, user-friendly terminal editor"
+tier = "C"
+packages = { fedora = ["nano"], debian = ["nano"], arch = ["nano"] }
+
+[[categories]]
+name = "multimedia"
+display_name = "Multimedia & Graphics"
+description = "Graphics, audio, and video"
+icon = "🎨"
+
+[[categories.subcategories]]
+name = "graphics"
+description = "Image and 3D editing"
+
+[[categories.subcategories.programs]]
+id = "gimp"
+name = "GIMP"
+description = "GNU Image Manipulation Program"
+tier = "S"
+packages = { fedora = ["gimp"], debian = ["gimp"], arch = ["gimp"] }
+
+[[categories.subcategories.programs]]
+id = "blender"
+name = "Blender"
+description = "3D creation suite"
+tier = "S"
+packages = { fedora = ["blender"], debian = ["blender"], arch = ["blender"] }
+
+[[categories.subcategories.programs]]
+id = "krita"
+name = "Krita"
+description = "Digital painting and animation"
+tier = "A"
+packages = { fedora = ["krita"], debian = ["krita"], arch = ["krita"] }
+
+[[categories.subcategories.programs]]
+id = "inkscape"
+name = "Inkscape"
+description = "Vector graphics editor"
+tier = "A"
+packages = { fedora = ["inkscape"], debian = ["inkscape"], arch = ["inkscape"] }
+
+[[categories.subcategories.programs]]
+id = "darktable"
+name = "Darktable"
+description = "Open source photography workflow application"
+tier = "B"
+packages = { fedora = ["darktable"], debian = ["darktable"], arch = ["darktable"] }
+
+[[categories]]
+name = "games"
+display_name = "Games & Emulation"
+description = "Native games and compatibility"
+icon = "🎮"
+
+[[categories.subcategories]]
+name = "launchers"
+description = "Accessing your game library"
+
+[[categories.subcategories.programs]]
+id = "steam"
+name = "Steam"
+description = "The ultimate gaming platform"
+tier = "S"
+packages = { fedora = ["steam"], debian = ["steam"], arch = ["steam"] }
+
+[[categories.subcategories.programs]]
+id = "lutris"
+name = "Lutris"
+description = "All-in-one gaming platform"
+tier = "S"
+packages = { fedora = ["lutris"], debian = ["lutris"], arch = ["lutris"] }
+
+[[categories.subcategories.programs]]
+id = "heroic"
+name = "Heroic Games Launcher"
+description = "Epic and GOG games launcher"
+tier = "A"
+packages = { fedora = ["heroic-games-launcher-bin"], debian = ["heroic"], arch = ["heroic-games-launcher-bin"] }
+
+[[categories.subcategories.programs]]
+id = "bottles"
+name = "Bottles"
+description = "Run Windows software easily"
+tier = "A"
+packages = { fedora = ["bottles"], debian = ["bottles"], arch = ["bottles"] }
+
+[[categories]]
+name = "office"
+display_name = "Office & Productivity"
+description = "Work and collaboration"
+icon = "📂"
+
+[[categories.subcategories]]
+name = "suites"
+description = "Office software collections"
+
+[[categories.subcategories.programs]]
+id = "libreoffice"
+name = "LibreOffice"
+description = "Standard office suite"
+tier = "S"
+packages = { fedora = ["libreoffice"], debian = ["libreoffice"], arch = ["libreoffice-fresh"] }
+
+[[categories.subcategories.programs]]
+id = "onlyoffice"
+name = "OnlyOffice"
+description = "Office suite with high MS compatibility"
+tier = "A"
+packages = { fedora = ["onlyoffice-desktopeditors"], debian = ["onlyoffice-desktopeditors"], arch = ["onlyoffice-bin"] }
+
+[[categories.subcategories.programs]]
+id = "wps-office"
+name = "WPS Office"
+description = "Feature-rich office suite"
+tier = "B"
+packages = { fedora = ["wps-office"], debian = ["wps-office"], arch = ["wps-office"] }
+
+[[categories]]
+name = "system"
+display_name = "System & Utilities"
+description = "Monitoring and management"
+icon = "⚙️"
+
+[[categories.subcategories]]
+name = "terminals"
+description = "Gateways to the machine"
+
+[[categories.subcategories.programs]]
+id = "kitty"
+name = "Kitty"
+description = "GPU-accelerated terminal"
+tier = "S"
+packages = { fedora = ["kitty"], debian = ["kitty"], arch = ["kitty"] }
+
+[[categories.subcategories.programs]]
+id = "alacritty"
+name = "Alacritty"
+description = "Fast, minimalist terminal"
+tier = "A"
+packages = { fedora = ["alacritty"], debian = ["alacritty"], arch = ["alacritty"] }
+
+[[categories.subcategories.programs]]
+id = "wezterm"
+name = "WezTerm"
+description = "Extensible terminal emulator"
+tier = "A"
+packages = { fedora = ["wezterm"], debian = ["wezterm"], arch = ["wezterm"] }
+
+[[categories.subcategories.programs]]
+id = "foot"
+name = "Foot"
+description = "Lightweight Wayland terminal"
+tier = "B"
+packages = { fedora = ["foot"], debian = ["foot"], arch = ["foot"] }
+
+[[categories]]
+name = "themes"
+display_name = "Themes & Aesthetics"
+description = "Icons, cursors, and visual polish"
+icon = "🎭"
+
+[[categories.subcategories]]
+name = "icons"
+description = "Visual identity for your apps"
+
+[[categories.subcategories.programs]]
+id = "papirus-icon-theme"
+name = "Papirus Icon Theme"
+description = "Polished and consistent icons"
+tier = "S"
+packages = { fedora = ["papirus-icon-theme"], debian = ["papirus-icon-theme"], arch = ["papirus-icon-theme"] }
+
+[[categories.subcategories.programs]]
+id = "tela-icon-theme"
+name = "Tela Icon Theme"
+description = "Vibrant and colorful icons"
+tier = "S"
+packages = { fedora = ["tela-icon-theme"], debian = ["tela-icon-theme-git"], arch = ["tela-icon-theme"] }
+
+[[categories.subcategories.programs]]
+id = "numix-icon-theme"
+name = "Numix Icon Theme"
+description = "Modern and flat icons"
+tier = "A"
+packages = { fedora = ["numix-icon-theme"], debian = ["numix-icon-theme"], arch = ["numix-icon-theme-git"] }
+
+[[categories]]
+name = "virtualization"
+display_name = "Virtualization & Clouds"
+description = "Containers and VMs"
+icon = "☁️"
+
+[[categories.subcategories]]
+name = "tools"
+description = "Managing virtual environments"
+
+[[categories.subcategories.programs]]
+id = "docker"
+name = "Docker"
+description = "Standard for containerization"
+tier = "S"
+packages = { fedora = ["docker", "docker-compose"], debian = ["docker.io", "docker-compose"], arch = ["docker", "docker-compose"] }
+
+[[categories.subcategories.programs]]
+id = "podman"
+name = "Podman"
+description = "Secure, daemonless containers"
+tier = "S"
+packages = { fedora = ["podman"], debian = ["podman"], arch = ["podman"] }
+
+[[categories.subcategories.programs]]
+id = "virtualbox"
+name = "VirtualBox"
+description = "Easy to use desktop virtualization"
+tier = "A"
+packages = { fedora = ["VirtualBox"], debian = ["virtualbox"], arch = ["virtualbox"] }
+
+[[categories]]
+name = "science"
+display_name = "Science & Math"
+description = "Data and research"
+icon = "🧪"
+
+[[categories.subcategories]]
+name = "analysis"
+description = "Tools for the scientific mind"
+
+[[categories.subcategories.programs]]
+id = "r-base"
+name = "R"
+description = "Statistical computing environment"
+tier = "S"
+packages = { fedora = ["R"], debian = ["r-base"], arch = ["r"] }
+
+[[categories.subcategories.programs]]
+id = "jupyterlab"
+name = "JupyterLab"
+description = "Interactive development for data"
+tier = "S"
+packages = { fedora = ["python3-jupyterlab"], debian = ["jupyter-lab"], arch = ["jupyterlab"] }
+
+[[categories.subcategories.programs]]
+id = "rstudio"
+name = "RStudio"
+description = "Professional IDE for R"
+tier = "A"
+packages = { fedora = ["rstudio-desktop"], debian = ["rstudio"], arch = ["rstudio-desktop-bin"] }
+
+[[categories]]
+name = "accessibility"
+display_name = "Accessibility & Utilities"
+description = "Inclusive tools"
+icon = "♿"
+
+[[categories.subcategories]]
+name = "tools"
+description = "Empowering every smith"
+
+[[categories.subcategories.programs]]
+id = "orca"
+name = "Orca"
+description = "Screen reader and magnifier"
+tier = "S"
+packages = { fedora = ["orca"], debian = ["orca"], arch = ["orca"] }
+
+[[categories.subcategories.programs]]
+id = "onboard"
+name = "Onboard"
+description = "On-screen keyboard"
+tier = "S"
+packages = { fedora = ["onboard"], debian = ["onboard"], arch = ["onboard"] }

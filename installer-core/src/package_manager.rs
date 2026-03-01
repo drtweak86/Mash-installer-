@@ -21,7 +21,7 @@ static APT_INSTALLER: AptInstaller = AptInstaller;
 static PACMAN_INSTALLER: PacmanInstaller = PacmanInstaller;
 static DNF_INSTALLER: DnfInstaller = DnfInstaller;
 
-fn installer_for(driver: &dyn DistroDriver) -> &'static dyn PackageInstaller {
+pub fn installer_for(driver: &dyn DistroDriver) -> &'static dyn PackageInstaller {
     match driver.pkg_backend() {
         PkgBackend::Apt => &APT_INSTALLER,
         PkgBackend::Pacman => &PACMAN_INSTALLER,

@@ -2,4 +2,5 @@
 //
 // This module contains phase implementations for the installer.
 
+pub mod pi_overlord;
 pub mod wallpapers;

@@ -52,6 +52,10 @@ pub fn dim_style() -> Style {
     Style::default().fg(DIM_GREEN)
 }
 
+pub fn muted_style() -> Style {
+    Style::default().fg(Color::DarkGray)
+}
+
 pub fn accent_style() -> Style {
     Style::default().fg(AMBER)
 }

@@ -20,6 +20,7 @@ use ratatui::Terminal;
 
 use crate::software_catalog::SOFTWARE_CATEGORIES;
 use crate::tui::bbs::spawn_bbs_cycler;
+use crate::tui::confirmation::LongProcessState;
 use crate::tui::observer::RatatuiPhaseObserver;
 use crate::tui::render;
 use crate::tui::sysinfo_poller::spawn_sysinfo_poller;
@@ -62,6 +63,9 @@ pub enum Screen {
     SoftwareMode,
     SoftwareSelect,
     Confirm,
+    DeSelect,
+    ProtocolSelect,
+    DeConfirm,
     FontPrep,
     #[allow(dead_code)]
     Password,
@@ -142,6 +146,8 @@ pub struct PasswordState {
     pub password: String,
 }
 
+// ── Long process confirmation state ─────────────────────────────────────────
+
 // ── Module selection (mirrors menu::ModuleSelection) ─────────────────────────
 
 #[derive(Debug, Clone, Default)]
@@ -165,6 +171,9 @@ pub const MODULE_LABELS: &[(&str, &str)] = &[
 pub struct TuiApp {
     // Screen state
     pub screen: Screen,
+    // Navigation state for enhanced install flow
+    pub navigation_history: Vec<Screen>,
+    pub navigation_context: String, // Human-readable description of current context
     // Menu navigation
     pub menu_cursor: usize,
     // Available drivers
@@ -174,6 +183,9 @@ pub struct TuiApp {
     pub modules: ModuleState,
     // Profile selection  (0=Minimal, 1=Dev, 2=Full)
     pub profile_idx: usize,
+    // Desktop environment selection
+    pub desktop_environment: Option<installer_core::desktop_environments::DesktopEnvironment>,
+    pub display_protocol: installer_core::desktop_environments::DisplayProtocol,
     // Theme selection
     pub theme_plan: ThemePlan,
     // Software tiers
@@ -183,6 +195,7 @@ pub struct TuiApp {
     // Dry-run flag (passed in from CLI)
     pub dry_run: bool,
     pub continue_on_error: bool,
+    pub platform_info: installer_core::platform::PlatformInfo,
     // Installing phase state
     pub phases: Vec<PhaseRow>,
     pub current_phase: usize,
@@ -198,6 +211,8 @@ pub struct TuiApp {
     pub arch_timer: Option<Instant>,
     // Confirm prompt (mid-install)
     pub confirm_state: Option<ConfirmState>,
+    // Long process confirmation
+    pub long_process_state: Option<LongProcessState>,
     // Password prompt (mid-install)
     pub password_state: Option<PasswordState>,
     // Final report
@@ -217,17 +232,29 @@ impl TuiApp {
     pub fn new(tx: Sender<TuiMessage>, drivers: Vec<&'static dyn DistroDriver>) -> Self {
         Self {
             screen: Screen::Welcome,
+            navigation_history: Vec::new(),
+            navigation_context: String::from("Welcome to MASH Installer"),
             menu_cursor: 0,
             drivers,
             selected_driver_idx: 0,
             modules: ModuleState::default(),
             profile_idx: 1, // Dev by default
+            desktop_environment: None,
+            display_protocol: installer_core::desktop_environments::DisplayProtocol::Auto,
             theme_plan: ThemePlan::None,
             software_full: true,
             software_picks: BTreeMap::new(),
             software_category_idx: 0,
             dry_run: false,
             continue_on_error: false,
+            platform_info: installer_core::platform::PlatformInfo {
+                arch: "unknown".to_string(),
+                distro: "unknown".to_string(),
+                distro_version: "unknown".to_string(),
+                distro_codename: "unknown".to_string(),
+                distro_family: "unknown".to_string(),
+                pi_model: None,
+            },
             phases: Vec::new(),
             current_phase: 0,
             total_phases: 0,
@@ -237,6 +264,7 @@ impl TuiApp {
             bbs_msg: "⚡ Initialising the forge...".to_string(),
             arch_timer: None,
             confirm_state: None,
+            long_process_state: None,
             password_state: None,
             report: None,
             error_msg: None,
@@ -267,6 +295,15 @@ impl TuiApp {
                     self.screen = Screen::DistroSelect;
                     self.arch_timer = None;
                 }
+            }
+        }
+
+        // Update long process confirmation countdown
+        if self.long_process_state.is_some() {
+            let auto_proceed = self.update_long_process_confirmation();
+            if auto_proceed {
+                // Countdown complete, auto-proceed with the operation
+                // The operation will proceed on the next tick
             }
         }
     }
@@ -336,6 +373,19 @@ impl TuiApp {
     // ── Keyboard handling ────────────────────────────────────────────────────
 
     pub fn handle_key(&mut self, code: KeyCode, modifiers: KeyModifiers) {
+        // Handle long process confirmation first (highest priority)
+        if self.long_process_state.is_some() {
+            let proceed = self.handle_long_process_key(code);
+            if proceed {
+                // User confirmed - the operation will proceed
+                return;
+            }
+            // If user cancelled (Esc), long_process_state is cleared
+            if self.long_process_state.is_none() {
+                return;
+            }
+        }
+
         // Global quit
         if code == KeyCode::Char('q')
             && (modifiers == KeyModifiers::NONE || modifiers == KeyModifiers::SHIFT)
@@ -390,6 +440,9 @@ impl TuiApp {
             Screen::SoftwareMode => self.handle_list_key(code, 2),
             Screen::SoftwareSelect => self.handle_software_key(code),
             Screen::Confirm => self.handle_confirm_key(code),
+            Screen::DeSelect => self.handle_list_key(code, 10),
+            Screen::ProtocolSelect => self.handle_list_key(code, 3),
+            Screen::DeConfirm => self.handle_confirm_key(code),
             Screen::FontPrep => self.handle_font_prep_key(code),
             Screen::Installing => self.handle_installing_key(code),
             Screen::Done | Screen::Error => match code {
@@ -452,6 +505,18 @@ impl TuiApp {
                 if idx < 3 {
                     self.menu_cursor = idx;
                     self.advance_from_list();
+                }
+            }
+            Screen::DeSelect => {
+                if idx < 10 {
+                    self.menu_cursor = idx;
+                    self.select_desktop_environment();
+                }
+            }
+            Screen::ProtocolSelect => {
+                if idx < 3 {
+                    self.menu_cursor = idx;
+                    self.select_display_protocol();
                 }
             }
             Screen::SoftwareMode => {
@@ -520,8 +585,8 @@ impl TuiApp {
                 self.toggle_module(self.menu_cursor);
             }
             KeyCode::Enter => {
-                self.screen = Screen::ThemeSelect;
-                self.menu_cursor = self.theme_menu_index();
+                self.screen = Screen::DeSelect;
+                self.menu_cursor = 0;
             }
             KeyCode::Esc => {
                 self.go_back();
@@ -541,18 +606,33 @@ impl TuiApp {
 
     fn handle_confirm_key(&mut self, code: KeyCode) {
         if self.confirm_state.is_none() {
-            // Pre-install confirm screen
-            match code {
-                KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => {
-                    self.screen = Screen::FontPrep;
+            // Check which confirm screen we're in
+            if self.screen == Screen::DeConfirm {
+                // Desktop environment confirmation
+                match code {
+                    KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => {
+                        self.advance_from_list();
+                    }
+                    KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => {
+                        self.go_back();
+                    }
+                    _ => {}
                 }
-                KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => {
-                    self.screen = Screen::SoftwareMode;
-                    self.menu_cursor = if self.software_full { 0 } else { 1 };
+                return;
+            } else {
+                // Pre-install confirm screen
+                match code {
+                    KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => {
+                        self.screen = Screen::FontPrep;
+                    }
+                    KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => {
+                        self.screen = Screen::SoftwareMode;
+                        self.menu_cursor = if self.software_full { 0 } else { 1 };
+                    }
+                    _ => {}
                 }
-                _ => {}
+                return;
             }
-            return;
         }
         // Mid-install confirm prompt — borrows are scoped to each arm
         match code {
@@ -645,42 +725,41 @@ impl TuiApp {
         }
     }
 
-    fn go_back(&mut self) {
-        match self.screen {
-            Screen::DistroSelect => self.screen = Screen::Welcome,
-            Screen::ProfileSelect => {
-                self.screen = Screen::DistroSelect;
-                self.menu_cursor = self.selected_driver_idx;
-            }
-            Screen::ModuleSelect => {
-                self.screen = Screen::ProfileSelect;
-                self.menu_cursor = self.profile_idx;
-            }
-            Screen::ThemeSelect => {
-                self.screen = Screen::ModuleSelect;
-                self.menu_cursor = 0;
-            }
-            Screen::SoftwareMode => {
-                self.screen = Screen::ThemeSelect;
-                self.menu_cursor = self.theme_menu_index();
-            }
-            Screen::SoftwareSelect => {
-                if self.software_category_idx == 0 {
-                    self.screen = Screen::SoftwareMode;
-                    self.menu_cursor = if self.software_full { 0 } else { 1 };
-                } else {
-                    self.software_category_idx = self.software_category_idx.saturating_sub(1);
-                    self.menu_cursor = self
-                        .selected_option_index(self.software_category_idx)
-                        .unwrap_or(0);
-                }
-            }
-            Screen::Confirm => {
-                self.screen = Screen::SoftwareMode;
-                self.menu_cursor = if self.software_full { 0 } else { 1 };
-            }
-            _ => {}
-        }
+    fn select_desktop_environment(&mut self) {
+        use installer_core::desktop_environments::DesktopEnvironment;
+
+        let de = match self.menu_cursor {
+            0 => DesktopEnvironment::Gnome,
+            1 => DesktopEnvironment::Kde,
+            2 => DesktopEnvironment::Xfce,
+            3 => DesktopEnvironment::Lxqt,
+            4 => DesktopEnvironment::Mate,
+            5 => DesktopEnvironment::Cinnamon,
+            6 => DesktopEnvironment::Budgie,
+            7 => DesktopEnvironment::Enlightenment,
+            8 => DesktopEnvironment::Lxde,
+            9 => DesktopEnvironment::None,
+            _ => DesktopEnvironment::None,
+        };
+
+        self.desktop_environment = Some(de);
+        self.screen = Screen::ProtocolSelect;
+        self.menu_cursor = 0; // Default to Auto
+    }
+
+    fn select_display_protocol(&mut self) {
+        use installer_core::desktop_environments::DisplayProtocol;
+
+        let protocol = match self.menu_cursor {
+            0 => DisplayProtocol::Auto,
+            1 => DisplayProtocol::X11,
+            2 => DisplayProtocol::Wayland,
+            _ => DisplayProtocol::Auto,
+        };
+
+        self.display_protocol = protocol;
+        self.screen = Screen::DeConfirm;
+        self.menu_cursor = 0;
     }
 
     fn handle_software_key(&mut self, code: KeyCode) {
@@ -1001,4 +1080,229 @@ pub fn run(
     }
 
     Ok(())
+}
+
+// ── Long Process Confirmation Methods ──────────────────────────────────────
+
+impl TuiApp {
+    /// Start a long process confirmation
+    #[allow(dead_code)]
+    pub fn start_long_process_confirmation(
+        &mut self,
+        operation_name: String,
+        estimated_duration: std::time::Duration,
+    ) {
+        if crate::tui::confirmation::should_show_long_confirmation(estimated_duration) {
+            self.long_process_state = Some(crate::tui::confirmation::LongProcessState::new(
+                operation_name,
+                estimated_duration,
+            ));
+        }
+    }
+
+    /// Cancel long process confirmation
+    #[allow(dead_code)]
+    pub fn cancel_long_process_confirmation(&mut self) {
+        self.long_process_state = None;
+    }
+
+    /// Navigate to a new screen with history tracking
+    #[allow(dead_code)]
+    pub fn navigate_to(&mut self, new_screen: Screen, context: &str) {
+        // Push current screen to history before navigating away
+        if self.screen != new_screen {
+            self.navigation_history.push(self.screen);
+        }
+        self.screen = new_screen;
+        self.navigation_context = context.to_string();
+    }
+
+    /// Navigate back using history
+    pub fn navigate_back(&mut self) {
+        if let Some(previous_screen) = self.navigation_history.pop() {
+            self.screen = previous_screen;
+            self.navigation_context = match previous_screen {
+                Screen::Welcome => "Welcome to MASH Installer",
+                Screen::ArchDetected => "Architecture Detection",
+                Screen::DistroSelect => "Distribution Selection",
+                Screen::ProfileSelect => "Profile Selection",
+                Screen::ModuleSelect => "Module Selection",
+                Screen::ThemeSelect => "Theme Selection",
+                Screen::SoftwareMode => "Software Mode Selection",
+                Screen::SoftwareSelect => "Software Selection",
+                Screen::Confirm => "Installation Confirmation",
+                Screen::DeSelect => "Desktop Environment Selection",
+                Screen::ProtocolSelect => "Display Protocol Selection",
+                Screen::DeConfirm => "Desktop Environment Confirmation",
+                Screen::FontPrep => "Font Preparation",
+                Screen::Password => "Password Prompt",
+                Screen::Installing => "Installation in Progress",
+                Screen::Done => "Installation Complete",
+                Screen::Error => "Error Encountered",
+            }
+            .to_string();
+        }
+    }
+
+    /// Get current navigation context
+    pub fn get_navigation_context(&self) -> &str {
+        &self.navigation_context
+    }
+
+    /// Handle key input for long process confirmation
+    pub fn handle_long_process_key(&mut self, code: crossterm::event::KeyCode) -> bool {
+        let Some(state) = &mut self.long_process_state else {
+            return false;
+        };
+
+        match code {
+            crossterm::event::KeyCode::Enter => {
+                // User confirmed - proceed immediately
+                state.user_confirmed = true;
+                true
+            }
+            crossterm::event::KeyCode::Esc => {
+                // User cancelled
+                self.long_process_state = None;
+                false
+            }
+            _ => false,
+        }
+    }
+
+    /// Enhanced go_back with navigation history support
+    fn go_back(&mut self) {
+        // Try to use navigation history first
+        if !self.navigation_history.is_empty() {
+            self.navigate_back();
+            return;
+        }
+
+        // Fallback to original hardcoded navigation with cursor positioning
+        match self.screen {
+            Screen::DistroSelect => self.screen = Screen::Welcome,
+            Screen::ProfileSelect => {
+                self.screen = Screen::DistroSelect;
+                self.menu_cursor = self.selected_driver_idx;
+            }
+            Screen::ModuleSelect => {
+                self.screen = Screen::ProfileSelect;
+                self.menu_cursor = self.profile_idx;
+            }
+            Screen::DeSelect => {
+                self.screen = Screen::ModuleSelect;
+                self.menu_cursor = 0;
+            }
+            Screen::ProtocolSelect => {
+                self.screen = Screen::DeSelect;
+                self.menu_cursor = self
+                    .desktop_environment
+                    .map(|de| match de {
+                        installer_core::desktop_environments::DesktopEnvironment::Gnome => 0,
+                        installer_core::desktop_environments::DesktopEnvironment::Kde => 1,
+                        installer_core::desktop_environments::DesktopEnvironment::Xfce => 2,
+                        installer_core::desktop_environments::DesktopEnvironment::Lxqt => 3,
+                        installer_core::desktop_environments::DesktopEnvironment::Mate => 4,
+                        installer_core::desktop_environments::DesktopEnvironment::Cinnamon => 5,
+                        installer_core::desktop_environments::DesktopEnvironment::Budgie => 6,
+                        installer_core::desktop_environments::DesktopEnvironment::Enlightenment => {
+                            7
+                        }
+                        installer_core::desktop_environments::DesktopEnvironment::Lxde => 8,
+                        installer_core::desktop_environments::DesktopEnvironment::None => 9,
+                    })
+                    .unwrap_or(0);
+            }
+            Screen::DeConfirm => {
+                // When confirmed, advance to ThemeSelect
+                self.screen = Screen::ThemeSelect;
+                self.menu_cursor = self.theme_menu_index();
+            }
+            Screen::ThemeSelect => {
+                self.screen = Screen::ModuleSelect;
+                self.menu_cursor = 0;
+            }
+            Screen::SoftwareMode => {
+                self.screen = Screen::ThemeSelect;
+                self.menu_cursor = self.theme_menu_index();
+            }
+            Screen::SoftwareSelect => {
+                if self.software_category_idx == 0 {
+                    self.screen = Screen::SoftwareMode;
+                    self.menu_cursor = if self.software_full { 0 } else { 1 };
+                } else {
+                    self.software_category_idx = self.software_category_idx.saturating_sub(1);
+                    self.menu_cursor = self
+                        .selected_option_index(self.software_category_idx)
+                        .unwrap_or(0);
+                }
+            }
+            Screen::Confirm => {
+                self.screen = Screen::SoftwareSelect;
+                self.menu_cursor = self
+                    .selected_option_index(self.software_category_idx)
+                    .unwrap_or(0);
+            }
+            Screen::FontPrep => {
+                self.screen = Screen::Confirm;
+                self.menu_cursor = 0;
+            }
+            Screen::Password => {
+                // No-op for password screen
+            }
+            Screen::Installing
+            | Screen::Done
+            | Screen::Error
+            | Screen::Welcome
+            | Screen::ArchDetected => {
+                // No-op for terminal screens
+            }
+        }
+
+        // Update navigation context for the new screen
+        self.navigation_context = match self.screen {
+            Screen::Welcome => "Welcome to MASH Installer",
+            Screen::ArchDetected => "Architecture Detection",
+            Screen::DistroSelect => "Distribution Selection",
+            Screen::ProfileSelect => "Profile Selection",
+            Screen::ModuleSelect => "Module Selection",
+            Screen::ThemeSelect => "Theme Selection",
+            Screen::SoftwareMode => "Software Mode Selection",
+            Screen::SoftwareSelect => "Software Selection",
+            Screen::Confirm => "Installation Confirmation",
+            Screen::DeSelect => "Desktop Environment Selection",
+            Screen::ProtocolSelect => "Display Protocol Selection",
+            Screen::DeConfirm => "Desktop Environment Confirmation",
+            Screen::FontPrep => "Font Preparation",
+            Screen::Password => "Password Prompt",
+            Screen::Installing => "Installation in Progress",
+            Screen::Done => "Installation Complete",
+            Screen::Error => "Error Encountered",
+        }
+        .to_string();
+    }
+
+    /// Update long process confirmation state (call this in tick())
+    pub fn update_long_process_confirmation(&mut self) -> bool {
+        let Some(state) = &mut self.long_process_state else {
+            return false;
+        };
+
+        if state.update_countdown() {
+            // Countdown complete - auto-proceed
+            state.user_confirmed = true;
+            return true;
+        }
+
+        false
+    }
+
+    /// Check if long process is confirmed
+    #[allow(dead_code)]
+    pub fn is_long_process_confirmed(&self) -> bool {
+        self.long_process_state
+            .as_ref()
+            .map(|s| s.user_confirmed)
+            .unwrap_or(false)
+    }
 }

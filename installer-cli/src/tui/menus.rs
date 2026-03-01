@@ -12,6 +12,7 @@ use crate::tui::theme;
 
 // Import installer-core for font selection
 use installer_core;
+use installer_core::desktop_environments::{DesktopEnvironment, DisplayProtocol};
 
 const WELCOME_BANNER: &str = r"
   __  __    _    ____  _   _ 
@@ -50,6 +51,46 @@ fn centered_rect(width_pct: u16, height_pct: u16, area: Rect) -> Rect {
         .split(vchunks[1])[1]
 }
 
+/// Draw navigation info at the bottom of the screen
+fn draw_navigation_info(f: &mut Frame, area: Rect, app: &TuiApp) {
+    let nav_block = Block::default()
+        .borders(Borders::TOP)
+        .style(theme::default_style());
+    let nav_area = Rect::new(area.x, area.y + area.height - 3, area.width, 3);
+    f.render_widget(nav_block, nav_area);
+
+    let nav_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(30),
+            Constraint::Percentage(40),
+            Constraint::Percentage(30),
+        ])
+        .split(nav_area);
+
+    // Left: Back navigation
+    let back_text = if app.navigation_history.is_empty() {
+        Span::styled("[BACK: Disabled]", theme::muted_style())
+    } else {
+        Span::styled("[BACK: Esc]", theme::success_style())
+    };
+    f.render_widget(Paragraph::new(back_text), nav_chunks[0]);
+
+    // Center: Current context
+    let context_text = Span::styled(app.get_navigation_context(), theme::default_style());
+    f.render_widget(
+        Paragraph::new(context_text).alignment(Alignment::Center),
+        nav_chunks[1],
+    );
+
+    // Right: Help
+    let help_text = Span::styled("[HELP: F1]", theme::warning_style());
+    f.render_widget(
+        Paragraph::new(help_text).alignment(Alignment::Right),
+        nav_chunks[2],
+    );
+}
+
 fn station_block<'a>(title: &'a str) -> Block<'a> {
     Block::default()
         .borders(Borders::ALL)
@@ -80,7 +121,7 @@ fn command_prompt_line(
 
 // ── Welcome screen ────────────────────────────────────────────────────────────
 
-pub fn draw_welcome(f: &mut Frame, area: Rect, _app: &TuiApp) {
+pub fn draw_welcome(f: &mut Frame, area: Rect, app: &TuiApp) {
     let block = station_block("MASH OPERATING SYSTEM");
     let inner = block.inner(area);
     f.render_widget(block, area);
@@ -126,6 +167,9 @@ pub fn draw_welcome(f: &mut Frame, area: Rect, _app: &TuiApp) {
     ))
     .alignment(Alignment::Right);
     f.render_widget(footer, chunks[3]);
+
+    // Draw navigation info at the bottom
+    draw_navigation_info(f, area, app);
 }
 
 // ── Arch detected screen ──────────────────────────────────────────────────────
@@ -711,4 +755,175 @@ pub fn draw_password_prompt(
 
     let para = Paragraph::new(prompt).alignment(Alignment::Center);
     f.render_widget(para, inner);
+}
+
+// ── Desktop Environment Select ─────────────────────────────────────────────
+
+pub fn draw_de_select(f: &mut Frame, area: Rect, app: &TuiApp) {
+    let popup = centered_rect(70, 60, area);
+    let block = station_block("DESKTOP ENVIRONMENT CONFIGURATION");
+    let inner = block.inner(popup);
+    f.render_widget(block, popup);
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(2),
+            Constraint::Min(0),
+            Constraint::Length(2),
+        ])
+        .split(inner);
+
+    f.render_widget(
+        Paragraph::new("SELECT PRIMARY DISPLAY ENVIRONMENT:"),
+        chunks[0],
+    );
+
+    // Get all desktop environments
+    let des = [
+        DesktopEnvironment::Gnome,
+        DesktopEnvironment::Kde,
+        DesktopEnvironment::Xfce,
+        DesktopEnvironment::Lxqt,
+        DesktopEnvironment::Mate,
+        DesktopEnvironment::Cinnamon,
+        DesktopEnvironment::Budgie,
+        DesktopEnvironment::Enlightenment,
+        DesktopEnvironment::Lxde,
+        DesktopEnvironment::None,
+    ];
+
+    let items: Vec<ListItem> = des
+        .iter()
+        .enumerate()
+        .map(|(i, de)| {
+            let label = format!("{} - {}", de.display_name(), de.description());
+            command_prompt_line(label, i + 1, i == app.menu_cursor)
+        })
+        .collect();
+
+    let list = List::new(items).style(theme::default_style());
+    f.render_widget(list, chunks[1]);
+
+    let prompt = Paragraph::new(vec![Line::from(vec![
+        Span::styled("COMMAND > ", theme::success_style()),
+        Span::styled(format!("{}", app.menu_cursor + 1), theme::selected_style()),
+        Span::styled(
+            "_",
+            theme::success_style().add_modifier(Modifier::SLOW_BLINK),
+        ),
+    ])]);
+    f.render_widget(prompt, chunks[2]);
+}
+
+// ── Display Protocol Select ───────────────────────────────────────────────
+
+pub fn draw_protocol_select(f: &mut Frame, area: Rect, app: &TuiApp) {
+    let popup = centered_rect(70, 40, area);
+    let block = station_block("DISPLAY PROTOCOL SELECTION");
+    let inner = block.inner(popup);
+    f.render_widget(block, popup);
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(2),
+            Constraint::Min(0),
+            Constraint::Length(2),
+        ])
+        .split(inner);
+
+    f.render_widget(Paragraph::new("SELECT DISPLAY PROTOCOL:"), chunks[0]);
+
+    let protocols = [
+        DisplayProtocol::Auto,
+        DisplayProtocol::X11,
+        DisplayProtocol::Wayland,
+    ];
+
+    let items: Vec<ListItem> = protocols
+        .iter()
+        .enumerate()
+        .map(|(i, protocol)| {
+            let label = format!("{} - {}", protocol.display_name(), protocol.description());
+            command_prompt_line(label, i + 1, i == app.menu_cursor)
+        })
+        .collect();
+
+    let list = List::new(items).style(theme::default_style());
+    f.render_widget(list, chunks[1]);
+
+    let prompt = Paragraph::new(vec![Line::from(vec![
+        Span::styled("COMMAND > ", theme::success_style()),
+        Span::styled(format!("{}", app.menu_cursor + 1), theme::selected_style()),
+        Span::styled(
+            "_",
+            theme::success_style().add_modifier(Modifier::SLOW_BLINK),
+        ),
+    ])]);
+    f.render_widget(prompt, chunks[2]);
+}
+
+// ── DE Confirmation with Pi Warnings ──────────────────────────────────────
+
+pub fn draw_de_confirm(f: &mut Frame, area: Rect, app: &TuiApp) {
+    let popup = centered_rect(70, 50, area);
+    let block = station_block("DESKTOP ENVIRONMENT CONFIRMATION");
+    let inner = block.inner(popup);
+    f.render_widget(block, popup);
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(2),
+            Constraint::Min(0),
+            Constraint::Length(2),
+        ])
+        .split(inner);
+
+    f.render_widget(
+        Paragraph::new("CONFIRM DESKTOP ENVIRONMENT SELECTION:"),
+        chunks[0],
+    );
+
+    // Get the selected DE and protocol from app state
+    let de = app.desktop_environment.unwrap_or(DesktopEnvironment::Xfce);
+    let protocol = app.display_protocol;
+    let is_pi = app.platform_info.pi_model.is_some();
+
+    let mut info_lines = vec![
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("Environment: ", theme::default_style()),
+            Span::styled(de.display_name(), theme::accent_style()),
+        ]),
+        Line::from(vec![
+            Span::styled("Protocol: ", theme::default_style()),
+            Span::styled(protocol.display_name(), theme::accent_style()),
+        ]),
+    ];
+
+    // Add Pi warning if applicable
+    if let Some(warning) = de.pi_warning(is_pi) {
+        info_lines.push(Line::from(""));
+        info_lines.push(Line::from(vec![
+            Span::styled("⚠️  PI WARNING: ", theme::warning_style()),
+            Span::styled(warning, theme::warning_style()),
+        ]));
+    }
+
+    let info = Paragraph::new(info_lines).alignment(Alignment::Left);
+    f.render_widget(info, chunks[1]);
+
+    let prompt = Paragraph::new(vec![Line::from(vec![
+        Span::styled(
+            "ENTER:CONFIRM  ESC:CANCEL  COMMAND > ",
+            theme::success_style(),
+        ),
+        Span::styled(
+            "_",
+            theme::success_style().add_modifier(Modifier::SLOW_BLINK),
+        ),
+    ])]);
+    f.render_widget(prompt, chunks[2]);
 }

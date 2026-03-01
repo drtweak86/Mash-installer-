@@ -47,6 +47,9 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
     // Configure MCP servers if applicable
     configure_mcp_servers(ctx)?;
 
+    // Install and configure GitHub MCP server
+    install_github_mcp_server(ctx)?;
+
     Ok(())
 }
 
@@ -69,14 +72,12 @@ fn configure_mcp_servers(ctx: &mut PhaseContext) -> Result<()> {
     ];
 
     // Try to find an existing GITHUB_PERSONAL_ACCESS_TOKEN in any of these files
-    let mut existing_token = String::new();
     if !ctx.options.dry_run {
         for (path, key) in &config_paths {
             if path.exists() {
                 if let Ok(content) = std::fs::read_to_string(path) {
                     if let Ok(config) = serde_json::from_str::<serde_json::Value>(&content) {
-                        if let Some(token) = find_github_token(&config, key) {
-                            existing_token = token;
+                        if let Some(_token) = find_github_token(&config, key) {
                             ctx.record_action(format!(
                                 "Detected existing GitHub token in {}",
                                 path.display()
@@ -110,12 +111,13 @@ fn configure_mcp_servers(ctx: &mut PhaseContext) -> Result<()> {
                         config[key] = serde_json::json!({});
                     }
 
-                    // Add github server
+                    // Add github server - use our local MCP server
                     config[key]["github"] = serde_json::json!({
-                        "command": "npx",
-                        "args": ["-y", "@modelcontextprotocol/server-github"],
+                        "command": "mcp-server",
+                        "args": [],
                         "env": {
-                            "GITHUB_PERSONAL_ACCESS_TOKEN": existing_token
+                            "GITHUB_WEBHOOK_SECRET": "${GITHUB_WEBHOOK_SECRET}",
+                            "MCP_SERVER_BIND_ADDRESS": "127.0.0.1:3000"
                         }
                     });
 
@@ -181,6 +183,33 @@ fn install_vibe(ctx: &mut PhaseContext) -> Result<()> {
             let mut cmd = Command::new("sudo");
             cmd.args(["npm", "install", "-g", "@mistral-ai/vibe"]);
             cmd::run(&mut cmd)?;
+            Ok(())
+        },
+    )
+}
+
+fn install_github_mcp_server(ctx: &mut PhaseContext) -> Result<()> {
+    ctx.run_or_record(
+        "AI Spirits",
+        "Install GitHub MCP Server",
+        Some("GitHub MCP Webhook Server".into()),
+        |_| {
+            // Build and install the mcp-server binary
+            let mut cmd = Command::new("cargo");
+            cmd.args(["build", "--release", "-p", "mcp-server"]);
+            cmd::run(&mut cmd)?;
+
+            // Install the binary to /usr/local/bin
+            let mut install_cmd = Command::new("sudo");
+            install_cmd.args([
+                "install",
+                "-m",
+                "755",
+                "target/release/mcp-server",
+                "/usr/local/bin/mcp-server",
+            ]);
+            cmd::run(&mut install_cmd)?;
+
             Ok(())
         },
     )

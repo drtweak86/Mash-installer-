@@ -7,7 +7,7 @@ use std::time::Duration;
 /// Helper function to check if server is responsive
 fn wait_for_server(url: &str, max_attempts: usize) -> Result<(), String> {
     let client = reqwest::blocking::Client::new();
-    
+
     for attempt in 1..=max_attempts {
         match client.get(url).send() {
             Ok(response) if response.status().is_success() => return Ok(()),
@@ -19,7 +19,10 @@ fn wait_for_server(url: &str, max_attempts: usize) -> Result<(), String> {
             }
         }
     }
-    Err(format!("Server not responsive after {} attempts", max_attempts))
+    Err(format!(
+        "Server not responsive after {} attempts",
+        max_attempts
+    ))
 }
 
 #[test]
@@ -120,7 +123,7 @@ fn test_actual_webhook_signature_validation() {
     // 2. Proper GitHub webhook secret configuration
     // 3. Actual GitHub webhook payloads
     // 4. Signature validation setup
-    
+
     // For now, this test is ignored but serves as documentation
     // for future implementation
 }

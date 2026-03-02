@@ -407,6 +407,7 @@ impl TuiApp {
             matches!(self.software_mode, SoftwareMode::BardsRecommendations),
             picks,
             self.theme_plan.clone(),
+            None, // No preset_id by default from manual selection
         )
     }
 
@@ -1346,8 +1347,10 @@ impl TuiApp {
                 Screen::ProtocolSelect => "Display Protocol Selection",
                 Screen::DeConfirm => "Desktop Environment Confirmation",
                 Screen::FontPrep => "Font Preparation",
+                Screen::Wardrobe => "The Wardrobe (Presets)",
                 Screen::SystemSummary => "System Pedigree Summary",
                 Screen::Password => "Password Prompt",
+                Screen::Authorization => "Interactive Authorization",
                 Screen::Installing => "Installation in Progress",
                 Screen::Done => "Installation Complete",
                 Screen::Error => "Error Encountered",
@@ -1471,12 +1474,16 @@ impl TuiApp {
                 self.screen = Screen::SystemSummary;
                 self.menu_cursor = 0;
             }
+            Screen::Wardrobe => {
+                self.screen = Screen::FontPrep;
+                self.menu_cursor = 0;
+            }
             Screen::SystemSummary => {
                 self.screen = Screen::Confirm;
                 self.menu_cursor = 0;
             }
-            Screen::Password => {
-                // No-op for password screen
+            Screen::Password | Screen::Authorization => {
+                // No-op for mid-install screens
             }
             Screen::Installing
             | Screen::Done
@@ -1502,8 +1509,10 @@ impl TuiApp {
             Screen::ProtocolSelect => "Display Protocol Selection",
             Screen::DeConfirm => "Desktop Environment Confirmation",
             Screen::FontPrep => "Font Preparation",
+            Screen::Wardrobe => "The Wardrobe (Presets)",
             Screen::SystemSummary => "System Pedigree Summary",
             Screen::Password => "Password Prompt",
+            Screen::Authorization => "Interactive Authorization",
             Screen::Installing => "Installation in Progress",
             Screen::Done => "Installation Complete",
             Screen::Error => "Error Encountered",

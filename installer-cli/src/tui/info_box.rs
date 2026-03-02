@@ -195,6 +195,22 @@ fn build_info_lines(app: &TuiApp) -> Vec<Line<'static>> {
             )),
         ],
 
+        Screen::Wardrobe => vec![
+            Line::from(Span::styled("The Wardrobe", theme::accent_style())),
+            Line::from(Span::styled(
+                "Choose a curated preset for your system",
+                theme::dim_style(),
+            )),
+        ],
+
+        Screen::Authorization => vec![
+            Line::from(Span::styled("Interactive Authorization", theme::accent_style())),
+            Line::from(Span::styled(
+                "Complete tool configuration in terminal",
+                theme::dim_style(),
+            )),
+        ],
+
         Screen::Installing => {
             let progress = if app.total_phases == 0 {
                 0

@@ -993,7 +993,7 @@ pub fn draw_auth_prompt(
     state: &crate::tui::app::AuthState,
 ) {
     use installer_core::AuthType;
-    use ratatui::widgets::Modifier;
+    use ratatui::style::Modifier;
 
     let (title, description) = match state.auth_type {
         AuthType::GitHubCli => (

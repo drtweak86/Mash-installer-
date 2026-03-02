@@ -50,7 +50,7 @@ pub fn run_software_tier_menu(interaction: &InteractionService) -> Result<Softwa
                     }
                 }
             }
-            Ok(SoftwareTierPlan::new(true, picks, theme_plan))
+            Ok(SoftwareTierPlan::new(true, picks, theme_plan, None))
         }
         2 => {
             let catalog = software_catalog::load_s_tier();
@@ -63,7 +63,7 @@ pub fn run_software_tier_menu(interaction: &InteractionService) -> Result<Softwa
                     }
                 }
             }
-            Ok(SoftwareTierPlan::new(true, picks, theme_plan))
+            Ok(SoftwareTierPlan::new(true, picks, theme_plan, None))
         }
         3 => run_custom_selection(interaction),
         _ => unreachable!(),
@@ -109,7 +109,7 @@ fn run_custom_selection(interaction: &InteractionService) -> Result<SoftwareTier
     println!("\nStep 3/6: Theme Selection");
     let theme_plan = run_theme_menu(interaction)?;
 
-    Ok(SoftwareTierPlan::new(false, picks, theme_plan))
+    Ok(SoftwareTierPlan::new(false, picks, theme_plan, None))
 }
 
 fn prompt_choice(prompt: &str, default: usize, max_choice: usize) -> usize {

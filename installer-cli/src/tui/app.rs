@@ -278,15 +278,18 @@ impl TuiApp {
             software_category_idx: 0,
             dry_run: false,
             continue_on_error: false,
-            platform_info: installer_core::platform::PlatformInfo {
-                arch: "unknown".to_string(),
+            platform_info: installer_core::PlatformInfo {
+                arch: std::env::consts::ARCH.to_string(),
                 distro: "unknown".to_string(),
                 distro_version: "unknown".to_string(),
                 distro_codename: "unknown".to_string(),
                 distro_family: "unknown".to_string(),
                 pi_model: None,
+                cpu_model: "Unknown".to_string(),
+                cpu_cores: 0,
+                ram_total_gb: 0.0,
             },
-            system_profile: None,
+            system_profile: installer_core::SystemProfile::detect(&installer_core::REAL_SYSTEM).ok(),
             phases: Vec::new(),
             current_phase: 0,
             total_phases: 0,
@@ -777,7 +780,7 @@ impl TuiApp {
             KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => {
                 self.screen = Screen::FontPrep;
             }
-            KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => {
+            KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Backspace => {
                 self.screen = Screen::DeConfirm;
             }
             _ => {}
@@ -795,6 +798,9 @@ impl TuiApp {
                 // User skips nerd fonts
                 self.push_log("Nerd Font installation skipped by user.", LogLevel::Warning);
                 self.screen = Screen::Wardrobe;
+            }
+            KeyCode::Backspace => {
+                self.screen = Screen::SystemSummary;
             }
             _ => {}
         }

@@ -64,7 +64,7 @@ pub fn draw(f: &mut Frame, app: &TuiApp) {
         .direction(Direction::Horizontal)
         .constraints([
             Constraint::Min(0),     // Left: Main Content (Panel 1)
-            Constraint::Length(35), // Right: Stats + Intel
+            Constraint::Length(40), // Right: Stats + Intel (widened for better hardware display)
         ])
         .split(root_v_chunks[0]);
 
@@ -72,8 +72,8 @@ pub fn draw(f: &mut Frame, app: &TuiApp) {
     let right_v_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(8), // System Status (Panel 2)
-            Constraint::Min(0),    // Station Intel (Panel 3)
+            Constraint::Length(10), // System Status (Panel 2) - slightly taller
+            Constraint::Min(0),     // Station Intel (Panel 3)
         ])
         .split(top_h_chunks[1]);
 
@@ -223,44 +223,46 @@ fn draw_intel_panel(f: &mut Frame, area: Rect, app: &TuiApp) {
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    let p = &app.platform_info;
+    let mut info = Vec::new();
 
-    // Scrying the machine's true pedigree
-    let mut info = vec![
-        Line::from(vec![
-            Span::styled("> ARCH: ", theme::dim_style()),
-            Span::styled(p.arch.to_uppercase(), theme::success_style()),
-        ]),
-        Line::from(vec![
+    if let Some(p) = &app.system_profile {
+        info.push(Line::from(vec![
             Span::styled("> OS:   ", theme::dim_style()),
-            Span::styled(p.distro.to_uppercase(), theme::success_style()),
-        ]),
-    ];
-
-    info.push(Line::from(vec![
-        Span::styled("> VER:  ", theme::dim_style()),
-        Span::styled(p.distro_version.to_uppercase(), theme::success_style()),
-    ]));
-
-    info.push(Line::from(""));
-
-    // Hardware Identity
-    let hardware = if p.arch == "aarch64" {
-        "RASPBERRY_PI_GENERIC"
+            Span::styled(p.distro.pretty_name.to_uppercase(), theme::success_style()),
+        ]));
+        info.push(Line::from(vec![
+            Span::styled("> ARCH: ", theme::dim_style()),
+            Span::styled(p.cpu.arch.to_uppercase(), theme::success_style()),
+        ]));
+        info.push(Line::from(""));
+        
+        info.push(Line::from(vec![
+            Span::styled("> CPU:  ", theme::dim_style()),
+            Span::styled(p.cpu.model.to_uppercase(), theme::accent_style()),
+        ]));
+        info.push(Line::from(vec![
+            Span::styled("> CORES:", theme::dim_style()),
+            Span::styled(format!(" {}/{}", p.cpu.physical_cores, p.cpu.logical_cores), theme::success_style()),
+        ]));
+        
+        let ram_gb = p.memory.ram_total_kb as f32 / (1024.0 * 1024.0);
+        info.push(Line::from(vec![
+            Span::styled("> RAM:  ", theme::dim_style()),
+            Span::styled(format!(" {:.1} GB", ram_gb), theme::success_style()),
+        ]));
+        
+        info.push(Line::from(""));
+        
+        info.push(Line::from(vec![
+            Span::styled("> HW:   ", theme::dim_style()),
+            Span::styled(p.platform.model.to_uppercase(), theme::accent_style()),
+        ]));
     } else {
-        "X86_64_STATION"
-    };
-
-    info.push(Line::from(vec![
-        Span::styled("> HW:   ", theme::dim_style()),
-        Span::styled(hardware, theme::accent_style()),
-    ]));
-
-    info.push(Line::from(""));
-    info.push(Line::from(Span::styled(
-        "RECOVERY RUNES ACTIVE",
-        theme::success_style(),
-    )));
+        info.push(Line::from(vec![
+            Span::styled("> STATUS: ", theme::dim_style()),
+            Span::styled("SCRYING PENDING...", theme::warning_style()),
+        ]));
+    }
 
     let para = Paragraph::new(info)
         .alignment(Alignment::Left)

@@ -11,6 +11,9 @@ pub struct PlatformInfo {
     /// "debian" for Ubuntu/Debian, "arch" for Manjaro/Arch/EndeavourOS, etc.
     pub distro_family: String,
     pub pi_model: Option<String>,
+    pub cpu_model: String,
+    pub cpu_cores: usize,
+    pub ram_total_gb: f32,
 }
 
 impl PlatformInfo {
@@ -20,6 +23,13 @@ impl PlatformInfo {
 
     pub fn is_debian_family(&self) -> bool {
         self.distro_family == "debian"
+    }
+
+    pub fn is_pi_4b(&self) -> bool {
+        self.pi_model
+            .as_ref()
+            .map(|m| m.contains("Raspberry Pi 4"))
+            .unwrap_or(false)
     }
 }
 
@@ -77,6 +87,9 @@ pub fn detect() -> Result<PlatformInfo> {
     }
 
     let pi_model = detect_pi_model();
+    let cpu_model = detect_cpu_model();
+    let cpu_cores = num_cpus::get();
+    let ram_total_gb = detect_ram_total_gb();
 
     Ok(PlatformInfo {
         arch,
@@ -85,7 +98,39 @@ pub fn detect() -> Result<PlatformInfo> {
         distro_codename,
         distro_family,
         pi_model,
+        cpu_model,
+        cpu_cores,
+        ram_total_gb,
     })
+}
+
+fn detect_cpu_model() -> String {
+    if let Ok(cpuinfo) = fs::read_to_string("/proc/cpuinfo") {
+        for line in cpuinfo.lines() {
+            if line.starts_with("model name") {
+                if let Some((_k, v)) = line.split_once(':') {
+                    return v.trim().to_string();
+                }
+            }
+        }
+    }
+    "Unknown".into()
+}
+
+fn detect_ram_total_gb() -> f32 {
+    if let Ok(meminfo) = fs::read_to_string("/proc/meminfo") {
+        for line in meminfo.lines() {
+            if line.starts_with("MemTotal:") {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if let Some(kb_str) = parts.get(1) {
+                    if let Ok(kb) = kb_str.parse::<u64>() {
+                        return kb as f32 / (1024.0 * 1024.0);
+                    }
+                }
+            }
+        }
+    }
+    0.0
 }
 
 fn determine_family(distro: &str, id_like: &str) -> String {

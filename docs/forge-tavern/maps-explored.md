@@ -672,20 +672,33 @@ Curated the new 10-category software catalog and forged the TOML databases.
 
 ---
 
-## Session: 2026-03-01 — Shaft U: The Great Refactor & Hardening Completion
+## Session: 2026-03-01 — Shaft I: Software Catalog & Installation Flow Completion
 
 ### Summary
-Purified the ore of the entire codebase through a deep refactor and hardening phase. Established `PhaseResult` and `SystemOps` as the new foundational patterns, purified the public API, and implemented strict validation and thread-safe design across the forge.
+Transformed the installation experience into a dynamic, data-driven "Living Installation." Implemented a hierarchical catalog engine, three distinct installation modes (Manual, Auto, Bard's Recommendations), and optimized the entire TUI for a professional retro-station aesthetic.
 
 ### Deliverables
-- [x] **Structural Refine**: Implemented `PhaseResult` for all 15 installation phases, enabling intelligent error recovery (Partial Success, Recoverable Failure).
-- [x] **SystemOps Mastery**: Unified board detection and integrated the `SystemOps` abstraction into the core context and distro drivers.
-- [x] **API Purification**: Reorganized `installer-core` into clean namespaces (`pi4b`, `theme`, `desktop`, `fonts`) and purged legacy shims.
-- [x] **The Validator's Oath**: Implemented strict `Validator` trait for `MashConfig`, `InstallOptions`, and `SoftwareTierPlan`.
-- [x] **Hardening**: Purged all `unsafe` blocks from `wallpaper-downloader` and `installer-core`, replacing them with thread-safe `Arc/Mutex` designs.
-- [x] **Transparency**: Enhanced the `dry_run` system with a structured "Pre-flight Audit Report" grouped by installation phase.
+- [x] **Dynamic Catalog Engine**: Built a TOML-driven system in `installer-core` for curated software resolution across S-tier, Full, and Language catalogs.
+- [x] **Installation Modes**: Implemented Manual (per-category audit), Auto (quick baseline), and Bard's Recommendation (opinionated S-tier) paths.
+- [x] **Hierarchical TUI**: Reborn the software selection UI with subcategory support, global indexing, and rich program info panels (Tier, Reasoning).
+- [x] **Sequence Optimization**: Engineered a strategic installation order (Snapshots -> Core Tools -> Software Tiers) and optimized the 'dev' profile for high-performance Pi 4B development.
+- [x] **Visual Progress Tracking**: Enhanced the TUI with real-time completion percentage tracking and a detailed pre-install provisioning manifest.
+
+---
+
+## Session: 2026-03-01 — Shaft S: The All-Seeing Eye Completion
+
+### Summary
+Forged a comprehensive auto-detection and profiling system that scries the machine's true pedigree. The forge now understands its host hardware, OS landscape, and complex storage structures, recording its findings for future wisdom.
+
+### Deliverables
+- [x] **Deep System Scrying**: Implemented `SystemProfile` detection for hardware model, CPU details, and memory landscape (including ZRAM).
+- [x] **Storage & Btrfs Mastery**: Engineered a robust analysis engine mapping block devices, mountpoints, and deep Btrfs subvolume structures.
+- [x] **TUI Visualization**: Created the "System Pedigree Summary" screen to provide miners with full visibility before final commitment.
+- [x] **Persistence Rune**: Integrated JSON persistence to `~/.config/mash-installer/system_profile.json`.
+- [x] **Scry Command**: Added the `scry` sub-command to the CLI for standalone system auditing.
 
 ---
 
 *Document Status: ACTIVE* 🟢
-*Version: 5.0* (Updated 2026-03-01 with Shaft U completion)
+*Version: 6.0* (Updated 2026-03-01 with Shaft I & S completion)

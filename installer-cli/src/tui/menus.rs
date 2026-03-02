@@ -592,6 +592,136 @@ pub fn draw_software_select(f: &mut Frame, area: Rect, app: &TuiApp) {
     f.render_widget(prompt, chunks[3]);
 }
 
+// ── System Summary screen ───────────────────────────────────────────────────
+
+pub fn draw_system_summary(f: &mut Frame, area: Rect, app: &TuiApp) {
+    let popup = centered_rect(80, 80, area);
+    let block = station_block("SYSTEM RECONNAISSANCE SUMMARY");
+    let inner = block.inner(popup);
+    f.render_widget(block, popup);
+
+    let mut lines: Vec<Line> = vec![
+        Line::from(""),
+        Line::from(Span::styled(
+            "STATION_01: SYSTEM PEDIGREE IDENTIFIED:",
+            theme::title_style(),
+        )),
+        Line::from(""),
+    ];
+
+    if let Some(profile) = &app.system_profile {
+        // Hardware
+        lines.push(Line::from(vec![
+            Span::styled("  HARDWARE: ", theme::dim_style()),
+            Span::styled(&profile.platform.model, theme::success_style()),
+        ]));
+
+        // CPU
+        lines.push(Line::from(vec![
+            Span::styled("  CPU:      ", theme::dim_style()),
+            Span::styled(
+                format!(
+                    "{} ({} cores)",
+                    profile.cpu.model, profile.cpu.logical_cores
+                ),
+                theme::success_style(),
+            ),
+        ]));
+
+        // Memory
+        let ram_gb = profile.memory.ram_total_kb as f32 / (1024.0 * 1024.0);
+        lines.push(Line::from(vec![
+            Span::styled("  MEMORY:   ", theme::dim_style()),
+            Span::styled(format!("{:.1} GB RAM", ram_gb), theme::success_style()),
+            if profile.memory.zram_total_kb > 0 {
+                Span::styled(
+                    format!(
+                        " + {:.1} GB ZRAM",
+                        profile.memory.zram_total_kb as f32 / (1024.0 * 1024.0)
+                    ),
+                    theme::accent_style(),
+                )
+            } else {
+                Span::styled("", theme::default_style())
+            },
+        ]));
+
+        // OS
+        lines.push(Line::from(vec![
+            Span::styled("  OS:       ", theme::dim_style()),
+            Span::styled(
+                format!(
+                    "{} (Kernel {})",
+                    profile.distro.pretty_name, profile.distro.kernel
+                ),
+                theme::success_style(),
+            ),
+        ]));
+
+        // Session
+        lines.push(Line::from(vec![
+            Span::styled("  SESSION:  ", theme::dim_style()),
+            Span::styled(
+                format!(
+                    "{} / {} ({})",
+                    profile.session.desktop_environment,
+                    profile.session.window_manager,
+                    profile.session.session_type
+                ),
+                theme::success_style(),
+            ),
+        ]));
+
+        // Storage
+        if let Some(btrfs) = &profile.storage.btrfs_data {
+            lines.push(Line::from(vec![
+                Span::styled("  STORAGE:  ", theme::dim_style()),
+                Span::styled(
+                    if btrfs.root_is_btrfs {
+                        "BTRFS ROOT DETECTED"
+                    } else {
+                        "BTRFS VOLUMES DETECTED"
+                    },
+                    theme::accent_style(),
+                ),
+            ]));
+            if !btrfs.subvolumes.is_empty() {
+                lines.push(Line::from(vec![
+                    Span::styled("            ", theme::dim_style()),
+                    Span::styled(
+                        format!("{} subvolumes mapped", btrfs.subvolumes.len()),
+                        theme::default_style(),
+                    ),
+                ]));
+            }
+        }
+    } else {
+        lines.push(Line::from(Span::styled(
+            "  NO PROFILE DATA AVAILABLE",
+            theme::error_style(),
+        )));
+    }
+
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "PROCEED WITH FINAL COMMITMENT? (Y/N)",
+        theme::accent_style(),
+    )));
+    lines.push(Line::from(""));
+    lines.push(Line::from(vec![
+        Span::styled("COMMAND > ", theme::success_style()),
+        Span::styled(
+            "_",
+            theme::success_style().add_modifier(Modifier::SLOW_BLINK),
+        ),
+    ]));
+
+    let para = Paragraph::new(Text::from(lines))
+        .style(theme::default_style())
+        .wrap(Wrap { trim: false });
+    f.render_widget(para, inner);
+}
+
 // ── Pre-install confirm ───────────────────────────────────────────────────────
 
 pub fn draw_pre_install_confirm(f: &mut Frame, area: Rect, app: &TuiApp) {

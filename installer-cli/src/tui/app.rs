@@ -67,6 +67,7 @@ pub enum Screen {
     ProtocolSelect,
     DeConfirm,
     FontPrep,
+    SystemSummary,
     #[allow(dead_code)]
     Password,
     Installing,
@@ -205,6 +206,7 @@ pub struct TuiApp {
     pub dry_run: bool,
     pub continue_on_error: bool,
     pub platform_info: installer_core::platform::PlatformInfo,
+    pub system_profile: Option<installer_core::SystemProfile>,
     // Installing phase state
     pub phases: Vec<PhaseRow>,
     pub current_phase: usize,
@@ -265,6 +267,7 @@ impl TuiApp {
                 distro_family: "unknown".to_string(),
                 pi_model: None,
             },
+            system_profile: None,
             phases: Vec::new(),
             current_phase: 0,
             total_phases: 0,
@@ -476,6 +479,7 @@ impl TuiApp {
             Screen::ProtocolSelect => self.handle_list_key(code, 3),
             Screen::DeConfirm => self.handle_confirm_key(code),
             Screen::FontPrep => self.handle_font_prep_key(code),
+            Screen::SystemSummary => self.handle_system_summary_key(code),
             Screen::Installing => self.handle_installing_key(code),
             Screen::Done | Screen::Error => match code {
                 KeyCode::Up => {
@@ -663,7 +667,17 @@ impl TuiApp {
                 // Pre-install confirm screen
                 match code {
                     KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => {
-                        self.screen = Screen::FontPrep;
+                        // Trigger detection before showing summary
+                        if self.system_profile.is_none() {
+                            self.bbs_msg = "SCRYING: ANALYSING MACHINE PEDIGREE...".to_string();
+                            if let Ok(profile) =
+                                installer_core::SystemProfile::detect(&installer_core::REAL_SYSTEM)
+                            {
+                                let _ = profile.save_to_config();
+                                self.system_profile = Some(profile);
+                            }
+                        }
+                        self.screen = Screen::SystemSummary;
                     }
                     KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => {
                         self.screen = Screen::SoftwareMode;
@@ -697,6 +711,18 @@ impl TuiApp {
                     let _ = s.reply.send(false);
                     self.screen = Screen::Installing;
                 }
+            }
+            _ => {}
+        }
+    }
+
+    fn handle_system_summary_key(&mut self, code: KeyCode) {
+        match code {
+            KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => {
+                self.screen = Screen::FontPrep;
+            }
+            KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => {
+                self.go_back();
             }
             _ => {}
         }
@@ -1207,6 +1233,7 @@ impl TuiApp {
                 Screen::ProtocolSelect => "Display Protocol Selection",
                 Screen::DeConfirm => "Desktop Environment Confirmation",
                 Screen::FontPrep => "Font Preparation",
+                Screen::SystemSummary => "System Pedigree Summary",
                 Screen::Password => "Password Prompt",
                 Screen::Installing => "Installation in Progress",
                 Screen::Done => "Installation Complete",
@@ -1328,6 +1355,10 @@ impl TuiApp {
                 }
             },
             Screen::FontPrep => {
+                self.screen = Screen::SystemSummary;
+                self.menu_cursor = 0;
+            }
+            Screen::SystemSummary => {
                 self.screen = Screen::Confirm;
                 self.menu_cursor = 0;
             }
@@ -1358,6 +1389,7 @@ impl TuiApp {
             Screen::ProtocolSelect => "Display Protocol Selection",
             Screen::DeConfirm => "Desktop Environment Confirmation",
             Screen::FontPrep => "Font Preparation",
+            Screen::SystemSummary => "System Pedigree Summary",
             Screen::Password => "Password Prompt",
             Screen::Installing => "Installation in Progress",
             Screen::Done => "Installation Complete",

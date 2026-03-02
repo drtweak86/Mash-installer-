@@ -3,88 +3,11 @@
 
 ---
 
-## 🏗️ SHAFT I: Software Catalog & Installation Flow Overhaul — ACTIVE
+## 🏗️ SHAFT T: THE BARD'S WISDOM (Intelligent Advice Engine) — ACTIVE
 > *Branch*: `main` (integrated)
-> *Risk*: MEDIUM (catalog restructuring, UI changes)
-> *Reward*: HIGH (significantly improved user experience, logical organization)
-> *Status*: 🔨 IMPLEMENTATION IN PROGRESS (Phase 4 Complete)
-
-### OVERVIEW
-Complete reorganization of MASH software catalog and installation flow to create a more logical, user-friendly, and efficient system with curated S-tier applications, multiple installation modes, and optimized dependency handling.
-
-### PHASE 1: Software Catalog Curation ✅ COMPLETE
-**Objective**: Create comprehensive software catalog with S-tier applications
-- [x] Define Category Structure (10 main categories)
-- [x] Curate S-Tier Applications (5 per category)
-- [x] Include All Programming Languages
-- [x] Create TOML Catalog Structure (`s-tier_catalog.toml`, `full_catalog.toml`, `programming_languages.toml`)
-**Status**: ✅ COMPLETE 2026-03-01
-
-### PHASE 2: Installation Modes ✅ COMPLETE
-**Objective**: Implement Manual, Auto, and Bard's Recommendations modes
-- [x] Manual Mode: Individual program selection from TOML catalog
-- [x] Auto Mode: Quick baseline sync from category defaults
-- [x] Bard's Recommendations: Opinionated S-tier selection
-**Status**: ✅ COMPLETE 2026-03-01
-
-### PHASE 3: Menu Restructuring ✅ COMPLETE
-**Objective**: Organize software into logical categories
-- [x] Category/Subcategory Hierarchy implementation in TUI
-- [x] Dynamic Catalog loading engine in `installer-core`
-- [x] Enhanced program info panels (Tier, Reasoning, Description)
-**Status**: ✅ COMPLETE 2026-03-01
-
-### PHASE 4: Installation Flow Optimization ✅ COMPLETE
-**Objective**: Ensure proper installation order
-- [x] Optimized sequence (Snapshots -> Core Tools -> Software Tiers)
-- [x] Dev Profile optimization (sccache integration, compiler tuning)
-- [x] Dependency Resolution (early nodejs/rustup for subsequent tools)
-**Status**: ✅ COMPLETE 2026-03-01
-
-### PHASE 5: UI Integration
-**Objective**: Connect catalog to installer UI
-- [ ] Visual Progress Tracking for complex multi-phase installs
-- [ ] Post-selection summary audit
-**Status**: ⏳ PENDING
-
----
-
-## 🏗️ SHAFT S: THE ALL-SEEING EYE (Auto-Detection & System Profiling) — PLANNING COMPLETE
-> *Branch*: `work-shaft-s-profiler` (to be created)
-> *Risk*: MEDIUM (complex system detection)
-> *Reward*: HIGH (intelligent installer, context-aware decisions)
-> *Status*: ✅ PLANNING COMPLETE | ⏳ IMPLEMENTATION PENDING
-
-### OVERVIEW
-Implementation of a comprehensive auto-detection system that builds a `SystemProfile` of the machine's hardware, OS, and storage landscape.
-
-### PHASE 1: System Profile Model
-- **File**: `docs/mining-projects/shaft-s/EX_S01_System_Profile_Model.md`
-- **Objective**: Define `SystemProfile` and sub-models with Serde support.
-- **Status**: ⏳ PENDING
-
-### PHASE 2: Hardware & OS Detection
-- **File**: `docs/mining-projects/shaft-s/EX_S02_Hardware_OS_Detection.md`
-- **Objective**: Scry CPU, RAM, Distro, and identify Raspberry Pi vs PC.
-- **Status**: ⏳ PENDING
-
-### PHASE 3: Storage & Filesystem Audit
-- **File**: `docs/mining-projects/shaft-s/EX_S03_Storage_Analysis.md`
-- **Objective**: Map block devices, partitions, and deep Btrfs runes.
-- **Status**: ⏳ PENDING
-
-### PHASE 4: TUI Summary & Persistence
-- **File**: `docs/mining-projects/shaft-s/EX_S04_TUI_Display_Persistence.md`
-- **Objective**: Visual summary in TUI and save to `system_profile.json`.
-- **Status**: ⏳ PENDING
-
----
-
-## 🏗️ SHAFT T: THE BARD'S WISDOM (Intelligent Advice Engine) — PLANNING COMPLETE
-> *Branch*: `work-shaft-t-advice` (to be created)
 > *Risk*: LOW (pure logic engine)
 > *Reward*: MAXIMUM (user-friendly, expert-level system optimization)
-> *Status*: ✅ PLANNING COMPLETE | ⏳ IMPLEMENTATION PENDING
+> *Status*: 🔨 IMPLEMENTATION IN PROGRESS (Phase 1 Kickoff)
 
 ### OVERVIEW
 Implementation of an intelligent "Advice Engine" that translates the `SystemProfile` into actionable wisdom, warnings, and performance tuning for the smith.

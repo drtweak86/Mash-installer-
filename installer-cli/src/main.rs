@@ -82,6 +82,12 @@ enum CliCommand {
         #[arg(long, value_enum, default_value_t = installer_core::DoctorOutput::Pretty)]
         format: installer_core::DoctorOutput,
     },
+    /// Scry the machine's true pedigree (System Profile)
+    Scry {
+        /// Output in JSON format
+        #[arg(long)]
+        json: bool,
+    },
     /// Manage configuration
     Config {
         #[command(subcommand)]
@@ -117,6 +123,15 @@ fn main() -> Result<()> {
         Some(CliCommand::Doctor { format }) => {
             let mut stdout = io::stdout();
             return installer_core::run_doctor(format, &mut stdout);
+        }
+        Some(CliCommand::Scry { json }) => {
+            let profile = installer_core::SystemProfile::detect(&installer_core::REAL_SYSTEM)?;
+            if json {
+                println!("{}", profile.to_json()?);
+            } else {
+                print_scry_pretty(&profile);
+            }
+            return Ok(());
         }
         Some(CliCommand::Config { action }) => {
             let mut stdout = io::stdout();
@@ -206,6 +221,54 @@ fn main() -> Result<()> {
 
     let mut observer = ui::CliPhaseObserver::new();
     run_installer_with_ui(driver, options, &mut observer).context("installer failed")
+}
+
+fn print_scry_pretty(profile: &installer_core::SystemProfile) {
+    println!("\n── STATION RECONNAISSANCE SUMMARY ──────────────────────");
+    println!("  HARDWARE:  {}", profile.platform.model);
+    println!(
+        "  CPU:       {} ({} cores)",
+        profile.cpu.model, profile.cpu.logical_cores
+    );
+
+    let ram_gb = profile.memory.ram_total_kb as f32 / (1024.0 * 1024.0);
+    print!("  MEMORY:    {:.1} GB RAM", ram_gb);
+    if profile.memory.zram_total_kb > 0 {
+        print!(
+            " + {:.1} GB ZRAM",
+            profile.memory.zram_total_kb as f32 / (1024.0 * 1024.0)
+        );
+    }
+    println!();
+
+    println!(
+        "  OS:        {} (Kernel {})",
+        profile.distro.pretty_name, profile.distro.kernel
+    );
+    println!(
+        "  SESSION:   {} / {} ({})",
+        profile.session.desktop_environment,
+        profile.session.window_manager,
+        profile.session.session_type
+    );
+
+    if let Some(btrfs) = &profile.storage.btrfs_data {
+        println!(
+            "  STORAGE:   {}",
+            if btrfs.root_is_btrfs {
+                "BTRFS ROOT DETECTED"
+            } else {
+                "BTRFS VOLUMES DETECTED"
+            }
+        );
+        if !btrfs.subvolumes.is_empty() {
+            println!("             {} subvolumes mapped", btrfs.subvolumes.len());
+        }
+    }
+
+    println!("────────────────────────────────────────────────────────");
+    println!("Pedigree recorded to ~/.config/mash-installer/system_profile.json");
+    println!();
 }
 
 fn print_bard_easter_egg() {

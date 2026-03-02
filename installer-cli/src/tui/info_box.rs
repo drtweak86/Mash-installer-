@@ -167,11 +167,22 @@ fn build_info_lines(app: &TuiApp) -> Vec<Line<'static>> {
 
         Screen::Confirm => vec![
             Line::from(Span::styled(
-                "Pre-Installation Confirmation",
+                "Final provision confirmation",
                 theme::accent_style(),
             )),
             Line::from(Span::styled(
-                "Review all settings before proceeding",
+                "Review the manifest before striking steel",
+                theme::dim_style(),
+            )),
+        ],
+
+        Screen::SystemSummary => vec![
+            Line::from(Span::styled(
+                "System scrying results",
+                theme::accent_style(),
+            )),
+            Line::from(Span::styled(
+                "Verify hardware and storage landscape",
                 theme::dim_style(),
             )),
         ],

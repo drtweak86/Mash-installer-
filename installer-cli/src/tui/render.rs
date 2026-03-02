@@ -99,6 +99,7 @@ pub fn draw(f: &mut Frame, app: &TuiApp) {
         Screen::DeConfirm => menus::draw_de_confirm(f, main_area, app),
         Screen::Confirm => menus::draw_pre_install_confirm(f, main_area, app),
         Screen::FontPrep => menus::draw_font_prep(f, main_area, app),
+        Screen::SystemSummary => menus::draw_system_summary(f, main_area, app),
         Screen::Installing | Screen::Password => draw_terminal_buffer(f, main_area, app),
         Screen::Done => draw_summary(f, app, false),
         Screen::Error => draw_summary(f, app, true),

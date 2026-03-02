@@ -1,9 +1,9 @@
 use anyhow::Result;
 
-use crate::{package_manager, PhaseContext};
+use crate::{package_manager, PhaseContext, PhaseResult};
 
 /// Buildroot build dependencies.
-pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
+pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
     let pkgs = [
         "bison",
         "flex",
@@ -23,5 +23,5 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
     ];
 
     package_manager::ensure_packages(ctx.platform.driver, &pkgs, ctx.options.dry_run)?;
-    Ok(())
+    Ok(PhaseResult::Success)
 }

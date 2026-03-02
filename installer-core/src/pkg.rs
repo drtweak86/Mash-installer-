@@ -1,11 +1,12 @@
 use crate::{
-    driver::DistroDriver, package_manager, PackageIntent, PackageSpec, PhaseContext, ProfileLevel,
+    driver::DistroDriver, package_manager, PackageIntent, PackageSpec, PhaseContext, PhaseResult,
+    ProfileLevel,
 };
 use anyhow::Result;
 
 // ── Phase 1: core packages ─────────────────────────────────────
 
-pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
+pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
     if ctx.options.dry_run {
         ctx.record_dry_run(
             "system_packages",
@@ -62,7 +63,7 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
         package_manager::try_optional(ctx.platform.driver, spec.canonical(), ctx.options.dry_run);
     }
 
-    Ok(())
+    Ok(PhaseResult::Success)
 }
 
 fn system_package_specs() -> Vec<PackageSpec<'static>> {
@@ -127,7 +128,7 @@ where
 {
     packages
         .into_iter()
-        .filter(|pkg| !driver.is_package_installed(pkg))
+        .filter(|pkg| !package_manager::is_installed(driver, pkg))
         .collect()
 }
 

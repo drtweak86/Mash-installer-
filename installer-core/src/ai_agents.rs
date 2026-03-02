@@ -7,11 +7,11 @@
 //!
 //! Entry point: [`install_phase`], called from [`crate::phase_registry`].
 
-use crate::{cmd, package_manager, PhaseContext};
+use crate::{cmd, package_manager, PhaseContext, PhaseResult};
 use anyhow::Result;
 use std::process::Command;
 
-pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
+pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
     let selections = &ctx.options.software_plan.selections;
 
     // Check if any AI agents are selected in the "AI Spirits" category
@@ -28,7 +28,7 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
     }
 
     if selected_agents.is_empty() {
-        return Ok(());
+        return Ok(PhaseResult::Success);
     }
 
     // Ensure nodejs/npm are present for these tools
@@ -50,7 +50,7 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
     // Install and configure GitHub MCP server
     install_github_mcp_server(ctx)?;
 
-    Ok(())
+    Ok(PhaseResult::Success)
 }
 
 fn configure_mcp_servers(ctx: &mut PhaseContext) -> Result<()> {

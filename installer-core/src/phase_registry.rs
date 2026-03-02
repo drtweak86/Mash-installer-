@@ -7,9 +7,9 @@ use crate::fonts;
 use crate::github;
 use crate::localization::Localization;
 use crate::options::ProfileLevel;
-use crate::phase_runner::{FunctionPhase, Phase};
+use crate::phase_runner::{FunctionPhase, Phase, PhaseResult};
 use crate::phases::wallpapers;
-use crate::pi4b_hdd;
+use crate::pi4b;
 use crate::pkg;
 use crate::rclone;
 use crate::rust;
@@ -133,7 +133,7 @@ impl Default for PhaseRegistry {
                 "pi4b_hdd_tuning",
                 "Pi 4B HDD Tuning",
                 "HDD tuning applied",
-                pi4b_hdd::install_phase,
+                pi4b::install_phase,
                 PhaseGate::Always,
             ),
             PhaseEntry::new(
@@ -151,7 +151,7 @@ struct PhaseEntry {
     key: &'static str,
     label: &'static str,
     description: &'static str,
-    run: fn(&mut PhaseContext) -> Result<()>,
+    run: fn(&mut PhaseContext) -> Result<PhaseResult>,
     gate: PhaseGate,
 }
 
@@ -160,7 +160,7 @@ impl PhaseEntry {
         key: &'static str,
         label: &'static str,
         description: &'static str,
-        run: fn(&mut PhaseContext) -> Result<()>,
+        run: fn(&mut PhaseContext) -> Result<PhaseResult>,
         gate: PhaseGate,
     ) -> Self {
         Self {

@@ -12,7 +12,7 @@ use crate::tui::theme;
 
 // Import installer-core for font selection
 use installer_core;
-use installer_core::desktop_environments::{DesktopEnvironment, DisplayProtocol};
+use installer_core::desktop::{DesktopEnvironment, DisplayProtocol};
 
 const WELCOME_BANNER: &str = r"
   __  __    _    ____  _   _ 
@@ -662,7 +662,7 @@ pub fn draw_font_select(f: &mut Frame, area: Rect, app: &TuiApp) {
     f.render_widget(Paragraph::new("SELECT PRIMARY NERD FONT SIGIL:"), chunks[0]);
 
     // Get fonts grouped by category from installer-core
-    let fonts_by_category = installer_core::fonts_all::get_fonts_by_category();
+    let fonts_by_category = installer_core::fonts::get_fonts_by_category();
 
     let mut items: Vec<ListItem> = Vec::new();
 

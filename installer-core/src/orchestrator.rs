@@ -38,14 +38,16 @@ pub fn run_with_driver(
             staging_dir: PathBuf::from("/tmp"),
             errors: vec![],
             outputs: Vec::new(),
-            events: vec![],
+            events: Vec::new(),
             options: opts.clone(),
             driver: DriverInfo {
                 name: driver.name().to_string(),
                 description: driver.description().to_string(),
             },
             dry_run_log: Vec::new(),
+            audit_report: crate::dry_run::PreflightAuditReport::default(),
         };
+
         Box::new(InstallerRunError {
             report: Box::new(report),
             source: InstallerError::new(
@@ -75,14 +77,16 @@ pub fn run_with_driver(
             staging_dir: PathBuf::from("/tmp"),
             errors: vec![],
             outputs: Vec::new(),
-            events: vec![],
+            events: Vec::new(),
             options: opts.clone(),
             driver: DriverInfo {
                 name: driver.name().to_string(),
                 description: driver.description().to_string(),
             },
             dry_run_log: Vec::new(),
+            audit_report: crate::dry_run::PreflightAuditReport::default(),
         };
+
         Box::new(InstallerRunError {
             report: Box::new(report),
             source: InstallerError::new(
@@ -204,6 +208,7 @@ pub fn run_with_driver(
         driver_name: driver.name(),
         driver,
         pkg_backend: driver.pkg_backend(),
+        system: &crate::system::REAL_SYSTEM,
     };
 
     let interaction = crate::interaction::InteractionService::new(
@@ -233,6 +238,8 @@ pub fn run_with_driver(
     let _install_guard = install_span.enter();
     let run_result = runner.run(&ctx, observer, Some(&signal_guard));
     let dry_run_log = ctx.dry_run_log.entries();
+    let audit_report = ctx.dry_run_log.audit_report();
+
     match run_result {
         Ok(result) => Ok(InstallationReport {
             completed_phases: result.completed_phases,
@@ -243,6 +250,7 @@ pub fn run_with_driver(
             options: api_options.clone(),
             driver: driver_info.clone(),
             dry_run_log: dry_run_log.clone(),
+            audit_report,
         }),
         Err(err) => {
             let PhaseRunError {
@@ -258,6 +266,7 @@ pub fn run_with_driver(
                 options: api_options,
                 driver: driver_info,
                 dry_run_log,
+                audit_report,
             };
             Err(Box::new(InstallerRunError {
                 report: Box::new(report),
@@ -276,13 +285,14 @@ fn warn_non_pi_4b(
         staging_dir: PathBuf::from("/tmp"),
         errors: vec![],
         outputs: Vec::new(),
-        events: vec![],
+        events: Vec::new(),
         options: opts.clone(),
         driver: DriverInfo {
             name: driver.name().to_string(),
             description: driver.description().to_string(),
         },
         dry_run_log: Vec::new(),
+        audit_report: crate::dry_run::PreflightAuditReport::default(),
     };
 
     Box::new(InstallerRunError {

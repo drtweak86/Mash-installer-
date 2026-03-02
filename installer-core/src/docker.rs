@@ -8,10 +8,10 @@ use std::process::Command;
 use crate::{
     apt_repo, cmd,
     driver::{RepoKind, ServiceName},
-    package_manager, systemd, PhaseContext, PkgBackend,
+    package_manager, systemd, PhaseContext, PhaseResult, PkgBackend,
 };
 
-pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
+pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
     let backend = ctx.platform.pkg_backend;
 
     if ctx.options.dry_run {
@@ -55,7 +55,7 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
         configure_data_root(ctx, &data_root)?;
     }
 
-    Ok(())
+    Ok(PhaseResult::Success)
 }
 
 fn install_docker_apt(ctx: &mut PhaseContext) -> Result<()> {
@@ -323,6 +323,7 @@ mod tests {
                 driver_name: TEST_DRIVER.name(),
                 driver: &TEST_DRIVER,
                 pkg_backend: PkgBackend::Apt,
+                system: &crate::system::REAL_SYSTEM,
             };
             let options = UserOptionsContext {
                 profile: ProfileLevel::Minimal,

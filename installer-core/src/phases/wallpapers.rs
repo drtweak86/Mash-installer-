@@ -5,6 +5,7 @@ use crate::context::PhaseContext;
 use crate::system::RealSystem;
 use crate::wallpaper::harvest::WallpaperHarvester;
 use crate::wallpaper::{download_wallpapers, HarvestConfig, WallpaperConfig};
+use crate::PhaseResult;
 
 /// Create a basic logger for wallpaper operations
 fn create_wallpaper_logger() -> slog::Logger {
@@ -18,7 +19,7 @@ fn create_wallpaper_logger() -> slog::Logger {
 }
 
 /// Wallpaper installation phase
-pub fn install_phase(ctx: &mut PhaseContext<'_>) -> Result<()> {
+pub fn install_phase(ctx: &mut PhaseContext<'_>) -> Result<PhaseResult> {
     // Whimsical starting message
     ctx.record_action("🚀  Launching plasma ore collection mission...");
     ctx.record_action("🎨  Painting your desktop with neon runes...");
@@ -58,7 +59,7 @@ pub fn install_phase(ctx: &mut PhaseContext<'_>) -> Result<()> {
                 ctx.record_warning("🌐  Pexels: https://www.pexels.com/api/");
                 ctx.record_warning("🌐  Pixabay: https://pixabay.com/api/docs/");
                 ctx.record_warning("💡  Traditional wallpaper download skipped without API keys.");
-                return Ok(());
+                return Ok(PhaseResult::Success);
             }
 
             // Traditional download
@@ -76,5 +77,5 @@ pub fn install_phase(ctx: &mut PhaseContext<'_>) -> Result<()> {
         }
     }
 
-    Ok(())
+    Ok(PhaseResult::Success)
 }

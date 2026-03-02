@@ -2,32 +2,28 @@ use anyhow::{Context, Result};
 use std::path::Path;
 use std::process::Command;
 
-use crate::{cmd, driver::ServiceName, package_manager, systemd, PhaseContext, PkgBackend};
+use crate::{
+    cmd, driver::ServiceName, package_manager, systemd, PhaseContext, PhaseResult, PkgBackend,
+};
 
 /// Clone target for the argononed C daemon.
 const ARGONONED_REPO: &str = "https://gitlab.com/DarkElvenAngel/argononed.git";
 /// Where we clone the source for building.
 const ARGONONED_SRC: &str = "/usr/local/src/argononed";
 
-/// Install Argon One fan control.
-///
-/// Strategy varies by distro family:
-/// - **Debian/Ubuntu**: uses the official Argon40 install script (Python-based).
-/// - **Arch/Manjaro**: builds the argononed C daemon from source, which is the
-///   community-recommended approach (the OEM script does not support Arch).
-///
-/// See: <https://gitlab.com/DarkElvenAngel/argononed>
-pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
+pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
     // Quick gate: only relevant on Raspberry Pi hardware
     if ctx.platform.platform.pi_model.is_none() {
         tracing::warn!("Not running on a Raspberry Pi; skipping Argon One");
-        return Ok(());
+        return Ok(PhaseResult::Success);
     }
 
     match ctx.platform.pkg_backend {
-        PkgBackend::Pacman | PkgBackend::Dnf => install_argononed(ctx),
-        PkgBackend::Apt => install_argon_oem(ctx),
+        PkgBackend::Pacman | PkgBackend::Dnf => install_argononed(ctx)?,
+        PkgBackend::Apt => install_argon_oem(ctx)?,
     }
+
+    Ok(PhaseResult::Success)
 }
 
 // ── Arch/Manjaro path: argononed C daemon ───────────────────────

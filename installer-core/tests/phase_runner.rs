@@ -4,8 +4,8 @@ use installer_core::localization::Localization;
 use installer_core::RollbackManager;
 use installer_core::{
     ConfigService, DistroDriver, ErrorSeverity, InstallContext, Phase, PhaseContext,
-    PhaseErrorPolicy, PhaseEvent, PhaseObserver, PhaseRunner, PkgBackend, PlatformContext,
-    PlatformInfo, ProfileLevel, SoftwareTierPlan, UIContext, UserOptionsContext,
+    PhaseErrorPolicy, PhaseEvent, PhaseObserver, PhaseResult, PhaseRunner, PkgBackend,
+    PlatformContext, PlatformInfo, ProfileLevel, SoftwareTierPlan, UIContext, UserOptionsContext,
 };
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -35,7 +35,7 @@ struct TestPhase {
     description: &'static str,
     should_run: bool,
     severity: ErrorSeverity,
-    runner: fn(&mut PhaseContext) -> Result<()>,
+    runner: fn(&mut PhaseContext) -> Result<PhaseResult>,
 }
 
 impl Phase for TestPhase {
@@ -55,7 +55,7 @@ impl Phase for TestPhase {
         self.severity
     }
 
-    fn execute(&self, ctx: &mut PhaseContext) -> Result<()> {
+    fn execute(&self, ctx: &mut PhaseContext) -> Result<PhaseResult> {
         (self.runner)(ctx)
     }
 }
@@ -66,7 +66,7 @@ impl TestPhase {
         description: &'static str,
         should_run: bool,
         severity: ErrorSeverity,
-        runner: fn(&mut PhaseContext) -> Result<()>,
+        runner: fn(&mut PhaseContext) -> Result<PhaseResult>,
     ) -> Self {
         Self {
             name,
@@ -118,6 +118,7 @@ fn build_install_context() -> Result<InstallContext> {
         driver_name: "dummy",
         driver,
         pkg_backend: PkgBackend::Apt,
+        system: &installer_core::REAL_SYSTEM,
     };
     let options = UserOptionsContext {
         profile: ProfileLevel::Minimal,
@@ -145,11 +146,11 @@ fn build_install_context() -> Result<InstallContext> {
     })
 }
 
-fn success_phase(_ctx: &mut PhaseContext) -> Result<()> {
-    Ok(())
+fn success_phase(_ctx: &mut PhaseContext) -> Result<PhaseResult> {
+    Ok(PhaseResult::Success)
 }
 
-fn failing_phase(_ctx: &mut PhaseContext) -> Result<()> {
+fn failing_phase(_ctx: &mut PhaseContext) -> Result<PhaseResult> {
     Err(anyhow!("boom"))
 }
 

@@ -1,5 +1,6 @@
 use crate::interaction::InteractionConfig;
 use crate::logging::LoggingConfig;
+use crate::Validator;
 use anyhow::Result as AnyResult;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -76,6 +77,77 @@ pub struct GitConfig {
     /// Enforce SSH remotes (advisory – the installer will not rewrite remotes).
     #[serde(default = "bool_true")]
     pub enforce_ssh: bool,
+}
+
+impl Validator for MashConfig {
+    fn validate(&self) -> Vec<String> {
+        let mut errors = Vec::new();
+
+        if !self.staging_dir.is_absolute() {
+            errors.push(format!(
+                "staging_dir must be absolute: {}",
+                self.staging_dir.display()
+            ));
+        }
+
+        // Validate Agent Dirs
+        if !self.agents.larry.is_absolute() {
+            errors.push(format!(
+                "agents.larry must be absolute: {}",
+                self.agents.larry.display()
+            ));
+        }
+        if !self.agents.moe.is_absolute() {
+            errors.push(format!(
+                "agents.moe must be absolute: {}",
+                self.agents.moe.display()
+            ));
+        }
+        if !self.agents.claude.is_absolute() {
+            errors.push(format!(
+                "agents.claude must be absolute: {}",
+                self.agents.claude.display()
+            ));
+        }
+
+        // Validate Cache Dirs
+        if !self.cache.installer.is_absolute() {
+            errors.push(format!(
+                "cache.installer must be absolute: {}",
+                self.cache.installer.display()
+            ));
+        }
+        if !self.cache.gh.is_absolute() {
+            errors.push(format!(
+                "cache.gh must be absolute: {}",
+                self.cache.gh.display()
+            ));
+        }
+        if !self.cache.cargo.is_absolute() {
+            errors.push(format!(
+                "cache.cargo must be absolute: {}",
+                self.cache.cargo.display()
+            ));
+        }
+        if !self.cache.rustup.is_absolute() {
+            errors.push(format!(
+                "cache.rustup must be absolute: {}",
+                self.cache.rustup.display()
+            ));
+        }
+
+        // Docker data-root must be absolute if specified
+        if let Some(ref path) = self.docker.data_root {
+            if !path.is_absolute() {
+                errors.push(format!(
+                    "docker.data_root must be absolute: {}",
+                    path.display()
+                ));
+            }
+        }
+
+        errors
+    }
 }
 
 // ── defaults ────────────────────────────────────────────────────

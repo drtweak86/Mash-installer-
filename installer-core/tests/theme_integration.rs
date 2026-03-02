@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use anyhow::Result;
-use installer_core::{
+use installer_core::theme::{
     command_exists, ensure_i3_installed, ensure_kitty_installed, ensure_retro_theme_dependencies,
     install_retro_theme, install_theme_file, ThemeConfig,
 };

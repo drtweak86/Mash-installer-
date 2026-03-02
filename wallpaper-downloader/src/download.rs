@@ -2,7 +2,7 @@
 
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use tokio::io::AsyncWriteExt;
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
@@ -19,9 +19,9 @@ use crate::types::{Category, DownloadStats};
 pub struct Downloader {
     config: Config,
     api_client: ApiClient,
-    downloaded_hashes: HashSet<String>,
-    url_cache: HashSet<String>,
-    stats: DownloadStats,
+    downloaded_hashes: Arc<Mutex<HashSet<String>>>,
+    url_cache: Arc<Mutex<HashSet<String>>>,
+    stats: Arc<Mutex<DownloadStats>>,
 }
 
 impl Downloader {
@@ -29,12 +29,12 @@ impl Downloader {
     pub fn new(config: &Config) -> Result<Self> {
         let api_client = ApiClient::new(config.get_api_key());
 
-        let mut downloader = Self {
+        let downloader = Self {
             config: config.clone(),
             api_client,
-            downloaded_hashes: HashSet::new(),
-            url_cache: HashSet::new(),
-            stats: DownloadStats::default(),
+            downloaded_hashes: Arc::new(Mutex::new(HashSet::new())),
+            url_cache: Arc::new(Mutex::new(HashSet::new())),
+            stats: Arc::new(Mutex::new(DownloadStats::default())),
         };
 
         // Load existing hashes
@@ -44,7 +44,7 @@ impl Downloader {
     }
 
     /// Load existing file hashes to avoid re-downloading
-    fn load_existing_hashes(&mut self) -> Result<()> {
+    fn load_existing_hashes(&self) -> Result<()> {
         if !self.config.first_boot {
             log::info!("🔍 Scanning for existing files...");
         }
@@ -56,6 +56,8 @@ impl Downloader {
             .unwrap_or_else(crate::types::default_output_dir);
         let mut count = 0;
 
+        let mut hashes = self.downloaded_hashes.lock().unwrap();
+
         // Get all category directories
         for category in &*crate::types::CATEGORIES {
             let category_dir = output_dir.join(&category.name);
@@ -65,8 +67,8 @@ impl Downloader {
                     let entry = entry?;
                     let path = entry.path();
                     if path.is_file() {
-                        if let Ok(file_hash) = self.compute_file_hash(&path) {
-                            self.downloaded_hashes.insert(file_hash);
+                        if let Ok(file_hash) = Self::compute_file_hash_static(&path) {
+                            hashes.insert(file_hash);
                             count += 1;
                         }
                     }
@@ -78,7 +80,7 @@ impl Downloader {
             log::info!(
                 "✓ Loaded {} existing files ({} unique)",
                 count,
-                self.downloaded_hashes.len()
+                hashes.len()
             );
         }
 
@@ -86,12 +88,10 @@ impl Downloader {
     }
 
     /// Compute SHA256 hash of a file
-    fn compute_file_hash(&self, filepath: &Path) -> Result<String> {
+    fn compute_file_hash_static(filepath: &Path) -> Result<String> {
         let mut file = std::fs::File::open(filepath)?;
         let mut hasher = Sha256::new();
-
         std::io::copy(&mut file, &mut hasher)?;
-
         Ok(format!("{:x}", hasher.finalize()))
     }
 
@@ -114,10 +114,156 @@ impl Downloader {
         Ok(())
     }
 
-    /// Download a single image
-    async fn download_image(&mut self, url: String, filepath: PathBuf) -> bool {
-        // Skip if already downloaded or in cache
-        if self.url_cache.contains(&url) || filepath.exists() {
+    /// Download all wallpapers
+    pub async fn download_all(&mut self) -> Result<()> {
+        // Create directories
+        self.create_directories().await?;
+
+        // Log start message
+        let output_dir = self
+            .config
+            .output_dir
+            .clone()
+            .unwrap_or_else(crate::types::default_output_dir);
+        let total_target = std::cmp::min(self.config.limit, 6000);
+        if !self.config.first_boot {
+            log::info!("🚀 Starting download of {} wallpapers...", total_target);
+            log::info!("📥 Category: {}", self.config.category);
+            log::info!("📁 Destination: {}", output_dir.display());
+        }
+
+        if self.config.category == "all" {
+            // Download all categories
+            let mut results = std::collections::HashMap::new();
+
+            for category in &*crate::types::CATEGORIES {
+                let downloaded = self.download_category(category).await?;
+                results.insert(category.name.clone(), downloaded);
+            }
+
+            // Print summary per category
+            if !self.config.first_boot {
+                println!("\n📊 Category Summary:");
+                for (category, count) in results {
+                    let display_name = crate::types::CATEGORIES
+                        .iter()
+                        .find(|c| c.name == category)
+                        .map(|c| c.display_name.as_str())
+                        .unwrap_or(&category);
+                    println!("  • {}: {} images", display_name, count);
+                }
+            }
+        } else {
+            // Download specific category
+            let category_name = self.config.category.clone();
+            let category = crate::types::CATEGORIES
+                .iter()
+                .find(|c| c.name == category_name)
+                .ok_or_else(|| {
+                    DownloadError::Config(format!("Unknown category: {}", category_name))
+                })?;
+
+            self.download_category(category).await?;
+        }
+
+        // Print final summary
+        if !self.config.first_boot {
+            let stats = self.stats.lock().unwrap();
+            println!("\n✨ Download complete!");
+            println!("  ✅ Success: {}", stats.success_count);
+            println!("  ❌ Failed:  {}", stats.fail_count);
+            log::info!("📁 Location: {}", output_dir.display());
+        }
+
+        // Setup wallpapers
+        self.setup_wallpapers().await?;
+
+        Ok(())
+    }
+
+    /// Download a specific category
+    async fn download_category(&self, category: &Category) -> Result<usize> {
+        let images = self
+            .api_client
+            .get_category_wallpapers(&category.name, &category.queries, category.count)
+            .await?;
+
+        let mut downloaded = 0;
+        let mut tasks = JoinSet::new();
+        let semaphore = Arc::new(Semaphore::new(self.config.max_workers));
+
+        // Limit to the requested count
+        let images_to_download = images.into_iter().take(category.count).collect::<Vec<_>>();
+
+        for (i, wallpaper) in images_to_download.iter().enumerate() {
+            let permit = semaphore.clone().acquire_owned().await?;
+            let url = wallpaper.url.clone();
+            let output_dir = self
+                .config
+                .output_dir
+                .clone()
+                .unwrap_or_else(crate::types::default_output_dir);
+            let filename = format!("{}_{:04}.jpg", category.name, i);
+            let filepath = output_dir.join(&category.name).join(filename);
+
+            // Clone shared state for the async task
+            let downloaded_hashes = self.downloaded_hashes.clone();
+            let url_cache = self.url_cache.clone();
+            let reqwest_client = self.api_client.get_client().clone();
+            let timeout = self.config.timeout;
+
+            tasks.spawn(async move {
+                let _permit = permit;
+                Self::download_image_static(
+                    reqwest_client,
+                    downloaded_hashes,
+                    url_cache,
+                    url,
+                    filepath,
+                    timeout,
+                )
+                .await
+            });
+        }
+
+        // Wait for all downloads to complete
+        while let Some(result) = tasks.join_next().await {
+            if let Ok(download_result) = result {
+                if download_result {
+                    downloaded += 1;
+                    if downloaded % 10 == 0 && !self.config.first_boot {
+                        log::info!("  ✓ Downloaded {} images...", downloaded);
+                    }
+                    let mut stats = self.stats.lock().unwrap();
+                    stats.success_count += 1;
+                } else {
+                    let mut stats = self.stats.lock().unwrap();
+                    stats.fail_count += 1;
+                }
+            }
+        }
+
+        Ok(downloaded)
+    }
+
+    /// Static helper for individual download to avoid self sharing issues
+    async fn download_image_static(
+        client: reqwest::Client,
+        downloaded_hashes: Arc<Mutex<HashSet<String>>>,
+        url_cache: Arc<Mutex<HashSet<String>>>,
+        url: String,
+        filepath: PathBuf,
+        timeout: u64,
+    ) -> bool {
+        // Skip if URL already cached
+        {
+            if url_cache.lock().unwrap().contains(&url) {
+                return false;
+            }
+        }
+
+        // Skip if file already exists
+        if filepath.exists() {
             return false;
         }
 
@@ -132,10 +278,9 @@ impl Downloader {
         }
 
         // Download the image
-        let client = reqwest::Client::new();
         let response = match client
             .get(&url)
-            .timeout(std::time::Duration::from_secs(self.config.timeout))
+            .timeout(std::time::Duration::from_secs(timeout))
             .send()
             .await
         {
@@ -176,7 +321,7 @@ impl Downloader {
         }
 
         // Compute hash of downloaded file
-        let file_hash = match self.compute_file_hash(&temp_path) {
+        let file_hash = match Self::compute_file_hash_static(&temp_path) {
             Ok(h) => h,
             Err(e) => {
                 log::error!("✗ Error hashing {}: {}", temp_path.display(), e);
@@ -185,11 +330,19 @@ impl Downloader {
         };
 
         // Check if already downloaded
-        if self.downloaded_hashes.contains(&file_hash) {
-            if let Err(e) = tokio::fs::remove_file(&temp_path).await {
-                log::error!("✗ Error removing temp file {}: {}", temp_path.display(), e);
+        let exists = {
+            let mut hashes = downloaded_hashes.lock().unwrap();
+            if hashes.contains(&file_hash) {
+                true
+            } else {
+                hashes.insert(file_hash);
+                false
             }
-            self.url_cache.insert(url);
+        };
+
+        if exists {
+            let _ = tokio::fs::remove_file(&temp_path).await;
+            url_cache.lock().unwrap().insert(url);
             return false;
         }
 
@@ -201,154 +354,11 @@ impl Downloader {
                 filepath.display(),
                 e
             );
+            let _ = tokio::fs::remove_file(&temp_path).await;
             return false;
         }
 
-        // Update caches
-        self.downloaded_hashes.insert(file_hash);
-        self.url_cache.insert(url);
-        self.stats.success_count += 1;
-
         true
-    }
-
-    /// Download all wallpapers
-    pub async fn download_all(&mut self) -> Result<()> {
-        // Create directories
-        self.create_directories().await?;
-
-        // Log start message
-        let output_dir = self
-            .config
-            .output_dir
-            .clone()
-            .unwrap_or_else(crate::types::default_output_dir);
-        let total_target = std::cmp::min(self.config.limit, 6000);
-        if !self.config.first_boot {
-            log::info!("🚀 Starting download of {} wallpapers...", total_target);
-            log::info!("📥 Category: {}", self.config.category);
-            log::info!("📁 Destination: {}", output_dir.display());
-        }
-
-        if self.config.category == "all" {
-            // Download all categories
-            let mut results = std::collections::HashMap::new();
-
-            for category in &*crate::types::CATEGORIES {
-                let downloaded = self.download_category(category).await?;
-                results.insert(category.name.clone(), downloaded);
-            }
-
-            // Print summary per category
-            if !self.config.first_boot {
-                println!("\n📊 Category Summary:");
-                for (category, count) in results {
-                    let display_name = crate::types::CATEGORIES
-                        .iter()
-                        .find(|c| c.name == category)
-                        .map(|c| c.display_name.as_str())
-                        .unwrap_or(&category);
-                    println!("  {}: {} images", display_name, count);
-                }
-            }
-        } else {
-            // Download specific category
-            let category = crate::types::CATEGORIES
-                .iter()
-                .find(|c| c.name == self.config.category)
-                .ok_or_else(|| {
-                    DownloadError::InvalidCategory(
-                        self.config.category.clone(),
-                        crate::types::CATEGORIES
-                            .iter()
-                            .map(|c| c.name.as_str())
-                            .collect::<Vec<_>>()
-                            .join(", "),
-                    )
-                })?;
-
-            let _ = self.download_category(category).await?;
-        }
-
-        // Summary
-        let output_dir = self
-            .config
-            .output_dir
-            .clone()
-            .unwrap_or_else(crate::types::default_output_dir);
-        let elapsed = self.stats.elapsed();
-        if !self.config.first_boot {
-            log::info!("\n📊 Download Complete!");
-            log::info!("✅ Success: {}", self.stats.success_count);
-            log::info!("❌ Failed: {}", self.stats.fail_count);
-            log::info!("⏱️  Time: {:.2?}", elapsed);
-            log::info!("📁 Location: {}", output_dir.display());
-        }
-
-        // Setup wallpapers
-        self.setup_wallpapers().await?;
-
-        Ok(())
-    }
-
-    /// Download a specific category
-    async fn download_category(&mut self, category: &Category) -> Result<usize> {
-        let images = self
-            .api_client
-            .get_category_wallpapers(&category.name, &category.queries, category.count)
-            .await?;
-
-        let mut downloaded = 0;
-        let mut tasks = JoinSet::new();
-        let semaphore = Arc::new(Semaphore::new(self.config.max_workers));
-
-        // Limit to the requested count
-        let images_to_download = images.into_iter().take(category.count).collect::<Vec<_>>();
-
-        for (i, wallpaper) in images_to_download.iter().enumerate() {
-            let permit = semaphore.clone().acquire_owned().await?;
-            let url = wallpaper.url.clone();
-            let output_dir = self
-                .config
-                .output_dir
-                .clone()
-                .unwrap_or_else(crate::types::default_output_dir);
-            let filename = format!("{}_{:04}", category.name, i);
-            let filepath = output_dir.join(&category.name).join(filename);
-
-            let downloader = self as *const _ as usize;
-            let downloader: &mut Downloader = unsafe { &mut *(downloader as *mut _) };
-
-            tasks.spawn(async move {
-                let _permit = permit;
-                let result = downloader.download_image(url, filepath).await;
-                result
-            });
-        }
-
-        // Wait for all downloads to complete
-        while let Some(result) = tasks.join_next().await {
-            if let Ok(download_result) = result {
-                if download_result {
-                    downloaded += 1;
-                    if downloaded % 10 == 0 && !self.config.first_boot {
-                        log::info!("  ✓ Downloaded {} images...", downloaded);
-                    }
-                } else {
-                    self.stats.fail_count += 1;
-                }
-            }
-        }
-
-        if !self.config.first_boot {
-            log::info!(
-                "✓ Downloaded {} images for category '{}'",
-                downloaded,
-                category.name
-            );
-        }
-
-        Ok(downloaded)
     }
 
     /// Setup wallpapers for i3 and GNOME

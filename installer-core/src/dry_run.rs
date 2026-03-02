@@ -1,10 +1,20 @@
 use std::cell::RefCell;
+use std::collections::BTreeMap;
 
 #[derive(Clone, Debug)]
 pub struct DryRunEntry {
     pub phase: String,
     pub action: String,
     pub detail: Option<String>,
+}
+
+/// A structured summary of planned actions for a dry-run.
+#[derive(Clone, Debug, Default)]
+pub struct PreflightAuditReport {
+    /// Actions grouped by phase
+    pub phases: BTreeMap<String, Vec<DryRunEntry>>,
+    /// Total number of actions planned
+    pub total_actions: usize,
 }
 
 pub struct DryRunLog {
@@ -34,6 +44,24 @@ impl DryRunLog {
 
     pub fn entries(&self) -> Vec<DryRunEntry> {
         self.entries.borrow().clone()
+    }
+
+    /// Generate a structured pre-flight audit report.
+    pub fn audit_report(&self) -> PreflightAuditReport {
+        let entries = self.entries.borrow();
+        let mut phases: BTreeMap<String, Vec<DryRunEntry>> = BTreeMap::new();
+
+        for entry in entries.iter() {
+            phases
+                .entry(entry.phase.clone())
+                .or_default()
+                .push(entry.clone());
+        }
+
+        PreflightAuditReport {
+            total_actions: entries.len(),
+            phases,
+        }
     }
 }
 

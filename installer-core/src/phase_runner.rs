@@ -64,6 +64,8 @@ impl PhaseOutput {
 #[derive(Clone, Debug)]
 pub enum PhaseStatus {
     Completed,
+    PartialSuccess(String),
+    RecoverableFailure(String),
     Failed(String),
     Skipped,
 }
@@ -198,7 +200,11 @@ impl PhaseRunner {
             );
             let metadata = phase_ctx.take_metadata();
             let status = match &phase_result {
-                Ok(()) => PhaseStatus::Completed,
+                Ok(PhaseResult::Success) => PhaseStatus::Completed,
+                Ok(PhaseResult::PartialSuccess(msg)) => PhaseStatus::PartialSuccess(msg.clone()),
+                Ok(PhaseResult::RecoverableFailure(msg)) => {
+                    PhaseStatus::RecoverableFailure(msg.clone())
+                }
                 Err(err) => PhaseStatus::Failed(err.to_string()),
             };
             outputs.push(PhaseOutput::from_metadata(
@@ -208,18 +214,48 @@ impl PhaseRunner {
                 status.clone(),
             ));
             match phase_result {
-                Ok(()) => {
-                    emit_event(
-                        observer,
-                        &mut events,
-                        PhaseEvent::Completed {
-                            index: i + 1,
-                            phase: phase_name.clone(),
-                            description: phase_description.clone(),
-                        },
-                    );
-                    completed.push(phase_name.clone());
-                }
+                Ok(res) => match res {
+                    PhaseResult::Success => {
+                        emit_event(
+                            observer,
+                            &mut events,
+                            PhaseEvent::Completed {
+                                index: i + 1,
+                                phase: phase_name.clone(),
+                                description: phase_description.clone(),
+                            },
+                        );
+                        completed.push(phase_name.clone());
+                    }
+                    PhaseResult::PartialSuccess(msg) => {
+                        emit_event(
+                            observer,
+                            &mut events,
+                            PhaseEvent::Warning {
+                                message: format!("{}: Partial success - {}", phase_name, msg),
+                            },
+                        );
+                        emit_event(
+                            observer,
+                            &mut events,
+                            PhaseEvent::Completed {
+                                index: i + 1,
+                                phase: phase_name.clone(),
+                                description: phase_description.clone(),
+                            },
+                        );
+                        completed.push(phase_name.clone());
+                    }
+                    PhaseResult::RecoverableFailure(msg) => {
+                        emit_event(
+                            observer,
+                            &mut events,
+                            PhaseEvent::Warning {
+                                message: format!("{}: Recoverable failure - {}", phase_name, msg),
+                            },
+                        );
+                    }
+                },
                 Err(e) => {
                     let severity = phase.error_severity();
                     let installer_error = InstallerError::new(
@@ -337,6 +373,16 @@ pub trait PhaseObserver {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PhaseResult {
+    /// Phase completed successfully.
+    Success,
+    /// Phase failed but some actions were completed.
+    PartialSuccess(String),
+    /// Phase failed completely but can be skipped.
+    RecoverableFailure(String),
+}
+
 pub trait Phase {
     fn name(&self) -> &str;
     fn description(&self) -> &str;
@@ -346,13 +392,13 @@ pub trait Phase {
     fn error_severity(&self) -> ErrorSeverity {
         ErrorSeverity::Fatal
     }
-    fn execute(&self, ctx: &mut PhaseContext) -> AnyhowResult<()>;
+    fn execute(&self, ctx: &mut PhaseContext) -> AnyhowResult<PhaseResult>;
 }
 
 pub struct FunctionPhase {
     name: String,
     description: String,
-    run: fn(&mut PhaseContext) -> AnyhowResult<()>,
+    run: fn(&mut PhaseContext) -> AnyhowResult<PhaseResult>,
 }
 
 impl Phase for FunctionPhase {
@@ -364,7 +410,7 @@ impl Phase for FunctionPhase {
         &self.description
     }
 
-    fn execute(&self, ctx: &mut PhaseContext) -> AnyhowResult<()> {
+    fn execute(&self, ctx: &mut PhaseContext) -> AnyhowResult<PhaseResult> {
         (self.run)(ctx)
     }
 }
@@ -373,7 +419,7 @@ impl FunctionPhase {
     pub fn new(
         name: impl Into<String>,
         description: impl Into<String>,
-        run: fn(&mut PhaseContext) -> AnyhowResult<()>,
+        run: fn(&mut PhaseContext) -> AnyhowResult<PhaseResult>,
     ) -> Self {
         Self {
             name: name.into(),
@@ -452,7 +498,7 @@ mod tests {
         description: &'static str,
         should_run: bool,
         severity: ErrorSeverity,
-        run: fn(&mut PhaseContext) -> AnyhowResult<()>,
+        run: fn(&mut PhaseContext) -> AnyhowResult<PhaseResult>,
     }
 
     impl Phase for TestPhase {
@@ -468,7 +514,7 @@ mod tests {
             self.should_run
         }
 
-        fn execute(&self, ctx: &mut PhaseContext) -> AnyhowResult<()> {
+        fn execute(&self, ctx: &mut PhaseContext) -> AnyhowResult<PhaseResult> {
             (self.run)(ctx)
         }
 
@@ -483,7 +529,7 @@ mod tests {
             description: &'static str,
             should_run: bool,
             severity: ErrorSeverity,
-            run: fn(&mut PhaseContext) -> AnyhowResult<()>,
+            run: fn(&mut PhaseContext) -> AnyhowResult<PhaseResult>,
         ) -> Self {
             Self {
                 name,
@@ -534,6 +580,7 @@ mod tests {
             driver_name: "dummy",
             driver,
             pkg_backend: driver.pkg_backend(),
+            system: &crate::system::REAL_SYSTEM,
         };
         let options = UserOptionsContext {
             profile: ProfileLevel::Minimal,
@@ -558,11 +605,11 @@ mod tests {
         })
     }
 
-    fn success_phase(_ctx: &mut PhaseContext) -> AnyhowResult<()> {
-        Ok(())
+    fn success_phase(_ctx: &mut PhaseContext) -> AnyhowResult<PhaseResult> {
+        Ok(PhaseResult::Success)
     }
 
-    fn failing_phase(_ctx: &mut PhaseContext) -> AnyhowResult<()> {
+    fn failing_phase(_ctx: &mut PhaseContext) -> AnyhowResult<PhaseResult> {
         Err(anyhow!("boom"))
     }
 

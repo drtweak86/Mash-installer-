@@ -3,10 +3,34 @@ use std::error::Error;
 use std::ffi::OsStr;
 use std::fmt;
 use std::process::{Command as StdCommand, Output, Stdio};
-use tracing::{debug, error};
+use tracing::{debug, error, info};
+
+/// Mode of command execution.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RunMode {
+    #[default]
+    Real,
+    DryRun,
+}
 
 /// Runs a command and provides detailed errors when it fails.
 pub fn run(cmd: &mut StdCommand) -> Result<Output> {
+    run_with_mode(cmd, RunMode::Real)
+}
+
+/// Runs a command with the specified mode (Real or DryRun).
+pub fn run_with_mode(cmd: &mut StdCommand, mode: RunMode) -> Result<Output> {
+    let desc = describe_command(cmd);
+
+    if mode == RunMode::DryRun {
+        info!("[dry-run] execution gated: {}", desc);
+        return Ok(Output {
+            status: std::process::ExitStatus::default(), // Success-like for dry run
+            stdout: Vec::new(),
+            stderr: Vec::new(),
+        });
+    }
+
     let program = cmd.get_program().to_string_lossy();
     let is_sudo = program == "sudo" || program.ends_with("/sudo");
     let password = if is_sudo {
@@ -14,8 +38,6 @@ pub fn run(cmd: &mut StdCommand) -> Result<Output> {
     } else {
         None
     };
-
-    let desc = describe_command(cmd);
 
     let output = if let Some(pass) = password {
         // Inject -S (stdin) into sudo command if not already present
@@ -96,13 +118,42 @@ fn describe_command(cmd: &StdCommand) -> String {
 /// Fluent shell command builder.
 pub struct Command {
     inner: StdCommand,
+    mode: RunMode,
 }
 
 impl Command {
     pub fn new(program: impl AsRef<OsStr>) -> Self {
         Self {
             inner: StdCommand::new(program),
+            mode: RunMode::Real,
         }
+    }
+
+    /// Mark this command as sudo.
+    pub fn sudo(mut self) -> Self {
+        let mut new_cmd = StdCommand::new("sudo");
+        new_cmd.arg(self.inner.get_program());
+        new_cmd.args(self.inner.get_args());
+        // Copy env and current_dir
+        for (k, v) in self.inner.get_envs() {
+            if let Some(v) = v {
+                new_cmd.env(k, v);
+            } else {
+                new_cmd.env_remove(k);
+            }
+        }
+        if let Some(dir) = self.inner.get_current_dir() {
+            new_cmd.current_dir(dir);
+        }
+        self.inner = new_cmd;
+        self
+    }
+
+    pub fn dry_run(mut self, is_dry: bool) -> Self {
+        if is_dry {
+            self.mode = RunMode::DryRun;
+        }
+        self
     }
 
     pub fn arg(mut self, arg: impl AsRef<OsStr>) -> Self {
@@ -141,7 +192,7 @@ impl Command {
     }
 
     pub fn execute(mut self) -> Result<Output> {
-        run(&mut self.inner)
+        run_with_mode(&mut self.inner, self.mode)
     }
 }
 

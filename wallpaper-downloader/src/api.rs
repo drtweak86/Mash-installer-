@@ -32,6 +32,11 @@ impl ApiClient {
         }
     }
 
+    /// Access the underlying HTTP client
+    pub fn get_client(&self) -> &Client {
+        &self.client
+    }
+
     /// Search for wallpapers by query
     pub async fn search(&self, query: &str, count: usize) -> Result<Vec<Wallpaper>> {
         let mut images = Vec::new();

@@ -1,5 +1,4 @@
-use installer_core::{cmd, DistroDriver, PkgBackend, PlatformInfo};
-use std::process::Command;
+use installer_core::{DistroDriver, PkgBackend, PlatformInfo};
 
 pub struct ArchDriver;
 
@@ -18,16 +17,6 @@ impl DistroDriver for ArchDriver {
 
     fn pkg_backend(&self) -> PkgBackend {
         PkgBackend::Pacman
-    }
-
-    fn is_package_installed(&self, package_name: &str) -> bool {
-        let native = match self.translate_package(package_name) {
-            Some(name) => name,
-            None => return false,
-        };
-        let mut cmd = Command::new("pacman");
-        cmd.args(["-Q", native.as_str()]);
-        cmd::run(&mut cmd).is_ok()
     }
 
     fn translate_package(&self, canonical: &str) -> Option<String> {

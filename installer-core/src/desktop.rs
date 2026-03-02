@@ -6,6 +6,7 @@
 use crate::{
     driver::DistroDriver,
     error::{ErrorSeverity, InstallerError, InstallerStateSnapshot},
+    package_manager,
 };
 use anyhow::Result;
 use std::collections::HashMap;
@@ -237,7 +238,7 @@ pub fn is_de_installed(de: DesktopEnvironment, driver: &dyn DistroDriver) -> boo
     // Check if any of the core packages are installed
     de_packages
         .iter()
-        .any(|pkg| driver.is_package_installed(pkg))
+        .any(|pkg| package_manager::is_installed(driver, pkg))
 }
 
 /// Get the current display protocol (if detectable)

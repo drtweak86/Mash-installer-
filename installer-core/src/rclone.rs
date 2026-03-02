@@ -1,22 +1,22 @@
 use anyhow::{Context, Result};
 use std::process::Command;
 
-use crate::{cmd, package_manager, PhaseContext};
+use crate::{cmd, package_manager, PhaseContext, PhaseResult};
 
-pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
+pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
     if which::which("rclone").is_ok() {
         tracing::info!("rclone already installed");
-        return Ok(());
+        return Ok(PhaseResult::Success);
     }
 
     // Try the system package manager first
     if try_pkg(ctx)? {
-        return Ok(());
+        return Ok(PhaseResult::Success);
     }
 
     // Fall back to official install script
     install_via_script(ctx)?;
-    Ok(())
+    Ok(PhaseResult::Success)
 }
 
 fn try_pkg(ctx: &mut PhaseContext) -> Result<bool> {

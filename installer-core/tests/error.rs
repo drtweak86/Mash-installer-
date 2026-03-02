@@ -42,26 +42,27 @@ fn installer_error_exposes_user_and_developer_messages() {
 #[test]
 fn installation_report_tracks_errors() {
     let options = build_user_options();
-    let error = InstallerError::new(
-        "phase-one",
-        "phase one description",
-        ErrorSeverity::Recoverable,
+    let installer_error = InstallerError::new(
+        "phase1",
+        "some action",
+        ErrorSeverity::Fatal,
         anyhow!("boom"),
         InstallerStateSnapshot::from_options(&options),
         None,
     );
     let report = InstallationReport {
-        completed_phases: vec!["phase-one".to_string()],
-        staging_dir: PathBuf::from("/tmp/staging"),
-        errors: vec![error],
+        completed_phases: vec!["phase1".to_string()],
+        staging_dir: PathBuf::from("/tmp/mash-test"),
+        errors: vec![installer_error.clone()],
         outputs: Vec::new(),
         events: Vec::new(),
         options: InstallOptions::default(),
         driver: DriverInfo {
-            name: "test".into(),
-            description: "test driver".into(),
+            name: "test-driver".to_string(),
+            description: "A test driver".to_string(),
         },
         dry_run_log: Vec::new(),
+        audit_report: installer_core::dry_run::PreflightAuditReport::default(),
     };
 
     assert!(report.has_errors());

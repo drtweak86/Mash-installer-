@@ -4,8 +4,8 @@
 use anyhow::Result;
 use installer_core::{
     dry_run::DryRunLog, ConfigService, DistroDriver, InstallContext, Phase, PhaseContext,
-    PhaseObserver, PhaseRunner, PkgBackend, PlatformInfo, ProfileLevel, SoftwareTierPlan,
-    UIContext, UserOptionsContext,
+    PhaseObserver, PhaseResult, PhaseRunner, PkgBackend, PlatformInfo, ProfileLevel,
+    SoftwareTierPlan, UIContext, UserOptionsContext,
 };
 use std::path::PathBuf;
 
@@ -65,6 +65,7 @@ fn build_mock_context(arch: &'static str) -> Result<InstallContext> {
             driver_name: "mock",
             driver: Box::leak(Box::new(MockDriver { name: "mock", arch })),
             pkg_backend: PkgBackend::Apt,
+            system: &installer_core::REAL_SYSTEM,
         },
         ui: UIContext,
         interaction: installer_core::interaction::InteractionService::new(
@@ -102,10 +103,10 @@ impl Phase for ArchSpecificPhase {
     fn description(&self) -> &str {
         "arch check"
     }
-    fn execute(&self, ctx: &mut PhaseContext) -> Result<()> {
+    fn execute(&self, ctx: &mut PhaseContext) -> Result<PhaseResult> {
         let arch = &ctx.platform.platform.arch;
         ctx.record_action(format!("Running on {}", arch));
-        Ok(())
+        Ok(PhaseResult::Success)
     }
 }
 

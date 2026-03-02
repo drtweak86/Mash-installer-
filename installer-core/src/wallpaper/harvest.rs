@@ -11,7 +11,7 @@
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 
 use anyhow::{Context, Result};
@@ -72,13 +72,10 @@ impl Default for HarvestConfig {
 // ── SQLite State Store ──────────────────────────────────────────────────────
 #[derive(Debug)]
 pub struct StateDB {
-    conn: RwLock<Connection>,
+    conn: Mutex<Connection>,
 }
 
-unsafe impl Send for StateDB {}
-unsafe impl Sync for StateDB {}
-
-#[allow(dead_code, clippy::readonly_write_lock)] // Methods kept for future expansion, SQLite uses write locks
+#[allow(dead_code)] // Methods kept for future expansion, SQLite uses write locks
 impl StateDB {
     pub fn new(db_path: &Path) -> Result<Self> {
         let conn = Connection::open(db_path)
@@ -109,13 +106,13 @@ impl StateDB {
         )?;
 
         Ok(Self {
-            conn: RwLock::new(conn),
+            conn: Mutex::new(conn),
         })
     }
 
     // URL helpers
     pub fn add_urls(&self, urls: &[String]) -> Result<usize> {
-        let mut conn = self.conn.write().unwrap();
+        let mut conn = self.conn.lock().unwrap();
         let tx = conn.transaction()?;
         let mut stmt = tx.prepare("INSERT OR IGNORE INTO urls (url) VALUES (?1)")?;
 
@@ -131,7 +128,7 @@ impl StateDB {
     }
 
     pub fn url_status(&self, url: &str) -> Result<Option<String>> {
-        let conn = self.conn.read().unwrap();
+        let conn = self.conn.lock().unwrap();
         Ok(conn
             .query_row("SELECT status FROM urls WHERE url=?1", [url], |row| {
                 row.get(0)
@@ -140,7 +137,7 @@ impl StateDB {
     }
 
     pub fn mark_done(&self, url: &str, filename: &str) -> Result<()> {
-        let conn = self.conn.write().unwrap();
+        let conn = self.conn.lock().unwrap();
         conn.execute(
             "UPDATE urls SET status='done', filename=?1, attempts=attempts+1, updated_at=unixepoch('now') WHERE url=?2",
             (filename, url),
@@ -149,7 +146,7 @@ impl StateDB {
     }
 
     pub fn mark_failed(&self, url: &str) -> Result<()> {
-        let conn = self.conn.write().unwrap();
+        let conn = self.conn.lock().unwrap();
         conn.execute(
             "UPDATE urls SET status='failed', attempts=attempts+1, updated_at=unixepoch('now') WHERE url=?1",
             [url],
@@ -158,7 +155,7 @@ impl StateDB {
     }
 
     pub fn mark_skip(&self, url: &str) -> Result<()> {
-        let conn = self.conn.write().unwrap();
+        let conn = self.conn.lock().unwrap();
         conn.execute(
             "UPDATE urls SET status='skip', updated_at=unixepoch('now') WHERE url=?1",
             [url],
@@ -167,9 +164,10 @@ impl StateDB {
     }
 
     pub fn pending_urls(&self) -> Result<Vec<String>> {
-        let conn = self.conn.read().unwrap();
+        let conn = self.conn.lock().unwrap();
         let mut stmt =
             conn.prepare("SELECT url FROM urls WHERE status='pending' ORDER BY added_at")?;
+
         let rows = stmt.query_map([], |row| row.get(0))?;
 
         let mut urls = Vec::new();
@@ -181,8 +179,9 @@ impl StateDB {
     }
 
     pub fn counts(&self) -> Result<std::collections::HashMap<String, i64>> {
-        let conn = self.conn.read().unwrap();
+        let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare("SELECT status, COUNT(*) FROM urls GROUP BY status")?;
+
         let rows = stmt.query_map([], |row| {
             Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
         })?;
@@ -198,7 +197,7 @@ impl StateDB {
 
     // Hash helpers
     pub fn has_hash(&self, fingerprint: &str) -> Result<bool> {
-        let conn = self.conn.read().unwrap();
+        let conn = self.conn.lock().unwrap();
         let exists: Option<bool> = conn
             .query_row(
                 "SELECT 1 FROM hashes WHERE fingerprint=?1",
@@ -210,7 +209,7 @@ impl StateDB {
     }
 
     pub fn add_hash(&self, fingerprint: &str, filename: &str) -> Result<()> {
-        let conn = self.conn.write().unwrap();
+        let conn = self.conn.lock().unwrap();
         conn.execute(
             "INSERT OR IGNORE INTO hashes (fingerprint, filename) VALUES (?1, ?2)",
             (fingerprint, filename),
@@ -219,13 +218,13 @@ impl StateDB {
     }
 
     pub fn hash_count(&self) -> Result<i64> {
-        let conn = self.conn.read().unwrap();
+        let conn = self.conn.lock().unwrap();
         Ok(conn.query_row("SELECT COUNT(*) FROM hashes", [], |row| row.get(0))?)
     }
 
     // Meta helpers
     pub fn set_meta(&self, key: &str, value: &str) -> Result<()> {
-        let conn = self.conn.write().unwrap();
+        let conn = self.conn.lock().unwrap();
         conn.execute(
             "INSERT OR REPLACE INTO meta(key,value) VALUES(?1,?2)",
             (key, value),
@@ -234,7 +233,7 @@ impl StateDB {
     }
 
     pub fn get_meta(&self, key: &str) -> Result<Option<String>> {
-        let conn = self.conn.read().unwrap();
+        let conn = self.conn.lock().unwrap();
         Ok(conn
             .query_row("SELECT value FROM meta WHERE key=?1", [key], |row| {
                 row.get(0)
@@ -243,7 +242,7 @@ impl StateDB {
     }
 
     pub fn reset(&self) -> Result<()> {
-        let conn = self.conn.write().unwrap();
+        let conn = self.conn.lock().unwrap();
         conn.execute_batch("DELETE FROM urls; DELETE FROM hashes; DELETE FROM meta;")?;
         Ok(())
     }
@@ -353,9 +352,6 @@ pub struct Downloader {
     client: Client,
     stop_flag: Arc<AtomicBool>,
 }
-
-unsafe impl Send for Downloader {}
-unsafe impl Sync for Downloader {}
 
 impl Downloader {
     pub fn new(config: HarvestConfig, db: Arc<StateDB>) -> Self {

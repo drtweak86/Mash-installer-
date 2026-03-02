@@ -1,9 +1,9 @@
-use crate::{cmd, system::RealSystem, system::SystemOps, PhaseContext};
+use crate::{cmd, PhaseContext, PhaseResult};
 use anyhow::Result;
 use std::process::Command;
 
-pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
-    let fstype = RealSystem.detect_root_fstype()?;
+pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
+    let fstype = ctx.platform.system.detect_root_fstype()?;
     ctx.record_action(format!(
         "STATION_01: ROOT_FS IDENTIFIED: {}",
         fstype.to_uppercase()
@@ -32,7 +32,7 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
         ));
     }
 
-    Ok(())
+    Ok(PhaseResult::Success)
 }
 
 fn command_exists(cmd: &str) -> bool {

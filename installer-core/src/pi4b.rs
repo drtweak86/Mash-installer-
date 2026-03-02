@@ -80,8 +80,10 @@ pub struct KernelParam {
 // ---------------------------------------------------------------------------
 
 /// Check if system is running on Raspberry Pi 4B
-pub fn is_raspberry_pi_4b() -> bool {
-    let model = std::fs::read_to_string("/sys/firmware/devicetree/base/model").unwrap_or_default();
+pub fn is_raspberry_pi_4b(system: &dyn SystemOps) -> bool {
+    let model = system
+        .read_to_string(Path::new("/sys/firmware/devicetree/base/model"))
+        .unwrap_or_default();
     model.contains("Raspberry Pi 4")
 }
 
@@ -148,7 +150,7 @@ pub fn analyze_partition_layout(device: &str) -> Result<PartitionLayout> {
 pub fn pi4b_hdd_preflight_checks(system: &dyn SystemOps) -> Result<Vec<PreflightCheck>> {
     let mut checks = Vec::new();
 
-    if !is_raspberry_pi_4b() {
+    if !is_raspberry_pi_4b(system) {
         checks.push(PreflightCheck {
             label: "Pi 4B HDD Optimization".into(),
             status: CheckStatus::Warning,
@@ -324,10 +326,10 @@ pub fn set_io_scheduler(_device: &str, scheduler: &str) -> Result<()> {
 }
 
 /// Optimize I/O scheduler for external USB 3.0 HDD
-pub fn optimize_io_scheduler() -> Result<Vec<PreflightCheck>> {
+pub fn optimize_io_scheduler(system: &dyn SystemOps) -> Result<Vec<PreflightCheck>> {
     let mut checks = Vec::new();
 
-    if !is_raspberry_pi_4b() {
+    if !is_raspberry_pi_4b(system) {
         checks.push(PreflightCheck {
             label: "I/O Scheduler Optimization".into(),
             status: CheckStatus::Warning,
@@ -513,10 +515,12 @@ pub fn tune_kernel_params(system: &dyn SystemOps) -> Result<Vec<KernelParam>> {
 
 /// Phase entry point: tunes HDD mount options, swap, kernel params, and I/O scheduler.
 /// Skips gracefully on non-Pi4B systems.
-pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
+use crate::PhaseResult;
+
+pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
     if !ctx.platform.is_pi_4b() {
         ctx.record_warning("Not running on Pi 4B — skipping HDD tuning");
-        return Ok(());
+        return Ok(PhaseResult::Success);
     }
 
     phase_mount_options(ctx)?;
@@ -524,7 +528,7 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
     phase_kernel_params(ctx)?;
     phase_io_scheduler(ctx)?;
 
-    Ok(())
+    Ok(PhaseResult::Success)
 }
 
 fn phase_mount_options(ctx: &mut PhaseContext) -> Result<()> {
@@ -608,7 +612,8 @@ mod tests {
 
     #[test]
     fn test_is_raspberry_pi_4b() {
-        let is_pi = is_raspberry_pi_4b();
+        let system = RealSystem;
+        let is_pi = is_raspberry_pi_4b(&system);
         if is_pi {
             println!("Running on Raspberry Pi 4B - test adapted");
         } else {
@@ -622,7 +627,7 @@ mod tests {
         let system = RealSystem;
         let checks = pi4b_hdd_preflight_checks(&system).unwrap();
 
-        if is_raspberry_pi_4b() {
+        if is_raspberry_pi_4b(&system) {
             assert!(checks.len() >= 4, "Should have multiple checks on Pi 4B");
             assert!(checks.iter().any(|c| c.label.contains("USB 3.0")));
             assert!(checks.iter().any(|c| c.label.contains("External HDD")));
@@ -679,9 +684,10 @@ mod tests {
 
     #[test]
     fn test_optimize_io_scheduler() {
-        let checks = optimize_io_scheduler().unwrap();
+        let system = RealSystem;
+        let checks = optimize_io_scheduler(&system).unwrap();
 
-        if is_raspberry_pi_4b() {
+        if is_raspberry_pi_4b(&system) {
             assert!(!checks.is_empty());
             assert!(checks.iter().any(|c| c.label.contains("I/O Scheduler")));
         } else {

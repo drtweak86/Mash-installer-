@@ -25,6 +25,8 @@ pub trait SystemOps {
 /// Real implementation of `SystemOps` that delegates to the OS.
 pub struct RealSystem;
 
+pub static REAL_SYSTEM: RealSystem = RealSystem;
+
 impl SystemOps for RealSystem {
     fn read_to_string(&self, path: &Path) -> Result<String> {
         std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))

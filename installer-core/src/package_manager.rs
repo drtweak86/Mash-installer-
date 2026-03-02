@@ -1,5 +1,4 @@
 use anyhow::{anyhow, Context, Result};
-use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::{backend::PkgBackend, cmd, distro, driver::DistroDriver};
@@ -30,7 +29,21 @@ pub fn installer_for(driver: &dyn DistroDriver) -> &'static dyn PackageInstaller
 }
 
 pub fn is_installed(driver: &dyn DistroDriver, pkg: &str) -> bool {
-    installer_for(driver).is_installed(pkg)
+    let native = match driver.translate_package(pkg) {
+        Some(n) => n,
+        None => return false,
+    };
+    driver.is_package_installed(&native)
+}
+
+/// Backend-specific check for whether a package is installed.
+/// This is used by the default implementation of DistroDriver::is_package_installed.
+pub fn check_installed(backend: PkgBackend, pkg: &str) -> bool {
+    match backend {
+        PkgBackend::Apt => APT_INSTALLER.is_installed(pkg),
+        PkgBackend::Pacman => PACMAN_INSTALLER.is_installed(pkg),
+        PkgBackend::Dnf => DNF_INSTALLER.is_installed(pkg),
+    }
 }
 
 pub fn update(driver: &dyn DistroDriver, dry_run: bool) -> Result<()> {
@@ -44,36 +57,73 @@ pub fn ensure_packages(driver: &dyn DistroDriver, pkgs: &[&str], dry_run: bool) 
 }
 
 pub fn try_optional(driver: &dyn DistroDriver, pkg: &str, dry_run: bool) {
-    installer_for(driver).try_optional(pkg, dry_run);
+    let native = match driver.translate_package(pkg) {
+        Some(n) => n,
+        None => return,
+    };
+    installer_for(driver).try_optional(&native, dry_run);
 }
 
 impl PackageInstaller for AptInstaller {
     fn is_installed(&self, pkg: &str) -> bool {
-        apt_is_installed(pkg)
+        cmd::Command::new("dpkg")
+            .args(["-s", pkg])
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .execute()
+            .is_ok()
     }
 
     fn update(&self, dry_run: bool) -> Result<()> {
-        apt_update(dry_run)
+        cmd::Command::new("apt-get")
+            .sudo()
+            .args(["update", "-qq"])
+            .dry_run(dry_run)
+            .execute()
+            .context("running apt-get update")?;
+        Ok(())
     }
 
     fn ensure_packages(&self, pkgs: &[&str], dry_run: bool) -> Result<()> {
-        apt_ensure(pkgs, dry_run)
+        let missing: Vec<&str> = pkgs
+            .iter()
+            .copied()
+            .filter(|p| !self.is_installed(p))
+            .collect();
+
+        if missing.is_empty() {
+            tracing::info!("All packages already installed");
+            return Ok(());
+        }
+
+        tracing::info!("Installing packages: {}", missing.join(", "));
+
+        cmd::Command::new("apt-get")
+            .sudo()
+            .args(["install", "-y", "--install-recommends"])
+            .args(&missing)
+            .env("DEBIAN_FRONTEND", "noninteractive")
+            .dry_run(dry_run)
+            .execute()
+            .context("running apt-get install")
+            .map_err(|err| anyhow!("apt-get install failed for {}: {err}", missing.join(" ")))?;
+        Ok(())
     }
 
     fn try_optional(&self, pkg: &str, dry_run: bool) {
         if self.is_installed(pkg) {
             return;
         }
-        if dry_run {
-            tracing::info!("[dry-run] would attempt optional: {pkg}");
-            return;
-        }
-        let mut cmd = Command::new("sudo");
-        cmd.args(["apt-get", "install", "-y", "--install-recommends", pkg])
+        let res = cmd::Command::new("apt-get")
+            .sudo()
+            .args(["install", "-y", "--install-recommends", pkg])
             .env("DEBIAN_FRONTEND", "noninteractive")
             .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null());
-        match cmd::run(&mut cmd) {
+            .stderr(std::process::Stdio::null())
+            .dry_run(dry_run)
+            .execute();
+
+        match res {
             Ok(_) => tracing::info!("Installed optional package: {pkg}"),
             Err(_) => tracing::warn!("Optional package '{pkg}' not available; skipping"),
         }
@@ -82,217 +132,128 @@ impl PackageInstaller for AptInstaller {
 
 impl PackageInstaller for PacmanInstaller {
     fn is_installed(&self, pkg: &str) -> bool {
-        pacman_is_installed(pkg)
+        cmd::Command::new("pacman")
+            .args(["-Q", pkg])
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .execute()
+            .is_ok()
     }
 
     fn update(&self, dry_run: bool) -> Result<()> {
-        ensure_pacman_synced(dry_run)
+        if PACMAN_SYNCED.load(Ordering::SeqCst) {
+            return Ok(());
+        }
+        cmd::Command::new("pacman")
+            .sudo()
+            .args(["-Syu", "--noconfirm"])
+            .dry_run(dry_run)
+            .execute()
+            .context("running pacman -Syu")?;
+
+        PACMAN_SYNCED.store(true, Ordering::SeqCst);
+        Ok(())
     }
 
     fn ensure_packages(&self, pkgs: &[&str], dry_run: bool) -> Result<()> {
-        ensure_pacman_synced(dry_run)?;
-        pacman_ensure(pkgs, dry_run)
+        if pkgs.is_empty() {
+            return Ok(());
+        }
+        self.update(dry_run)?;
+
+        tracing::info!("Ensuring packages via pacman: {}", pkgs.join(", "));
+
+        cmd::Command::new("pacman")
+            .sudo()
+            .args(["-S", "--noconfirm", "--needed"])
+            .args(pkgs)
+            .dry_run(dry_run)
+            .execute()
+            .context("running pacman -S")
+            .map_err(|err| anyhow!("pacman -S failed for {}: {err}", pkgs.join(" ")))?;
+        Ok(())
     }
 
     fn try_optional(&self, pkg: &str, dry_run: bool) {
         if self.is_installed(pkg) {
             return;
         }
-        if dry_run {
-            tracing::info!("[dry-run] would attempt optional: {pkg}");
-            return;
-        }
-        let mut cmd = Command::new("sudo");
-        cmd.args(["pacman", "-S", "--noconfirm", "--needed", pkg])
+        let res = cmd::Command::new("pacman")
+            .sudo()
+            .args(["-S", "--noconfirm", "--needed", pkg])
             .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null());
-        match cmd::run(&mut cmd) {
+            .stderr(std::process::Stdio::null())
+            .dry_run(dry_run)
+            .execute();
+
+        match res {
             Ok(_) => tracing::info!("Installed optional package: {pkg}"),
             Err(_) => tracing::warn!("Optional package '{pkg}' not available; skipping"),
         }
     }
 }
-
-fn apt_is_installed(pkg: &str) -> bool {
-    let mut cmd = Command::new("dpkg");
-    cmd.args(["-s", pkg])
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null());
-    cmd::run(&mut cmd).map(|_| true).unwrap_or(false)
-}
-
-fn apt_update(dry_run: bool) -> Result<()> {
-    if dry_run {
-        tracing::info!("[dry-run] apt-get update");
-        return Ok(());
-    }
-    let mut cmd = Command::new("sudo");
-    cmd.args(["apt-get", "update", "-qq"]);
-    cmd::run(&mut cmd).context("running apt-get update")?;
-    Ok(())
-}
-
-fn apt_ensure(pkgs: &[&str], dry_run: bool) -> Result<()> {
-    let missing: Vec<&str> = pkgs
-        .iter()
-        .copied()
-        .filter(|p| !apt_is_installed(p))
-        .collect();
-    if missing.is_empty() {
-        tracing::info!("All packages already installed");
-        return Ok(());
-    }
-    tracing::info!(
-        "Installing {} packages: {}",
-        missing.len(),
-        missing.join(", ")
-    );
-    if dry_run {
-        tracing::info!("[dry-run] would install: {}", missing.join(" "));
-        return Ok(());
-    }
-    let mut cmd = Command::new("sudo");
-    cmd.args(["apt-get", "install", "-y", "--install-recommends"]);
-    for p in &missing {
-        cmd.arg(p);
-    }
-    cmd.env("DEBIAN_FRONTEND", "noninteractive");
-    cmd::run(&mut cmd)
-        .context("running apt-get install")
-        .map_err(|err| anyhow!("apt-get install failed for {}: {err}", missing.join(" ")))?;
-    Ok(())
-}
-
-fn pacman_is_installed(pkg: &str) -> bool {
-    let mut cmd = Command::new("pacman");
-    cmd.args(["-Q", pkg])
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null());
-    cmd::run(&mut cmd).map(|_| true).unwrap_or(false)
-}
-
-fn pacman_sync(dry_run: bool) -> Result<()> {
-    if dry_run {
-        tracing::info!("[dry-run] pacman -Syu");
-        return Ok(());
-    }
-    let mut cmd = Command::new("sudo");
-    cmd.args(["pacman", "-Syu", "--noconfirm"]);
-    cmd::run(&mut cmd).context("running pacman -Syu")?;
-    Ok(())
-}
-
-fn ensure_pacman_synced(dry_run: bool) -> Result<()> {
-    if PACMAN_SYNCED.load(Ordering::SeqCst) {
-        return Ok(());
-    }
-    let res = pacman_sync(dry_run);
-    if res.is_ok() {
-        PACMAN_SYNCED.store(true, Ordering::SeqCst);
-    }
-    res
-}
-
-fn pacman_ensure(pkgs: &[&str], dry_run: bool) -> Result<()> {
-    if pkgs.is_empty() {
-        return Ok(());
-    }
-    tracing::info!("Ensuring packages via pacman: {}", pkgs.join(", "));
-    if dry_run {
-        tracing::info!("[dry-run] would install: {}", pkgs.join(" "));
-        return Ok(());
-    }
-    let mut cmd = Command::new("sudo");
-    cmd.args(["pacman", "-S", "--noconfirm", "--needed"]);
-    for p in pkgs {
-        cmd.arg(p);
-    }
-    cmd::run(&mut cmd)
-        .context("running pacman -S")
-        .map_err(|err| anyhow!("pacman -S failed for {}: {err}", pkgs.join(" ")))?;
-    Ok(())
-}
-
-// ── DNF installer (Fedora, RHEL, CentOS, Rocky, AlmaLinux) ──
 
 impl PackageInstaller for DnfInstaller {
     fn is_installed(&self, pkg: &str) -> bool {
-        dnf_is_installed(pkg)
+        cmd::Command::new("rpm")
+            .args(["-q", pkg])
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .execute()
+            .is_ok()
     }
 
     fn update(&self, dry_run: bool) -> Result<()> {
-        dnf_update(dry_run)
+        // dnf check-update returns 100 if updates are available, 0 if none, error otherwise.
+        // We just run it to sync metadata.
+        let _ = cmd::Command::new("dnf")
+            .sudo()
+            .args(["check-update", "-q"])
+            .dry_run(dry_run)
+            .execute();
+        Ok(())
     }
 
     fn ensure_packages(&self, pkgs: &[&str], dry_run: bool) -> Result<()> {
-        dnf_ensure(pkgs, dry_run)
+        let missing: Vec<&str> = pkgs
+            .iter()
+            .copied()
+            .filter(|p| !self.is_installed(p))
+            .collect();
+
+        if missing.is_empty() {
+            tracing::info!("All packages already installed");
+            return Ok(());
+        }
+
+        tracing::info!("Installing packages via dnf: {}", missing.join(", "));
+
+        cmd::Command::new("dnf")
+            .sudo()
+            .args(["install", "-y"])
+            .args(&missing)
+            .dry_run(dry_run)
+            .execute()
+            .context("running dnf install")
+            .map_err(|err| anyhow!("dnf install failed for {}: {err}", missing.join(" ")))?;
+        Ok(())
     }
 
     fn try_optional(&self, pkg: &str, dry_run: bool) {
         if self.is_installed(pkg) {
             return;
         }
-        if dry_run {
-            tracing::info!("[dry-run] would attempt optional: {pkg}");
-            return;
-        }
-        let mut cmd = Command::new("sudo");
-        cmd.args(["dnf", "install", "-y", pkg])
+        let res = cmd::Command::new("dnf")
+            .sudo()
+            .args(["install", "-y", pkg])
             .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null());
-        match cmd::run(&mut cmd) {
+            .stderr(std::process::Stdio::null())
+            .dry_run(dry_run)
+            .execute();
+
+        match res {
             Ok(_) => tracing::info!("Installed optional package: {pkg}"),
             Err(_) => tracing::warn!("Optional package '{pkg}' not available; skipping"),
         }
     }
-}
-
-fn dnf_is_installed(pkg: &str) -> bool {
-    let mut cmd = Command::new("rpm");
-    cmd.args(["-q", pkg])
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null());
-    cmd::run(&mut cmd).map(|_| true).unwrap_or(false)
-}
-
-fn dnf_update(dry_run: bool) -> Result<()> {
-    if dry_run {
-        tracing::info!("[dry-run] dnf check-update");
-        return Ok(());
-    }
-    let mut cmd = Command::new("sudo");
-    cmd.args(["dnf", "check-update", "-q"]);
-    // dnf check-update returns 100 if updates are available, 0 if none, error otherwise
-    let _ = cmd::run(&mut cmd);
-    Ok(())
-}
-
-fn dnf_ensure(pkgs: &[&str], dry_run: bool) -> Result<()> {
-    let missing: Vec<&str> = pkgs
-        .iter()
-        .copied()
-        .filter(|p| !dnf_is_installed(p))
-        .collect();
-    if missing.is_empty() {
-        tracing::info!("All packages already installed");
-        return Ok(());
-    }
-    tracing::info!(
-        "Installing {} packages via dnf: {}",
-        missing.len(),
-        missing.join(", ")
-    );
-    if dry_run {
-        tracing::info!("[dry-run] would install: {}", missing.join(" "));
-        return Ok(());
-    }
-    let mut cmd = Command::new("sudo");
-    cmd.args(["dnf", "install", "-y"]);
-    for p in &missing {
-        cmd.arg(p);
-    }
-    cmd::run(&mut cmd)
-        .context("running dnf install")
-        .map_err(|err| anyhow!("dnf install failed for {}: {err}", missing.join(" ")))?;
-    Ok(())
 }

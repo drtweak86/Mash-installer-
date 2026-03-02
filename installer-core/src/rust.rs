@@ -10,7 +10,7 @@ use anyhow::{Context, Result};
 use std::path::PathBuf;
 use std::process::Command;
 
-use crate::{cmd, PhaseContext};
+use crate::{cmd, PhaseContext, PhaseResult};
 
 /// Check if rustup is installed for the current user.
 fn has_rustup() -> bool {
@@ -31,7 +31,7 @@ fn cargo_bin() -> PathBuf {
     which::which("cargo").unwrap_or_else(|_| cargo_home().join("bin/cargo"))
 }
 
-pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
+pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
     // 1. Install rustup + stable toolchain
     install_rustup(ctx)?;
 
@@ -46,7 +46,7 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
         install_cargo_tools(ctx)?;
     }
 
-    Ok(())
+    Ok(PhaseResult::Success)
 }
 
 fn apply_pi_optimizations(ctx: &mut PhaseContext) -> Result<()> {

@@ -56,9 +56,9 @@ pub trait DistroDriver: Sync + Send {
         }
     }
 
-    /// Check whether a system package (canonical name) is already installed.
-    fn is_package_installed(&self, _package: &str) -> bool {
-        false
+    /// Check whether a system package (native name) is already installed.
+    fn is_package_installed(&self, package: &str) -> bool {
+        crate::package_manager::check_installed(self.pkg_backend(), package)
     }
 }
 

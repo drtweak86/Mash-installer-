@@ -1,15 +1,17 @@
 use anyhow::Result;
 use std::process::Command;
 
-use crate::{apt_repo, cmd, driver::RepoKind, package_manager, PhaseContext, PkgBackend};
+use crate::{
+    apt_repo, cmd, driver::RepoKind, package_manager, PhaseContext, PhaseResult, PkgBackend,
+};
 
-pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
+pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
     install_git(ctx)?;
     install_gh(ctx)?;
     install_ssh_tools(ctx)?;
     remind_gh_auth_if_needed();
     print_ssh_notes();
-    Ok(())
+    Ok(PhaseResult::Success)
 }
 
 fn install_git(ctx: &mut PhaseContext) -> Result<()> {

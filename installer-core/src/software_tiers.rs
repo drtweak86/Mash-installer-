@@ -14,7 +14,7 @@ use std::os::unix::fs::PermissionsExt;
 
 use anyhow::{Context, Result};
 
-use crate::{cmd, package_manager, PhaseContext};
+use crate::{cmd, package_manager, PhaseContext, PhaseResult, Validator};
 
 #[derive(Clone, Debug, Default)]
 pub enum ThemePlan {
@@ -29,6 +29,20 @@ pub struct SoftwareTierPlan {
     pub full_install: bool,
     pub selections: BTreeMap<&'static str, &'static str>,
     pub theme_plan: ThemePlan,
+}
+
+impl Validator for SoftwareTierPlan {
+    fn validate(&self) -> Vec<String> {
+        let mut errors = Vec::new();
+        for (category, selection) in &self.selections {
+            if packages_for_selection(selection).is_none() {
+                errors.push(format!(
+                    "No package mapping for {category} selection: {selection}"
+                ));
+            }
+        }
+        errors
+    }
 }
 
 impl SoftwareTierPlan {
@@ -59,11 +73,15 @@ impl Default for SoftwareTierPlan {
     }
 }
 
-pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
+pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
     let plan = &ctx.options.software_plan;
+    for error in plan.validate() {
+        ctx.record_warning(format!("Plan validation: {error}"));
+    }
+
     if plan.is_empty() {
         tracing::info!("No software tiers selected; skipping.");
-        return Ok(());
+        return Ok(PhaseResult::Success);
     }
 
     let mut required = BTreeSet::new();
@@ -83,7 +101,7 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
     install_packages(ctx, &required, &optional)?;
     apply_theme_plan(ctx, &plan.theme_plan)?;
 
-    Ok(())
+    Ok(PhaseResult::Success)
 }
 
 struct PackageSet {

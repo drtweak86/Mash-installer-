@@ -184,8 +184,8 @@ pub struct TuiApp {
     // Profile selection  (0=Minimal, 1=Dev, 2=Full)
     pub profile_idx: usize,
     // Desktop environment selection
-    pub desktop_environment: Option<installer_core::desktop_environments::DesktopEnvironment>,
-    pub display_protocol: installer_core::desktop_environments::DisplayProtocol,
+    pub desktop_environment: Option<installer_core::desktop::DesktopEnvironment>,
+    pub display_protocol: installer_core::desktop::DisplayProtocol,
     // Theme selection
     pub theme_plan: ThemePlan,
     // Software tiers
@@ -240,7 +240,7 @@ impl TuiApp {
             modules: ModuleState::default(),
             profile_idx: 1, // Dev by default
             desktop_environment: None,
-            display_protocol: installer_core::desktop_environments::DisplayProtocol::Auto,
+            display_protocol: installer_core::desktop::DisplayProtocol::Auto,
             theme_plan: ThemePlan::None,
             software_full: true,
             software_picks: BTreeMap::new(),
@@ -726,7 +726,7 @@ impl TuiApp {
     }
 
     fn select_desktop_environment(&mut self) {
-        use installer_core::desktop_environments::DesktopEnvironment;
+        use installer_core::desktop::DesktopEnvironment;
 
         let de = match self.menu_cursor {
             0 => DesktopEnvironment::Gnome,
@@ -748,7 +748,7 @@ impl TuiApp {
     }
 
     fn select_display_protocol(&mut self) {
-        use installer_core::desktop_environments::DisplayProtocol;
+        use installer_core::desktop::DisplayProtocol;
 
         let protocol = match self.menu_cursor {
             0 => DisplayProtocol::Auto,
@@ -1198,18 +1198,16 @@ impl TuiApp {
                 self.menu_cursor = self
                     .desktop_environment
                     .map(|de| match de {
-                        installer_core::desktop_environments::DesktopEnvironment::Gnome => 0,
-                        installer_core::desktop_environments::DesktopEnvironment::Kde => 1,
-                        installer_core::desktop_environments::DesktopEnvironment::Xfce => 2,
-                        installer_core::desktop_environments::DesktopEnvironment::Lxqt => 3,
-                        installer_core::desktop_environments::DesktopEnvironment::Mate => 4,
-                        installer_core::desktop_environments::DesktopEnvironment::Cinnamon => 5,
-                        installer_core::desktop_environments::DesktopEnvironment::Budgie => 6,
-                        installer_core::desktop_environments::DesktopEnvironment::Enlightenment => {
-                            7
-                        }
-                        installer_core::desktop_environments::DesktopEnvironment::Lxde => 8,
-                        installer_core::desktop_environments::DesktopEnvironment::None => 9,
+                        installer_core::desktop::DesktopEnvironment::Gnome => 0,
+                        installer_core::desktop::DesktopEnvironment::Kde => 1,
+                        installer_core::desktop::DesktopEnvironment::Xfce => 2,
+                        installer_core::desktop::DesktopEnvironment::Lxqt => 3,
+                        installer_core::desktop::DesktopEnvironment::Mate => 4,
+                        installer_core::desktop::DesktopEnvironment::Cinnamon => 5,
+                        installer_core::desktop::DesktopEnvironment::Budgie => 6,
+                        installer_core::desktop::DesktopEnvironment::Enlightenment => 7,
+                        installer_core::desktop::DesktopEnvironment::Lxde => 8,
+                        installer_core::desktop::DesktopEnvironment::None => 9,
                     })
                     .unwrap_or(0);
             }

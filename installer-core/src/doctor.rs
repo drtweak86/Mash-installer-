@@ -333,7 +333,7 @@ pub fn collect_preflight_checks(
     checks.push(check_existing_config());
 
     // Add Pi 4B HDD specific checks
-    if let Ok(pi4b_checks) = crate::pi4b_hdd::pi4b_hdd_preflight_checks(system) {
+    if let Ok(pi4b_checks) = crate::pi4b::pi4b_hdd_preflight_checks(system) {
         checks.extend(pi4b_checks);
     }
 

@@ -4,8 +4,8 @@
 use anyhow::Result;
 use installer_core::{
     dry_run::DryRunLog, ConfigService, DistroDriver, ErrorSeverity, InstallContext, Phase,
-    PhaseContext, PhaseEvent, PhaseObserver, PhaseRunner, PkgBackend, PlatformInfo, ProfileLevel,
-    SoftwareTierPlan, UIContext, UserOptionsContext,
+    PhaseContext, PhaseEvent, PhaseObserver, PhaseResult, PhaseRunner, PkgBackend, PlatformInfo,
+    ProfileLevel, SoftwareTierPlan, UIContext, UserOptionsContext,
 };
 use std::path::PathBuf;
 
@@ -37,14 +37,14 @@ impl Phase for PackageTranslationPhase {
         ErrorSeverity::Fatal
     }
 
-    fn execute(&self, ctx: &mut PhaseContext) -> Result<()> {
+    fn execute(&self, ctx: &mut PhaseContext) -> Result<PhaseResult> {
         let driver = ctx.platform.driver;
         let translated = driver.translate_package(self.package_name);
         let expected = self.expected_result.map(|s| s.to_string());
 
         match (&translated, &expected) {
-            (Some(t), Some(e)) if t == e => Ok(()),
-            (None, None) => Ok(()),
+            (Some(t), Some(e)) if t == e => Ok(PhaseResult::Success),
+            (None, None) => Ok(PhaseResult::Success),
             _ => Err(anyhow::anyhow!(
                 "Package translation mismatch for {}: got {:?}, expected {:?}",
                 self.package_name,
@@ -77,12 +77,12 @@ impl Phase for ServiceNamePhase {
         ErrorSeverity::Fatal
     }
 
-    fn execute(&self, ctx: &mut PhaseContext) -> Result<()> {
+    fn execute(&self, ctx: &mut PhaseContext) -> Result<PhaseResult> {
         let driver = ctx.platform.driver;
         let actual = driver.service_unit(self.service_name);
 
         if actual == self.expected_unit {
-            Ok(())
+            Ok(PhaseResult::Success)
         } else {
             Err(anyhow::anyhow!(
                 "Service name mismatch: got {}, expected {}",
@@ -114,7 +114,7 @@ impl Phase for DryRunLoggingPhase {
         ErrorSeverity::Fatal
     }
 
-    fn execute(&self, ctx: &mut PhaseContext) -> Result<()> {
+    fn execute(&self, ctx: &mut PhaseContext) -> Result<PhaseResult> {
         let driver = ctx.platform.driver;
         let translated = driver.translate_package(self.package_name);
 
@@ -128,7 +128,7 @@ impl Phase for DryRunLoggingPhase {
             )),
         );
 
-        Ok(())
+        Ok(PhaseResult::Success)
     }
 }
 
@@ -169,6 +169,7 @@ fn build_context_for_driver(driver: &'static dyn DistroDriver) -> Result<Install
             driver_name: driver.name(),
             driver,
             pkg_backend: driver.pkg_backend(),
+            system: &installer_core::REAL_SYSTEM,
         },
         ui: UIContext,
         interaction: installer_core::interaction::InteractionService::new(

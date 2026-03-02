@@ -35,10 +35,12 @@ This shaft focuses on a full codebase purification to ensure structural integrit
 
 ## 📦 DELIVERABLES
 
-### Phase 1: Deduplication ✅ PLANNED
-- [ ] Centralize package management logic in `installer-core`.
-- [ ] Remove duplicate TUI widget implementations in `installer-cli`.
-- [ ] Align all workspace crate versions and dependencies.
+### Phase 1: Deduplication ✅ COMPLETE (2026-03-01)
+- [x] Centralize package management logic in `installer-core`.
+- [x] Remove duplicate TUI widget implementations in `installer-cli`.
+- [x] Align all workspace crate versions and dependencies.
+- [x] Unify `CliPhaseObserver` and delete legacy UI code.
+- [x] Enhanced `cmd::Command` with `sudo()` and `dry_run()` support.
 
 ### Phase 2: Structural Refining ✅ PLANNED
 - [ ] Refactor `Phase` execution registry for better error recovery.

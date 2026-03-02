@@ -87,6 +87,7 @@ pub struct PlatformContext {
     pub driver_name: &'static str,
     pub driver: &'static dyn DistroDriver,
     pub pkg_backend: PkgBackend,
+    pub system: &'static dyn crate::system::SystemOps,
 }
 
 impl PlatformContext {
@@ -213,6 +214,7 @@ mod tests {
             driver_name: "test",
             driver: &TEST_DRIVER,
             pkg_backend: TEST_DRIVER.pkg_backend(),
+            system: &crate::system::REAL_SYSTEM,
         }
     }
 
@@ -310,19 +312,20 @@ impl<'a> PhaseContext<'a> {
         }
     }
 
-    pub fn run_or_record<F>(
+    pub fn run_or_record<F, R>(
         &mut self,
         phase: impl Into<String>,
         action: impl Into<String>,
         detail: Option<String>,
         work: F,
-    ) -> Result<()>
+    ) -> Result<R>
     where
-        F: FnOnce(&mut PhaseContext<'a>) -> Result<()>,
+        F: FnOnce(&mut PhaseContext<'a>) -> Result<R>,
+        R: DryRunDefault,
     {
         if self.options.dry_run {
             self.record_dry_run(phase, action, detail);
-            Ok(())
+            Ok(R::dry_run_default())
         } else {
             work(self)
         }
@@ -344,4 +347,18 @@ pub struct PhaseMetadata {
     pub rollback_actions: Vec<String>,
     pub warnings: Vec<String>,
     pub dry_run: bool,
+}
+
+pub trait DryRunDefault {
+    fn dry_run_default() -> Self;
+}
+
+impl DryRunDefault for () {
+    fn dry_run_default() -> Self {}
+}
+
+impl DryRunDefault for crate::PhaseResult {
+    fn dry_run_default() -> Self {
+        crate::PhaseResult::Success
+    }
 }

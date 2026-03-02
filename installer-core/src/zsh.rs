@@ -5,7 +5,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
-use crate::{cmd, options::ProfileLevel, package_manager, PhaseContext, PkgBackend};
+use crate::{cmd, options::ProfileLevel, package_manager, PhaseContext, PhaseResult, PkgBackend};
 use which::which;
 
 fn home_dir() -> PathBuf {
@@ -36,7 +36,7 @@ if [ -f "$HOME/.eza_aliases" ]; then
 fi
 "#;
 
-pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
+pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
     install_zsh(ctx)?;
     install_omz(ctx)?;
     install_starship(ctx)?;
@@ -51,7 +51,7 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<()> {
         tracing::info!("Powerlevel10k skipped (pass --enable-p10k to install)");
     }
 
-    Ok(())
+    Ok(PhaseResult::Success)
 }
 
 fn install_zsh(ctx: &mut PhaseContext) -> Result<()> {
@@ -276,7 +276,7 @@ fn install_kitty_config(ctx: &mut PhaseContext) -> Result<()> {
 }
 
 fn install_eza_aliases(ctx: &mut PhaseContext) -> Result<()> {
-    if !ctx.platform.driver.is_package_installed("eza") {
+    if !package_manager::is_installed(ctx.platform.driver, "eza") {
         tracing::info!("Skipping eza aliases because eza is not installed");
         return Ok(());
     }

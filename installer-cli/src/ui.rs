@@ -1,5 +1,9 @@
 //! UI components for progress tracking and phase observation
 
+use crossterm::{
+    event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers},
+    terminal::{disable_raw_mode, enable_raw_mode},
+};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use installer_core::{PhaseEvent, PhaseObserver};
 use std::io::{self, Write};
@@ -149,13 +153,69 @@ impl PhaseObserver for CliPhaseObserver {
             response == "y" || response == "yes"
         })
     }
+
+    fn sudo_password(&mut self) -> anyhow::Result<String> {
+        self.mp
+            .suspend(|| read_password_crossterm("Enter sudo password: "))
+    }
+}
+
+fn read_password_crossterm(prompt: &str) -> anyhow::Result<String> {
+    print!("{}", prompt);
+    io::stdout().flush()?;
+
+    enable_raw_mode()?;
+    let mut password = String::new();
+    let res = (|| -> anyhow::Result<String> {
+        loop {
+            if let Event::Key(KeyEvent {
+                code,
+                modifiers,
+                kind,
+                ..
+            }) = event::read()?
+            {
+                if kind != KeyEventKind::Press {
+                    continue;
+                }
+                match code {
+                    KeyCode::Enter => break,
+                    KeyCode::Char('c') if modifiers.contains(KeyModifiers::CONTROL) => {
+                        anyhow::bail!("Interrupted by user");
+                    }
+                    KeyCode::Char(c) => password.push(c),
+                    KeyCode::Backspace => {
+                        password.pop();
+                    }
+                    KeyCode::Esc => {
+                        password.clear();
+                        break;
+                    }
+                    _ => {}
+                }
+            }
+        }
+        Ok(password)
+    })();
+
+    let _ = disable_raw_mode();
+    println!();
+    res
 }
 
 pub fn print_banner() {
-    println!();
-    println!("╔══════════════════════════════════════════════╗");
-    println!("║       mash-setup · mega installer            ║");
-    println!("╚══════════════════════════════════════════════╝");
+    println!(
+        r#"
+  __  __    _    ____  _   _ 
+ |  \/  |  / \  / ___|| | | |
+ | |\/| | / _ \ \___ \| |_| |
+ | |  | |/ ___ \ ___) |  _  |
+ |_|  |_/_/   \_\____/|_| |_|
+"#
+    );
+    println!(" ╔══════════════════════════════════════════════╗");
+    println!(" ║       mash-setup · mega installer            ║");
+    println!(" ╚══════════════════════════════════════════════╝");
     println!();
 }
 

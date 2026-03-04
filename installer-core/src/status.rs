@@ -217,7 +217,11 @@ fn run_fast_preflight() -> PreflightSummary {
     }
 
     // CPU cores (warn if <2)
-    if num_cpus::get() >= 2 {
+    if std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1)
+        >= 2
+    {
         pass += 1;
     } else {
         warn += 1;

@@ -1,3 +1,7 @@
+mod model;
+mod system;
+mod wallpaper;
+
 pub mod advice;
 mod ai_agents;
 mod apt_repo;
@@ -16,7 +20,7 @@ mod docker;
 mod doctor;
 pub mod dotfiles;
 mod driver;
-pub use mash_system::error;
+pub use crate::system::error;
 
 pub mod fonts;
 mod github;
@@ -50,15 +54,14 @@ mod status;
 mod systemd;
 pub mod theme;
 pub mod verify;
-mod wallpaper;
 mod zsh;
 
 use crate::localization::Localization;
 pub use advice::{AdviceEngine, AdviceEntry, Rule, Severity as AdviceSeverity};
-pub use mash_system::{cmd, dry_run, logging as sys_logging, sudo, system};
+pub use system::{cmd, dry_run, logging as sys_logging, sudo, system_ops as sys_ops};
 
 // --- Core API ---
-pub use authorization::{AuthType, AuthorizationService};
+pub use authorization::AuthorizationService;
 pub use backend::PkgBackend;
 pub use config::{init_config, show_config, ConfigError, MashConfig};
 pub use context::{
@@ -66,12 +69,7 @@ pub use context::{
 };
 pub use doctor::{run_doctor, DoctorOutput};
 pub use driver::{AptRepoConfig, DistroDriver, RepoKind, ServiceName};
-pub use mash_system::error::{
-    DriverInfo, ErrorSeverity, InstallationReport, InstallerError, InstallerRunError,
-    InstallerStateSnapshot,
-};
-pub use mash_system::logging::init as init_logging;
-pub use mash_system::system::{SystemOps, REAL_SYSTEM};
+pub use model::phase::AuthType;
 pub use options::{InstallOptions, ProfileLevel};
 pub use orchestrator::run_with_driver;
 pub use package_spec::{PackageIntent, PackageSpec};
@@ -90,7 +88,16 @@ pub use rollback::RollbackManager;
 pub use software_tiers::SoftwareTierPlan;
 pub use software_tiers::ThemePlan;
 pub use status::{run_status, StatusOutput};
-pub use wallpaper::{download_wallpapers, WallpaperConfig, WallpaperError};
+pub use system::error::{
+    DriverInfo, ErrorSeverity, InstallationReport, InstallerError, InstallerRunError,
+    InstallerStateSnapshot,
+};
+pub use system::logging::init as init_logging;
+pub use system::proc;
+pub use system::system_ops::{SystemOps, REAL_SYSTEM};
+pub use wallpaper::{
+    download_wallpapers, harvest_wallpapers, HarvestConfig, WallpaperConfig, WallpaperError,
+};
 
 /// Trait for validating configuration and options.
 pub trait Validator {
@@ -112,7 +119,7 @@ pub struct InstallContext {
     pub interaction: interaction::InteractionService,
     pub localization: Localization,
     pub rollback: RollbackManager,
-    pub dry_run_log: mash_system::dry_run::DryRunLog,
+    pub dry_run_log: system::dry_run::DryRunLog,
 }
 
 impl InstallContext {

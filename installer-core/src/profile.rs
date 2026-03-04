@@ -7,11 +7,11 @@ use anyhow::Result;
 use serde::Deserialize;
 use std::collections::HashSet;
 use std::path::Path;
-use sysinfo::{CpuRefreshKind, MemoryRefreshKind, RefreshKind, System};
 
-pub use installer_model::profile::*;
+pub use crate::model::profile::*;
 
-use mash_system::system::SystemOps;
+use crate::system::proc::{read_cpu_model, MemStats};
+use crate::system::system_ops::SystemOps;
 
 pub trait SystemProfileExt {
     fn detect(system: &dyn SystemOps) -> Result<Self>
@@ -32,11 +32,11 @@ pub trait DistroInfoExt {
 }
 
 pub trait CpuInfoExt {
-    fn detect(sys: &System) -> Self;
+    fn detect() -> Self;
 }
 
 pub trait MemoryInfoExt {
-    fn detect(sys: &System, system: &dyn SystemOps) -> Self;
+    fn detect(system: &dyn SystemOps) -> Self;
 }
 
 pub trait GpuInfoExt {
@@ -70,18 +70,11 @@ pub trait StorageInfoExt {
 impl SystemProfileExt for SystemProfile {
     /// Full auto-detection of the system.
     fn detect(system: &dyn SystemOps) -> Result<Self> {
-        let mut sys = System::new_with_specifics(
-            RefreshKind::nothing()
-                .with_cpu(CpuRefreshKind::everything())
-                .with_memory(MemoryRefreshKind::everything()),
-        );
-        sys.refresh_all();
-
         let mut profile = Self::new();
         profile.platform = PlatformInfo::detect(system)?;
         profile.distro = DistroInfo::detect()?;
-        profile.cpu = CpuInfo::detect(&sys);
-        profile.memory = MemoryInfo::detect(&sys, system);
+        profile.cpu = CpuInfo::detect();
+        profile.memory = MemoryInfo::detect(system);
         profile.gpu = GpuInfo::detect(system)?;
         profile.network = NetworkInfo::detect(system)?;
         profile.software = SoftwareInfo::detect(system)?;
@@ -331,13 +324,15 @@ fn parse_os_field(content: &str, key: &str) -> Option<String> {
 }
 
 impl CpuInfoExt for CpuInfo {
-    fn detect(sys: &System) -> Self {
-        let cpu = sys.cpus().first();
-        let model = cpu.map(|c| c.brand().to_string()).unwrap_or_default();
+    fn detect() -> Self {
+        let model = read_cpu_model();
         let arch = std::env::consts::ARCH.to_string();
 
         let mut flags = HashSet::new();
-        // Extract flags from /proc/cpuinfo on Linux
+        let mut logical_cores = 0;
+        let mut physical_cores = 0;
+
+        // Extract flags and core info from /proc/cpuinfo on Linux
         if let Ok(cpuinfo) = std::fs::read_to_string("/proc/cpuinfo") {
             for line in cpuinfo.lines() {
                 if line.starts_with("flags") || line.starts_with("Features") {
@@ -347,14 +342,34 @@ impl CpuInfoExt for CpuInfo {
                         }
                     }
                 }
+                if line.starts_with("processor") {
+                    logical_cores += 1;
+                }
+                if line.starts_with("cpu cores") {
+                    if let Some((_, v)) = line.split_once(':') {
+                        if let Ok(count) = v.trim().parse::<u32>() {
+                            physical_cores = count;
+                        }
+                    }
+                }
             }
+        }
+
+        // Fallback for cores if /proc/cpuinfo parsing failed
+        if logical_cores == 0 {
+            logical_cores = std::thread::available_parallelism()
+                .map(|n| n.get() as u32)
+                .unwrap_or(1);
+        }
+        if physical_cores == 0 {
+            physical_cores = logical_cores;
         }
 
         Self {
             model,
             arch,
-            physical_cores: System::physical_core_count().unwrap_or(0),
-            logical_cores: sys.cpus().len(),
+            physical_cores: physical_cores as usize,
+            logical_cores: logical_cores as usize,
             flags,
         }
     }
@@ -427,10 +442,11 @@ impl SoftwareInfoExt for SoftwareInfo {
 }
 
 impl MemoryInfoExt for MemoryInfo {
-    fn detect(sys: &System, system: &dyn SystemOps) -> Self {
-        let ram_total_kb = sys.total_memory() / 1024;
-        let ram_avail_kb = sys.available_memory() / 1024;
-        let swap_total_kb = sys.total_swap() / 1024;
+    fn detect(system: &dyn SystemOps) -> Self {
+        let mem = MemStats::read().unwrap_or_default();
+        let ram_total_kb = mem.total_kb;
+        let ram_avail_kb = mem.available_kb;
+        let swap_total_kb = mem.swap_total_kb;
 
         // Detect ZRAM
         let mut zram_total_kb = 0;
@@ -485,7 +501,7 @@ impl SessionInfoExt for SessionInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mash_system::system::REAL_SYSTEM;
+    use crate::system::system_ops::REAL_SYSTEM;
 
     #[test]
     fn test_profile_serialization() {

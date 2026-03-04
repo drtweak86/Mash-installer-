@@ -1,6 +1,5 @@
-use async_trait::async_trait;
-use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use ureq::Agent;
 
 use crate::wallpaper::api::WallpaperApi;
 use crate::wallpaper::error::WallpaperError;
@@ -9,7 +8,7 @@ use crate::wallpaper::types::{WallpaperImage, WallpaperResult};
 /// Pixabay API client
 #[derive(Debug, Clone)]
 pub struct PixabayApi {
-    client: Client,
+    agent: Agent,
     api_key: String,
 }
 
@@ -17,7 +16,7 @@ impl PixabayApi {
     /// Creates a new Pixabay API client
     pub fn new(api_key: String) -> Self {
         Self {
-            client: Client::new(),
+            agent: Agent::new(),
             api_key,
         }
     }
@@ -41,9 +40,8 @@ pub struct PixabayHit {
     pub image_height: usize,
 }
 
-#[async_trait]
 impl WallpaperApi for PixabayApi {
-    async fn search(
+    fn search(
         &self,
         query: &str,
         count: usize,
@@ -54,15 +52,19 @@ impl WallpaperApi for PixabayApi {
             self.api_key, query, count, page
         );
 
-        let response = self.client.get(&url).send().await?;
+        let response = self.agent.get(&url).call().map_err(|e| {
+            WallpaperError::ApiError(format!("Pixabay request failed: {}", e).into())
+        })?;
 
-        if !response.status().is_success() {
+        if response.status() != 200 {
             return Err(WallpaperError::ApiError(
                 format!("Pixabay API error: {}", response.status()).into(),
             ));
         }
 
-        let pixabay_response: PixabayResponse = response.json().await?;
+        let pixabay_response: PixabayResponse = response.into_json().map_err(|e| {
+            WallpaperError::ApiError(format!("Pixabay JSON parsing failed: {}", e).into())
+        })?;
 
         let images = pixabay_response
             .hits

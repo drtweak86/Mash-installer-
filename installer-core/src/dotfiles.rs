@@ -1,5 +1,4 @@
 use anyhow::{Context, Result};
-use chrono::Local;
 use std::fs;
 use std::path::Path;
 use tracing::{info, warn};
@@ -104,7 +103,10 @@ impl<'a> DotfileManager<'a> {
     }
 
     fn backup(&self, path: &Path) -> Result<()> {
-        let timestamp = Local::now().format("%Y%m%d_%H%M%S");
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
         let backup_path = path.with_extension(format!("bak.{}", timestamp));
 
         warn!(

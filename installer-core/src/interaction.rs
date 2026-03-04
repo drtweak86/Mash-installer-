@@ -1,5 +1,5 @@
+pub use crate::model::config::InteractionConfig;
 use anyhow::{anyhow, Result};
-pub use installer_model::config::InteractionConfig;
 
 /// Central gatekeeper for every prompt or interactive decision.
 #[derive(Debug, Clone)]

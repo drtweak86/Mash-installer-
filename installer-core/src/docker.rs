@@ -340,7 +340,7 @@ mod tests {
                 driver_name: TEST_DRIVER.name(),
                 driver: &TEST_DRIVER,
                 pkg_backend: PkgBackend::Apt,
-                system: &crate::system::REAL_SYSTEM,
+                system: &crate::sys_ops::REAL_SYSTEM,
             };
             let options = UserOptionsContext {
                 profile: ProfileLevel::Minimal,

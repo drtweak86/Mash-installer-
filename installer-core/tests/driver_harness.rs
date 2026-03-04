@@ -10,9 +10,9 @@ use installer_core::{
 use std::path::PathBuf;
 
 // Import actual drivers
-use installer_arch::driver as arch_driver;
-use installer_debian::driver as debian_driver;
-use installer_fedora::driver as fedora_driver;
+use installer_drivers::arch::driver as arch_driver;
+use installer_drivers::debian::driver as debian_driver;
+use installer_drivers::fedora::driver as fedora_driver;
 
 // Test phases that exercise driver functionality
 struct PackageTranslationPhase {

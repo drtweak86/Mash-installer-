@@ -1,4 +1,4 @@
-pub use installer_model::config::MashConfig;
+pub use crate::model::config::MashConfig;
 
 use anyhow::Result as AnyResult;
 use std::env;

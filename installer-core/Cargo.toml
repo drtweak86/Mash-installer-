@@ -12,36 +12,24 @@ clap = { workspace = true }
 indicatif = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-chrono = { workspace = true }
 toml = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+env_logger = "0.11.9"
 dirs = { workspace = true }
 nix = { workspace = true }
-lazy_static = { workspace = true }
 signal-hook = "0.4.3"
 which = { workspace = true }
 tempfile = { workspace = true }
-reqwest = { version = "0.13.2", default-features = false, features = ["json", "rustls", "stream", "query"] }
-num_cpus = "1"
+ureq = { version = "2.12.1", features = ["json"] }
 tokio = { workspace = true }
-async-trait = { workspace = true }
 thiserror = { workspace = true }
 rusqlite = { version = "0.38.0", features = ["bundled"] }
 serde_urlencoded = "0.7"
 sha2 = "0.10"
-slog = { version = "2.7", features = ["max_level_trace", "release_max_level_debug"] }
-slog-term = "2.9"
-slog-async = "2.7"
 futures-util = "0.3"
-bytes = "1.11.1"
-sysinfo = { workspace = true }
-installer-model = { version = "0.1.0", path = "../installer-model" }
 workspace-hack = { version = "0.1.0", path = "../workspace-hack" }
-mash-system = { version = "0.1.0", path = "../mash-system" }
 
 [dev-dependencies]
 tempfile = { workspace = true }
-installer-arch = { path = "../installer-arch" }
-installer-debian = { path = "../installer-debian" }
-installer-fedora = { path = "../installer-fedora" }
+installer-drivers = { path = "../installer-drivers" }

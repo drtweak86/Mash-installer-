@@ -1,1 +1,1 @@
-pub use installer_model::preset::{Preset, PresetRegistry};
+pub use crate::model::preset::{Preset, PresetRegistry};

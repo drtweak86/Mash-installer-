@@ -253,7 +253,7 @@ cargo release patch --execute
 
 - Binary: `mash-setup` (single statically-linked binary for aarch64 and x86_64)
 - Config: `~/.config/mash/mash.toml`
-- Workspace: 6 crates — `installer-core`, `installer-cli`, `installer-arch`, `installer-debian`, `installer-fedora`, `wallpaper-downloader`
+- Workspace: Consolidated structure with `installer-core`, `installer-cli`, `installer-drivers`, `mash-system`, `mash-wallpaper`, and `xtask`.
 - Phases: metadata-driven via `PhaseRegistry` / `PhaseRunner`
 - Dry-run: all side effects gated through `PhaseContext::run_or_record()`
 

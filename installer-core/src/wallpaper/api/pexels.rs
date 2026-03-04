@@ -1,6 +1,5 @@
-use async_trait::async_trait;
-use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use ureq::Agent;
 
 use crate::wallpaper::api::WallpaperApi;
 use crate::wallpaper::error::WallpaperError;
@@ -9,7 +8,7 @@ use crate::wallpaper::types::{WallpaperImage, WallpaperResult};
 /// Pexels API client
 #[derive(Debug, Clone)]
 pub struct PexelsApi {
-    client: Client,
+    agent: Agent,
     api_key: String,
 }
 
@@ -17,7 +16,7 @@ impl PexelsApi {
     /// Creates a new Pexels API client
     pub fn new(api_key: String) -> Self {
         Self {
-            client: Client::new(),
+            agent: Agent::new(),
             api_key,
         }
     }
@@ -48,9 +47,8 @@ pub struct PexelsImageSources {
     pub medium: String,
 }
 
-#[async_trait]
 impl WallpaperApi for PexelsApi {
-    async fn search(
+    fn search(
         &self,
         query: &str,
         count: usize,
@@ -62,19 +60,23 @@ impl WallpaperApi for PexelsApi {
         );
 
         let response = self
-            .client
+            .agent
             .get(&url)
-            .header("Authorization", self.api_key.clone())
-            .send()
-            .await?;
+            .set("Authorization", &self.api_key)
+            .call()
+            .map_err(|e| {
+                WallpaperError::ApiError(format!("Pexels request failed: {}", e).into())
+            })?;
 
-        if !response.status().is_success() {
+        if response.status() != 200 {
             return Err(WallpaperError::ApiError(
                 format!("Pexels API error: {}", response.status()).into(),
             ));
         }
 
-        let pexels_response: PexelsResponse = response.json().await?;
+        let pexels_response: PexelsResponse = response.into_json().map_err(|e| {
+            WallpaperError::ApiError(format!("Pexels JSON parsing failed: {}", e).into())
+        })?;
 
         let images = pexels_response
             .photos

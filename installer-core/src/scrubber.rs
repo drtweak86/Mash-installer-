@@ -1,11 +1,8 @@
-use lazy_static::lazy_static;
 use std::collections::HashSet;
-use std::sync::{Arc, RwLock};
+use std::sync::{LazyLock, RwLock};
 
-lazy_static! {
-    static ref SENSITIVE_STRINGS: Arc<RwLock<HashSet<String>>> =
-        Arc::new(RwLock::new(HashSet::new()));
-}
+static SENSITIVE_STRINGS: LazyLock<RwLock<HashSet<String>>> =
+    LazyLock::new(|| RwLock::new(HashSet::new()));
 
 /// Register a string as sensitive so it can be scrubbed from logs and output.
 pub fn register_secret(secret: impl Into<String>) {

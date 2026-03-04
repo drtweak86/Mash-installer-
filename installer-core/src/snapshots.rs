@@ -1,6 +1,6 @@
+use crate::system::cmd;
 use crate::{PhaseContext, PhaseResult};
 use anyhow::Result;
-use mash_system::cmd;
 use std::process::Command;
 
 pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {

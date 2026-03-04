@@ -1,6 +1,5 @@
-use async_trait::async_trait;
-use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use ureq::Agent;
 
 use crate::wallpaper::api::WallpaperApi;
 use crate::wallpaper::error::WallpaperError;
@@ -9,7 +8,7 @@ use crate::wallpaper::types::{WallpaperImage, WallpaperResult};
 /// Wallhaven API client
 #[derive(Debug, Clone)]
 pub struct WallhavenApi {
-    client: Client,
+    agent: Agent,
     api_key: String,
 }
 
@@ -17,7 +16,7 @@ impl WallhavenApi {
     /// Creates a new Wallhaven API client
     pub fn new(api_key: String) -> Self {
         Self {
-            client: Client::new(),
+            agent: Agent::new(),
             api_key,
         }
     }
@@ -38,9 +37,8 @@ pub struct WallhavenImage {
     pub short_url: String,
 }
 
-#[async_trait]
 impl WallpaperApi for WallhavenApi {
-    async fn search(
+    fn search(
         &self,
         query: &str,
         count: usize,
@@ -51,15 +49,19 @@ impl WallpaperApi for WallhavenApi {
             self.api_key, query, page, count
         );
 
-        let response = self.client.get(&url).send().await?;
+        let response = self.agent.get(&url).call().map_err(|e| {
+            WallpaperError::ApiError(format!("Wallhaven request failed: {}", e).into())
+        })?;
 
-        if !response.status().is_success() {
+        if response.status() != 200 {
             return Err(WallpaperError::ApiError(
                 format!("Wallhaven API error: {}", response.status()).into(),
             ));
         }
 
-        let wallhaven_response: WallhavenResponse = response.json().await?;
+        let wallhaven_response: WallhavenResponse = response.into_json().map_err(|e| {
+            WallpaperError::ApiError(format!("Wallhaven JSON parsing failed: {}", e).into())
+        })?;
 
         let images = wallhaven_response
             .data

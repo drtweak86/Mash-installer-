@@ -10,41 +10,45 @@ WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 COPY installer-cli/Cargo.toml installer-cli/
 COPY installer-core/Cargo.toml installer-core/
-COPY installer-arch/Cargo.toml installer-arch/
-COPY installer-debian/Cargo.toml installer-debian/
-COPY installer-fedora/Cargo.toml installer-fedora/
+COPY installer-drivers/Cargo.toml installer-drivers/
+COPY installer-model/Cargo.toml installer-model/
+COPY mash-system/Cargo.toml mash-system/
+COPY mash-wallpaper/Cargo.toml mash-wallpaper/
 COPY wallpaper-downloader/Cargo.toml wallpaper-downloader/
 COPY xtask/Cargo.toml xtask/
+COPY workspace-hack/Cargo.toml workspace-hack/
 
 # Create placeholder source files so cargo can parse manifests without source trees.
-# These are replaced by the real COPY steps below.
 RUN mkdir -p installer-cli/src installer-core/src \
-             installer-arch/src installer-debian/src \
-             installer-fedora/src wallpaper-downloader/src \
-             xtask/src \
+             installer-drivers/src installer-model/src \
+             mash-system/src mash-wallpaper/src \
+             wallpaper-downloader/src \
+             xtask/src workspace-hack/src \
     && echo 'fn main() {}' > installer-cli/src/main.rs \
     && echo 'fn main() {}' > xtask/src/main.rs \
     && touch installer-core/src/lib.rs \
-             installer-arch/src/lib.rs \
-             installer-debian/src/lib.rs \
-             installer-fedora/src/lib.rs \
-             wallpaper-downloader/src/lib.rs
+             installer-drivers/src/lib.rs \
+             installer-model/src/lib.rs \
+             mash-system/src/lib.rs \
+             mash-wallpaper/src/lib.rs \
+             wallpaper-downloader/src/lib.rs \
+             workspace-hack/src/lib.rs
 
-# Fetch (and implicitly cache) all dependencies
+# Fetch dependencies
 RUN cargo fetch --target x86_64-unknown-linux-gnu
 
-# Copy real source files (overwrites placeholders)
+# Copy real source files
 COPY installer-cli/src/ installer-cli/src/
 COPY installer-core/src/ installer-core/src/
-COPY installer-arch/src/ installer-arch/src/
-COPY installer-debian/src/ installer-debian/src/
-COPY installer-fedora/src/ installer-fedora/src/
+COPY installer-drivers/src/ installer-drivers/src/
+COPY installer-model/src/ installer-model/src/
+COPY mash-system/src/ mash-system/src/
+COPY mash-wallpaper/src/ mash-wallpaper/src/
 COPY wallpaper-downloader/src/ wallpaper-downloader/src/
 COPY resources/ resources/
 
-# Build release binary with network retry
-RUN apt-get update && apt-get install -y --no-install-recommends pkg-config libssl-dev \
-    && apt-get install -y --no-install-recommends libsqlite3-dev \
+# Build release binary
+RUN apt-get update && apt-get install -y --no-install-recommends pkg-config libssl-dev libsqlite3-dev \
     && cargo build --release --bin mash-setup
 
 # Stage 2: Create runtime image
@@ -58,17 +62,12 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /root/
 
-# Copy the binary from builder
+# Copy binary from builder (handling custom target path if present)
 COPY --from=builder /app/target/release/mash-setup /usr/local/bin/mash-setup
 
 # Copy install script
 COPY install.sh /usr/local/bin/install-mash
-
-# Make install script executable
 RUN chmod +x /usr/local/bin/install-mash
 
-# Set entrypoint
 ENTRYPOINT ["/usr/local/bin/mash-setup"]
-
-# Default command (can be overridden)
 CMD ["--help"]

@@ -2,33 +2,9 @@ use anyhow::{anyhow, Context, Result};
 use std::process::Command;
 use tracing::{info, warn};
 
-use crate::{context::UserOptionsContext, phase_runner::PhaseObserver};
-use mash_system::cmd;
-
-/// Types of interactive authorizations supported by the forge.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum AuthType {
-    /// GitHub CLI login (`gh auth login`)
-    GitHubCli,
-    /// SSH key generation (`ssh-keygen`)
-    SshKey,
-    /// Global Git configuration (`git config --global`)
-    GitConfig,
-    /// Rclone configuration (`rclone config`)
-    RcloneConfig,
-    /// Borg repository initialization (`borg init`)
-    BorgSetup,
-    /// Tailscale node authorization (`tailscale up`)
-    TailscaleAuth,
-    /// Ngrok authtoken configuration
-    NgrokAuth,
-    /// Cloudflared tunnel login
-    CloudflaredAuth,
-    /// Docker registry login
-    DockerAuth,
-    /// Argon One fan curve configuration
-    ArgonOneConfig,
-}
+use crate::context::UserOptionsContext;
+use crate::model::phase::{AuthType, PhaseObserver};
+use crate::system::cmd;
 
 /// Service for handling interactive authorizations.
 pub struct AuthorizationService<'a> {

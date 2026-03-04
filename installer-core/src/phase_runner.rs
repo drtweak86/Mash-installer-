@@ -1,7 +1,7 @@
 use std::fmt;
 
+pub use crate::model::phase::{PhaseEvent, PhaseObserver, PhaseOutput, PhaseStatus};
 use anyhow::Result as AnyhowResult;
-pub use installer_model::phase::{PhaseEvent, PhaseOutput, PhaseStatus};
 use tracing::{error, info};
 
 use crate::{
@@ -319,26 +319,6 @@ impl PhaseRunner {
     }
 }
 
-pub trait PhaseObserver {
-    fn on_event(&mut self, _event: PhaseEvent) {}
-
-    /// Ask the user for confirmation. Returns `true` to proceed, `false` to abort.
-    /// Default implementation always proceeds.
-    fn confirm(&mut self, _prompt: &str) -> bool {
-        true
-    }
-
-    /// Ask the user for a sudo password.
-    fn sudo_password(&mut self) -> anyhow::Result<String> {
-        Ok(String::new())
-    }
-
-    /// Ask the user for interactive authorization.
-    fn request_auth(&mut self, _auth_type: crate::AuthType) -> anyhow::Result<bool> {
-        Ok(false)
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PhaseResult {
     /// Phase completed successfully.
@@ -565,7 +545,7 @@ mod tests {
             driver_name: "dummy",
             driver,
             pkg_backend: driver.pkg_backend(),
-            system: &crate::system::REAL_SYSTEM,
+            system: &crate::sys_ops::REAL_SYSTEM,
         };
         let options = UserOptionsContext {
             profile: ProfileLevel::Minimal,

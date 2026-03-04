@@ -5,8 +5,8 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
+use crate::system::cmd;
 use crate::{options::ProfileLevel, package_manager, PhaseContext, PhaseResult, PkgBackend};
-use mash_system::cmd;
 use which::which;
 
 fn home_dir() -> PathBuf {

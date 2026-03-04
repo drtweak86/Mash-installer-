@@ -20,9 +20,9 @@ For detailed operating instructions and troubleshooting, see the [MANUAL.md](doc
 The project is structured as a modular Rust workspace, ensuring separation of concerns between core logic, UI, and platform-specific implementations.
 
 ### 📂 Directory Structure
-- `installer-core/`: The engine. Handles phase management, dry-runs, and system abstractions.
-- `installer-cli/`: The driver. Contains the Ratatui TUI and CLI argument handling.
-- `installer-arch/`, `installer-debian/`, `installer-fedora/`: Distribution-specific drivers.
+- `installer-core/`: The engine. Logic, models, system types, and wallpaper harvesting.
+- `installer-cli/`: The gate. Contains the Ratatui TUI and CLI interface.
+- `installer-drivers/`: The specialized smiths. Consolidated Arch, Debian, and Fedora drivers.
 - `resources/`: Shell configurations, themes, and string localizations.
 - `docs/`: Technical specifications, historical records, and the Bard's personal journal.
 

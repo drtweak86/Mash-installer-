@@ -10,8 +10,8 @@ use anyhow::{Context, Result};
 use std::path::PathBuf;
 use std::process::Command;
 
+use crate::system::cmd;
 use crate::{PhaseContext, PhaseResult};
-use mash_system::cmd;
 
 /// Check if rustup is installed for the current user.
 fn has_rustup() -> bool {

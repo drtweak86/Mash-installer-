@@ -13,11 +13,11 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 
-pub use installer_model::software::{SoftwareTierPlan, ThemePlan};
+pub use crate::model::software::{SoftwareTierPlan, ThemePlan};
 
 use crate::catalog::{Catalog, Program};
+use crate::system::cmd;
 use crate::{package_manager, AuthType, AuthorizationService, PhaseContext, PhaseResult};
-use mash_system::cmd;
 
 pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
     let plan = &ctx.options.software_plan;

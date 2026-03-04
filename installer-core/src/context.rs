@@ -4,12 +4,12 @@ use crate::backend::PkgBackend;
 use crate::config::{self, ConfigError};
 use crate::driver::DistroDriver;
 use crate::localization::Localization;
+pub use crate::model::options::UserOptionsContext;
 use crate::platform::PlatformInfo;
 use crate::rollback::RollbackManager;
 use crate::staging;
+use crate::system::dry_run::DryRunLog;
 use anyhow::Result;
-pub use installer_model::options::UserOptionsContext;
-use mash_system::dry_run::DryRunLog;
 
 /// Options that override values in the persisted Mash config.
 #[derive(Debug, Clone, Default)]
@@ -75,7 +75,7 @@ pub struct PlatformContext {
     pub driver_name: &'static str,
     pub driver: &'static dyn DistroDriver,
     pub pkg_backend: PkgBackend,
-    pub system: &'static dyn crate::system::SystemOps,
+    pub system: &'static dyn crate::sys_ops::SystemOps,
 }
 
 impl PlatformContext {
@@ -205,7 +205,7 @@ mod tests {
             driver_name: "test",
             driver: &TEST_DRIVER,
             pkg_backend: TEST_DRIVER.pkg_backend(),
-            system: &crate::system::REAL_SYSTEM,
+            system: &crate::sys_ops::REAL_SYSTEM,
         }
     }
 
@@ -352,7 +352,7 @@ impl<'a> PhaseContext<'a> {
     }
 }
 
-pub use installer_model::phase::PhaseMetadata;
+pub use crate::model::phase::PhaseMetadata;
 
 pub trait DryRunDefault {
     fn dry_run_default() -> Self;

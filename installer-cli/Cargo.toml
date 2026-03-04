@@ -20,20 +20,17 @@ tracing-subscriber = { workspace = true }
 serde_json = { workspace = true }
 ratatui = "0.30.0"
 crossterm = "0.29.0"
-sysinfo = { workspace = true }
 whoami = { workspace = true }
 
-# Optional distro-specific installers
-installer-arch = { path = "../installer-arch", optional = true }
-installer-debian = { path = "../installer-debian", optional = true }
-installer-fedora = { path = "../installer-fedora", optional = true }
+# Distro drivers
+installer-drivers = { path = "../installer-drivers" }
 workspace-hack = { version = "0.1.0", path = "../workspace-hack" }
 
 [features]
 default = ["arch", "debian", "fedora"]
-arch = ["installer-arch"]
-debian = ["installer-debian"]
-fedora = ["installer-fedora"]
+arch = []
+debian = []
+fedora = []
 
 [package.metadata.deb]
 maintainer = "drtweak86"

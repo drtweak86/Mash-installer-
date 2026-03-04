@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+use std::time::Duration;
 
 use super::error::WallpaperError;
 use super::types::{ApiKeys, WallpaperCategory};
@@ -110,16 +111,6 @@ impl Default for WallpaperConfig {
 
 impl WallpaperConfig {
     /// Override API keys from environment variables.
-    ///
-    /// Reads `MASH_WALLHAVEN_KEY`, `MASH_PEXELS_KEY`, and `MASH_PIXABAY_KEY`.
-    /// Any non-empty value found in the environment takes precedence over the
-    /// current config value.
-    ///
-    /// # Example
-    /// ```no_run
-    /// use installer_core::WallpaperConfig;
-    /// let config = WallpaperConfig::default().with_env_keys();
-    /// ```
     pub fn with_env_keys(mut self) -> Self {
         if let Ok(key) = std::env::var("MASH_WALLHAVEN_KEY") {
             if !key.trim().is_empty() {
@@ -141,28 +132,21 @@ impl WallpaperConfig {
 
     /// Validates the configuration
     pub fn validate(&self) -> Result<(), WallpaperError> {
-        // Validate output directory path
         if self.output_dir.as_os_str().is_empty() {
             return Err(WallpaperError::config_error(
                 "Output directory cannot be empty",
             ));
         }
-
-        // Validate max concurrent downloads
         if self.max_concurrent == 0 {
             return Err(WallpaperError::config_error(
                 "Max concurrent downloads must be at least 1",
             ));
         }
-
-        // Validate categories
         if self.categories.is_empty() {
             return Err(WallpaperError::config_error(
                 "At least one category must be configured",
             ));
         }
-
-        // Validate total count matches expected (6500)
         let total: usize = self.categories.iter().map(|c| c.target_count).sum();
         if total != 6500 {
             return Err(WallpaperError::config_error(format!(
@@ -170,7 +154,48 @@ impl WallpaperConfig {
                 total
             )));
         }
-
         Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HarvestConfig {
+    pub dest: PathBuf,
+    pub workers: usize,
+    pub target: usize,
+    pub min_width: u32,
+    pub min_height: u32,
+    pub min_size_kb: u64,
+    pub max_size_mb: u64,
+    pub connect_timeout: Duration,
+    pub read_timeout: Duration,
+    pub retry_max: usize,
+    pub retry_delay: Duration,
+    pub rate_limit: Duration,
+    pub chunk_size: usize,
+    pub fingerprint_bytes: usize,
+}
+
+impl Default for HarvestConfig {
+    fn default() -> Self {
+        Self {
+            dest: dirs::home_dir()
+                .unwrap_or_else(|| PathBuf::from("/tmp"))
+                .join("wallpapers")
+                .join("mash"),
+            workers: 4,
+            target: 5000,
+            min_width: 1280,
+            min_height: 720,
+            min_size_kb: 100,
+            max_size_mb: 25,
+            connect_timeout: Duration::from_secs(15),
+            read_timeout: Duration::from_secs(60),
+            retry_max: 3,
+            retry_delay: Duration::from_secs(2),
+            rate_limit: Duration::from_secs_f32(1.0),
+            chunk_size: 65536,
+            fingerprint_bytes: 65536,
+        }
     }
 }

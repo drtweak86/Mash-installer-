@@ -19,10 +19,13 @@ pub enum WallpaperError {
     MissingApiKey(&'static str),
 
     #[error("Network error: {0}")]
-    NetworkError(#[from] reqwest::Error),
+    NetworkError(Box<ureq::Error>),
+}
 
-    #[error("Semaphore error: {0}")]
-    SemaphoreError(String),
+impl From<ureq::Error> for WallpaperError {
+    fn from(e: ureq::Error) -> Self {
+        WallpaperError::NetworkError(Box::new(e))
+    }
 }
 
 impl WallpaperError {

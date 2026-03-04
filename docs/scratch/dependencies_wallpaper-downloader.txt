@@ -359,3 +359,26 @@ wallpaper-downloader v1.1.0-alpha.2 (/data/GitHub/Mash-installer/wallpaper-downl
     ├── similar v2.7.0
     └── tokio v1.49.0 (*)
 
+ File  .text    Size                Crate Name
+ 0.3%   1.1% 24.9KiB            [Unknown] Lp384_montjscalarmul_p384_montjadd
+ 0.2%   0.8% 17.1KiB            [Unknown] Lp384_montjscalarmul_alt_p384_montjadd
+ 0.2%   0.7% 16.2KiB       regex_automata regex_automata::meta::strategy::new
+ 0.2%   0.7% 15.4KiB           aws_lc_sys aws_lc_0_38_0_curve25519_x25519_byte_alt
+ 0.2%   0.7% 15.3KiB wallpaper_downloader wallpaper_downloader::download::Downloader::dow...
+ 0.2%   0.7% 14.7KiB         clap_builder clap_builder::parser::parser::Parser::get_match...
+ 0.1%   0.6% 13.5KiB              reqwest reqwest::async_impl::client::ClientBuilder::build
+ 0.1%   0.6% 12.4KiB wallpaper_downloader wallpaper_downloader::main::{{closure}}
+ 0.1%   0.5% 12.2KiB            [Unknown] Lp256_montjscalarmul_p256_montjadd
+ 0.1%   0.5% 12.1KiB            [Unknown] Lp384_montjscalarmul_p384_montjdouble
+ 0.1%   0.5% 12.1KiB           aws_lc_sys aws_lc_0_38_0_p384_montjdouble
+ 0.1%   0.5% 12.0KiB               rustls rustls::conn::ConnectionCore<Data>::process_msg
+ 0.1%   0.5% 11.8KiB           aws_lc_sys aws_lc_0_38_0_edwards25519_scalarmulbase
+ 0.1%   0.5% 11.6KiB                  std std::backtrace_rs::symbolize::gimli::Cache::wit...
+ 0.1%   0.5% 11.5KiB           aws_lc_sys aws_lc_0_38_0_curve25519_x25519base_byte
+ 0.1%   0.5% 11.4KiB           hyper_util hyper_util::client::legacy::client::Client<C,B>...
+ 0.1%   0.5% 10.9KiB               rustls <rustls::msgs::handshake::ClientHelloPayload as...
+ 0.1%   0.5% 10.8KiB                 http http::header::name::StandardHeader::from_bytes
+ 0.1%   0.5% 10.5KiB           aws_lc_sys aws_lc_0_38_0_p521_jdouble_alt
+ 0.1%   0.5% 10.3KiB wallpaper_downloader wallpaper_downloader::download::Downloader::dow...
+21.6%  87.5%  1.9MiB                      And 14110 smaller methods. Use -n N to show more.
+24.6% 100.0%  2.2MiB                      .text section size, the file size is 8.9MiB

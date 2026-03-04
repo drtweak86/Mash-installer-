@@ -56,10 +56,8 @@ impl TuiApp {
                 cpu_cores: 0,
                 ram_total_gb: 0.0,
             },
-            system_profile: installer_core::SystemProfile::detect(
-                &installer_core::system::REAL_SYSTEM,
-            )
-            .ok(),
+            system_profile: installer_core::SystemProfile::detect(&installer_core::REAL_SYSTEM)
+                .ok(),
             phases: Vec::new(),
             current_phase: 0,
             total_phases: 0,

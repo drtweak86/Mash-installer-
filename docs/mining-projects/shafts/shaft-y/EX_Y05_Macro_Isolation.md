@@ -1,7 +1,7 @@
 # EX_Y05: Macro Isolation
 
 **Excavation Task**: Macro Crate Creation and Isolation
-**Status**: ⏳ PLANNING
+**Status**: ⏭️ SKIPPED (No internal macros found during Phase 4 audit)
 **Owner**: Bard, Drunken Dwarf Runesmith 🍺⚒️
 **Last Updated**: 2026-03-03
 **Duration**: 4 days

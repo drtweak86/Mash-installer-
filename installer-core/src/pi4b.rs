@@ -6,8 +6,8 @@ use std::path::Path;
 use std::process::Command;
 
 use crate::doctor::{CheckStatus, PreflightCheck};
+use crate::system::system_ops::SystemOps;
 use crate::PhaseContext;
-use mash_system::system::SystemOps;
 
 // ---------------------------------------------------------------------------
 // Structs
@@ -608,7 +608,7 @@ pub fn optimize_pi4b_hdd() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mash_system::system::RealSystem;
+    use crate::system::system_ops::RealSystem;
 
     #[test]
     fn test_is_raspberry_pi_4b() {

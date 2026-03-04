@@ -1,8 +1,8 @@
 use anyhow::{Context, Result};
 use std::process::Command;
 
+use crate::system::cmd;
 use crate::{package_manager, AuthType, AuthorizationService, PhaseContext, PhaseResult};
-use mash_system::cmd;
 
 pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
     if which::which("rclone").is_err() {

@@ -8,13 +8,13 @@ use std::path::Path;
 use std::process::Command;
 use std::time::Duration;
 
+use crate::system::cmd;
 use crate::{
     config,
     context::{ConfigOverrides, ConfigService},
     scrubber,
-    system::{RealSystem, SystemOps},
+    system::system_ops::{RealSystem, SystemOps},
 };
-use mash_system::cmd;
 
 #[allow(dead_code)]
 pub struct Doctor<'a> {
@@ -474,7 +474,9 @@ fn check_memory() -> PreflightCheck {
 }
 
 fn check_cpu() -> PreflightCheck {
-    let cores = num_cpus::get();
+    let cores = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1);
     let status = if cores < MIN_CPU_CORES {
         CheckStatus::Warning
     } else {
@@ -782,7 +784,7 @@ fn write_report(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mash_system::system::{RealSystem, SystemOps};
+    use crate::system::system_ops::{RealSystem, SystemOps};
     use std::net::{TcpListener, TcpStream};
     use std::path::Path;
     use std::process::Command;

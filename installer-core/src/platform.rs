@@ -88,7 +88,9 @@ pub fn detect() -> Result<PlatformInfo> {
 
     let pi_model = detect_pi_model();
     let cpu_model = detect_cpu_model();
-    let cpu_cores = num_cpus::get();
+    let cpu_cores = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1);
     let ram_total_gb = detect_ram_total_gb();
 
     Ok(PlatformInfo {

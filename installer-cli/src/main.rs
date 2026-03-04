@@ -150,13 +150,12 @@ fn main() -> Result<()> {
     // Build list of available drivers based on compile-time features
     let drivers: Vec<&'static dyn DistroDriver> = vec![
         #[cfg(feature = "arch")]
-        installer_arch::driver(),
+        installer_drivers::arch::driver(),
         #[cfg(feature = "debian")]
-        installer_debian::driver(),
+        installer_drivers::debian::driver(),
         #[cfg(feature = "fedora")]
-        installer_fedora::driver(),
+        installer_drivers::fedora::driver(),
     ];
-
     if drivers.is_empty() {
         anyhow::bail!(
             "No distro drivers available! Recompile with at least one feature: arch, debian, or fedora"
@@ -523,3 +522,4 @@ mod error_report_tests {
         assert!(output.contains("No additional error details were recorded."));
     }
 }
+// Incremental build test

@@ -3,6 +3,15 @@ use std::path::PathBuf;
 use anyhow::{anyhow, Result};
 use tracing::info;
 
+use crate::system::{
+    dry_run::DryRunLog,
+    error::{
+        DriverInfo, ErrorSeverity, InstallationReport, InstallerError, InstallerRunError,
+        InstallerStateSnapshot,
+    },
+    lockfile::InstallerLock,
+    sudo_password,
+};
 use crate::{
     context::{ConfigService, PlatformContext, UIContext, UserOptionsContext},
     driver::DistroDriver,
@@ -15,15 +24,6 @@ use crate::{
     rollback::RollbackManager,
     signal::SignalGuard,
     InstallContext,
-};
-use mash_system::{
-    dry_run::DryRunLog,
-    error::{
-        DriverInfo, ErrorSeverity, InstallationReport, InstallerError, InstallerRunError,
-        InstallerStateSnapshot,
-    },
-    lockfile::InstallerLock,
-    sudo_password,
 };
 
 pub fn run_with_driver(
@@ -57,7 +57,7 @@ pub fn run_with_driver(
                     description: driver.description().to_string(),
                 },
                 dry_run_log: Vec::new(),
-                audit_report: mash_system::dry_run::PreflightAuditReport::default(),
+                audit_report: crate::system::dry_run::PreflightAuditReport::default(),
             }),
             source: err,
         }
@@ -86,7 +86,7 @@ pub fn run_with_driver(
                     description: driver.description().to_string(),
                 },
                 dry_run_log: Vec::new(),
-                audit_report: mash_system::dry_run::PreflightAuditReport::default(),
+                audit_report: crate::system::dry_run::PreflightAuditReport::default(),
             }),
             source: err,
         })
@@ -110,7 +110,7 @@ pub fn run_with_driver(
         driver_name: driver.name(),
         driver,
         pkg_backend: driver.pkg_backend(),
-        system: &crate::system::REAL_SYSTEM,
+        system: &crate::sys_ops::REAL_SYSTEM,
     };
 
     let localization = Localization::load_default().map_err(Box::<InstallerRunError>::from)?;
@@ -190,7 +190,7 @@ pub fn run_with_driver(
                         description: driver.description().to_string(),
                     },
                     dry_run_log: ctx.dry_run_log.entries(),
-                    audit_report: mash_system::dry_run::PreflightAuditReport::default(),
+                    audit_report: crate::system::dry_run::PreflightAuditReport::default(),
                 }),
                 source: run_err.source,
             })
@@ -213,7 +213,7 @@ pub fn run_with_driver(
             description: driver.description().to_string(),
         },
         dry_run_log: ctx.dry_run_log.entries(),
-        audit_report: mash_system::dry_run::PreflightAuditReport::default(),
+        audit_report: crate::system::dry_run::PreflightAuditReport::default(),
     })
 }
 
@@ -221,7 +221,7 @@ pub fn run_with_driver(
 pub fn run_preflight_audit(
     driver: &'static dyn DistroDriver,
     opts: &InstallOptions,
-) -> Result<mash_system::dry_run::PreflightAuditReport> {
+) -> Result<crate::system::dry_run::PreflightAuditReport> {
     let registry = PhaseRegistry::default();
     // Use dummy context for audit
     let platform = detect_platform()?;
@@ -232,7 +232,7 @@ pub fn run_preflight_audit(
         driver_name: driver.name(),
         driver,
         pkg_backend: driver.pkg_backend(),
-        system: &crate::system::REAL_SYSTEM,
+        system: &crate::sys_ops::REAL_SYSTEM,
     };
     let ctx = InstallContext {
         options: UserOptionsContext::from_options(opts),

@@ -78,31 +78,22 @@ installer-core v1.1.0-alpha.2 (/data/GitHub/Mash-installer/installer-core)
 │   │       ├── proc-macro2 v1.0.106 (*)
 │   │       ├── quote v1.0.44 (*)
 │   │       └── syn v2.0.117 (*)
-│   ├── toml v0.8.23
-│   │   ├── serde v1.0.228 (*)
-│   │   ├── serde_spanned v0.6.9
-│   │   │   └── serde v1.0.228 (*)
-│   │   ├── toml_datetime v0.6.11
-│   │   │   └── serde v1.0.228 (*)
-│   │   └── toml_edit v0.22.27
-│   │       ├── indexmap v2.13.0
-│   │       │   ├── equivalent v1.0.2
-│   │       │   └── hashbrown v0.16.1
-│   │       │       └── foldhash v0.2.0
-│   │       ├── serde v1.0.228 (*)
-│   │       ├── serde_spanned v0.6.9 (*)
-│   │       ├── toml_datetime v0.6.11 (*)
-│   │       ├── toml_write v0.1.2
-│   │       └── winnow v0.7.14
+│   ├── toml v1.0.3+spec-1.1.0
+│   │   ├── serde_core v1.0.228
+│   │   ├── serde_spanned v1.0.4
+│   │   │   └── serde_core v1.0.228
+│   │   ├── toml_datetime v1.0.0+spec-1.1.0
+│   │   │   └── serde_core v1.0.228
+│   │   ├── toml_parser v1.0.9+spec-1.1.0
+│   │   │   └── winnow v0.7.14
+│   │   ├── toml_writer v1.0.6+spec-1.1.0
+│   │   └── winnow v0.7.14
 │   └── workspace-hack v0.1.0 (/data/GitHub/Mash-installer/workspace-hack)
 ├── lazy_static v1.5.0
 ├── mash-system v0.1.0 (/data/GitHub/Mash-installer/mash-system)
 │   ├── anyhow v1.0.102
 │   ├── async-trait v0.1.89 (proc-macro) (*)
-│   ├── dirs v5.0.1
-│   │   └── dirs-sys v0.4.1
-│   │       ├── libc v0.2.182
-│   │       └── option-ext v0.2.0
+│   ├── dirs v6.0.0 (*)
 │   ├── installer-model v0.1.0 (/data/GitHub/Mash-installer/installer-model) (*)
 │   ├── log v0.4.29
 │   ├── nix v0.31.2
@@ -113,11 +104,7 @@ installer-core v1.1.0-alpha.2 (/data/GitHub/Mash-installer/installer-core)
 │   │   └── cfg_aliases v0.2.1
 │   ├── serde v1.0.228 (*)
 │   ├── serde_json v1.0.149 (*)
-│   ├── thiserror v1.0.69
-│   │   └── thiserror-impl v1.0.69 (proc-macro)
-│   │       ├── proc-macro2 v1.0.106 (*)
-│   │       ├── quote v1.0.44 (*)
-│   │       └── syn v2.0.117 (*)
+│   ├── thiserror v2.0.18 (*)
 │   ├── tokio v1.49.0
 │   │   ├── bytes v1.11.1
 │   │   ├── libc v0.2.182
@@ -373,7 +360,8 @@ installer-core v1.1.0-alpha.2 (/data/GitHub/Mash-installer/installer-core)
 │   ├── fallible-iterator v0.3.0
 │   ├── fallible-streaming-iterator v0.1.9
 │   ├── hashlink v0.11.0
-│   │   └── hashbrown v0.16.1 (*)
+│   │   └── hashbrown v0.16.1
+│   │       └── foldhash v0.2.0
 │   ├── libsqlite3-sys v0.36.0
 │   │   [build-dependencies]
 │   │   ├── cc v1.2.56 (*)
@@ -440,16 +428,7 @@ installer-core v1.1.0-alpha.2 (/data/GitHub/Mash-installer/installer-core)
 │       └── linux-raw-sys v0.12.1
 ├── thiserror v2.0.18 (*)
 ├── tokio v1.49.0 (*)
-├── toml v1.0.3+spec-1.1.0
-│   ├── serde_core v1.0.228
-│   ├── serde_spanned v1.0.4
-│   │   └── serde_core v1.0.228
-│   ├── toml_datetime v1.0.0+spec-1.1.0
-│   │   └── serde_core v1.0.228
-│   ├── toml_parser v1.0.9+spec-1.1.0
-│   │   └── winnow v0.7.14
-│   ├── toml_writer v1.0.6+spec-1.1.0
-│   └── winnow v0.7.14
+├── toml v1.0.3+spec-1.1.0 (*)
 ├── tracing v0.1.44 (*)
 ├── tracing-subscriber v0.3.22 (*)
 ├── which v8.0.0

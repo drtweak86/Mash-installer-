@@ -1,0 +1,10 @@
+[package]
+name = "installer-drivers"
+version = "1.1.0-alpha.2"
+edition = "2021"
+description = "Consolidated Linux distribution drivers for the MASH installer"
+license = "MIT"
+
+[dependencies]
+installer-core = { path = "../installer-core" }
+anyhow = { workspace = true }

@@ -5,7 +5,6 @@
 //! Linux distributions.
 
 use anyhow::Result;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use crate::context::PhaseContext;
@@ -14,7 +13,7 @@ use crate::driver::DistroDriver;
 use crate::package_manager::installer_for;
 
 // ── Package Categories ──────────────────────────────────────────────────────
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PackageCategory {
     CoreTools,
     KdePlasma,
@@ -36,7 +35,7 @@ pub enum PackageCategory {
 }
 
 // ── Package Mapping ────────────────────────────────────────────────────────
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct PackageMapping {
     pub fedora: Vec<&'static str>,
     pub debian: Vec<&'static str>,

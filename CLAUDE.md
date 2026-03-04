@@ -53,11 +53,11 @@ Pinned at **1.93.1** via `rust-toolchain.toml`. Components: `rustfmt`, `clippy`.
 | Crate | Role |
 |-------|------|
 | `installer-cli` | Binary (`mash-setup`): arg parsing, TUI (default) or stdio (`--no-tui`) |
-| `installer-core` | Library: phases, orchestration, dry-run, logging, config |
-| `installer-arch` | Arch/Manjaro distro driver (thin wrapper over `installer-core`) |
-| `installer-debian` | Debian/Ubuntu distro driver |
-| `installer-fedora` | Fedora distro driver |
-| `wallpaper-downloader` | Standalone binary for Wallhaven/Pexels/Pixabay wallpaper downloads |
+| `installer-core` | Library: phases, orchestration, models, system, and wallpaper logic |
+| `installer-drivers` | Consolidated distro drivers (Arch, Debian, Fedora) |
+| `mash-system` | Foundational system abstractions and manual /proc parsing |
+| `mash-wallpaper` | Standalone wallpaper harvesting library |
+| `wallpaper-downloader` | Thin wrapper for standalone wallpaper downloads |
 | `xtask` | Dev tooling (`cargo xtask <subcommand>`); not published |
 
 ### Two Execution Paths in `installer-cli`
@@ -70,7 +70,7 @@ Pinned at **1.93.1** via `rust-toolchain.toml`. Components: `rustfmt`, `clippy`.
 - **`PhaseContext::run_or_record()`** — the single dry-run gate. All side-effecting operations must pass through this. Never bypass it for new phase work.
 - **`pub mod verify`** — exposes `verify_file_written()` and `sync_file()` for Pi SD card write safety. Use these after writing config files on Pi targets.
 - **`WallpaperConfig::with_env_keys()`** — reads `MASH_WALLHAVEN_KEY`, `MASH_PEXELS_KEY`, `MASH_PIXABAY_KEY` from the environment. Never hardcode API keys.
-- **`DistroDriver` trait** — implemented in each distro crate; `installer-core` calls it via dynamic dispatch.
+- **`DistroDriver` trait** — implemented in `installer-drivers`; `installer-core` calls it via dynamic dispatch.
 
 ### `install.sh`
 

@@ -3,6 +3,19 @@
 
 ---
 
+## Session: 2026-03-04 — Shaft Y: Baseline Establishment & Verification
+
+### Summary
+Established a clean baseline for the `work-shaft-v-w` branch. Verified workspace integrity through a full clean build and exhaustive test suite execution.
+
+### Key Achievements
+- [x] **Workspace Integrity**: Confirmed all 10 crates compile successfully in the new workspace structure.
+- [x] **Test Verification**: Verified 110+ tests pass across the workspace, including doc-tests and integration harnesses.
+- [x] **CLI Validation**: Confirmed `mash-setup` binary interface and help-system are fully operational.
+- [x] **Source of Truth Sync**: Updated `maps.md` and `maps-explored.md` to reflect the verified state.
+
+---
+
 ## Session: 2026-03-03 — Shaft Y: Planning & Quality Standards
 
 ### Summary

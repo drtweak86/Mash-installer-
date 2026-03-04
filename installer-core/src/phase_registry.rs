@@ -62,7 +62,10 @@ impl PhaseRegistry {
             Err(e) => {
                 // If there's a circular dependency, we log and fallback to original order
                 // which is better than panicking in production.
-                tracing::error!("Circular dependency in phases: {}. Falling back to default order.", e);
+                tracing::error!(
+                    "Circular dependency in phases: {}. Falling back to default order.",
+                    e
+                );
                 return filtered_entries
                     .iter()
                     .map(|entry| entry.to_phase(strings))
@@ -291,7 +294,7 @@ mod tests {
         let strings = Localization::load_default()?;
 
         let phases = registry.build_phases(&options, &strings);
-        
+
         assert_eq!(phases.len(), 3);
         assert_eq!(phases[0].name(), "A");
         assert_eq!(phases[1].name(), "B");

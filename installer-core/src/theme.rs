@@ -55,7 +55,7 @@ impl Theme {
         for entry in &self.configs {
             let target_rel = PathBuf::from(&entry.target_path);
             let resource_path = resources_base.join(&entry.resource_path);
-            
+
             df_mgr.deploy(&resource_path, &target_rel, DeployStrategy::Copy)?;
 
             // Set permissions if executable
@@ -79,7 +79,7 @@ impl Theme {
 pub fn install_theme_file(config: &ThemeConfig) -> Result<()> {
     let mgr = DotfileManager::new(Path::new("/"), false); // Legacy assume absolute or handled elsewhere
     mgr.deploy(&config.resource_path, &config.target_path, config.strategy)?;
-    
+
     if config.is_executable {
         let mut perms = fs::metadata(&config.target_path)
             .context("Failed to get file metadata")?
@@ -101,7 +101,9 @@ pub fn get_retro_theme() -> Theme {
             ("background".into(), "#000000".into()),
             ("foreground".into(), "#ffffff".into()),
             ("accent".into(), "#ffff00".into()),
-        ].into_iter().collect(),
+        ]
+        .into_iter()
+        .collect(),
         font_id: Some("JetBrainsMono".into()),
         wallpaper_id: None,
         configs: vec![

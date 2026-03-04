@@ -56,12 +56,11 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
         configure_data_root(ctx, &data_root)?;
     }
 
-    if ctx.options.interactive {
-        if !AuthorizationService::new(ctx.observer, ctx.options).is_authorized(AuthType::DockerAuth) {
-            if ctx.observer.request_auth(AuthType::DockerAuth)? {
-                AuthorizationService::new(ctx.observer, ctx.options).authorize(AuthType::DockerAuth)?;
-            }
-        }
+    if ctx.options.interactive
+        && !AuthorizationService::new(ctx.observer, ctx.options).is_authorized(AuthType::DockerAuth)
+        && ctx.observer.request_auth(AuthType::DockerAuth)?
+    {
+        AuthorizationService::new(ctx.observer, ctx.options).authorize(AuthType::DockerAuth)?;
     }
 
     Ok(PhaseResult::Success)
@@ -331,6 +330,9 @@ mod tests {
                 distro_codename: "test".into(),
                 distro_family: "debian".into(),
                 pi_model: None,
+                cpu_model: "test".into(),
+                cpu_cores: 4,
+                ram_total_gb: 8.0,
             };
             let platform_ctx = PlatformContext {
                 config_service,

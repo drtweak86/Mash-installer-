@@ -1,0 +1,4 @@
+error: no such command: `udeps`
+
+help: view all installed commands with `cargo --list`
+help: find a package to install `udeps` with `cargo search cargo-udeps`

@@ -1,10 +1,11 @@
 use std::fmt;
 
 use anyhow::Result as AnyhowResult;
+pub use installer_model::phase::{PhaseEvent, PhaseOutput, PhaseStatus};
 use tracing::{error, info};
 
 use crate::{
-    context::{PhaseContext, PhaseMetadata},
+    context::PhaseContext,
     error::{ErrorSeverity, InstallerError, InstallerStateSnapshot},
     logging,
     signal::SignalGuard,
@@ -17,63 +18,6 @@ pub struct PhaseRunResult {
     pub outputs: Vec<PhaseOutput>,
     pub events: Vec<PhaseEvent>,
     pub errors: Vec<InstallerError>,
-}
-
-#[derive(Clone, Debug)]
-pub struct PhaseOutput {
-    pub name: String,
-    pub description: String,
-    pub actions_taken: Vec<String>,
-    pub configured_actions: Vec<String>,
-    pub tweaked_actions: Vec<String>,
-    pub rollback_actions: Vec<String>,
-    pub warnings: Vec<String>,
-    pub dry_run: bool,
-    pub status: PhaseStatus,
-}
-
-impl PhaseOutput {
-    pub fn from_metadata(
-        name: impl Into<String>,
-        description: impl Into<String>,
-        metadata: PhaseMetadata,
-        status: PhaseStatus,
-    ) -> Self {
-        Self {
-            name: name.into(),
-            description: description.into(),
-            actions_taken: metadata.actions_taken,
-            configured_actions: metadata.configured_actions,
-            tweaked_actions: metadata.tweaked_actions,
-            rollback_actions: metadata.rollback_actions,
-            warnings: metadata.warnings,
-            dry_run: metadata.dry_run,
-            status,
-        }
-    }
-
-    pub fn skipped(name: impl Into<String>, description: impl Into<String>, dry_run: bool) -> Self {
-        Self {
-            name: name.into(),
-            description: description.into(),
-            actions_taken: Vec::new(),
-            configured_actions: Vec::new(),
-            tweaked_actions: Vec::new(),
-            rollback_actions: Vec::new(),
-            warnings: Vec::new(),
-            dry_run,
-            status: PhaseStatus::Skipped,
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub enum PhaseStatus {
-    Completed,
-    PartialSuccess(String),
-    RecoverableFailure(String),
-    Failed(String),
-    Skipped,
 }
 
 #[derive(Debug)]
@@ -174,16 +118,22 @@ impl PhaseRunner {
                 // We only care about dependencies that are part of the current run's phase set.
                 // If a dependency was registered but skipped via should_run, we don't block.
                 // But if it was SUPPOSED to run and FAILED, we must block.
-                
+
                 // Check if this dependency was supposed to run
-                let dep_supposed_to_run = self.phases.iter().any(|p| p.name() == *dep && p.should_run(ctx));
-                
+                let dep_supposed_to_run = self
+                    .phases
+                    .iter()
+                    .any(|p| p.name() == *dep && p.should_run(ctx));
+
                 if dep_supposed_to_run && !completed.contains(&dep.to_string()) {
                     emit_event(
                         observer,
                         &mut events,
                         PhaseEvent::Warning {
-                            message: format!("Skipping {} because dependency {} was not completed", phase_name, dep),
+                            message: format!(
+                                "Skipping {} because dependency {} was not completed",
+                                phase_name, dep
+                            ),
                         },
                     );
                     emit_event(
@@ -367,35 +317,6 @@ impl PhaseRunner {
             errors,
         })
     }
-}
-
-#[derive(Clone, Debug)]
-pub enum PhaseEvent {
-    Total {
-        total: usize,
-    },
-    Started {
-        index: usize,
-        total: usize,
-        phase: String,
-    },
-    Completed {
-        index: usize,
-        phase: String,
-        description: String,
-    },
-    Failed {
-        index: usize,
-        phase: String,
-        error: String,
-    },
-    Skipped {
-        index: usize,
-        phase: String,
-    },
-    Warning {
-        message: String,
-    },
 }
 
 pub trait PhaseObserver {
@@ -633,6 +554,9 @@ mod tests {
             distro_codename: "test".into(),
             distro_family: "debian".into(),
             pi_model: None,
+            cpu_model: "test".into(),
+            cpu_cores: 4,
+            ram_total_gb: 8.0,
         };
         let driver: &'static dyn DistroDriver = &TEST_DRIVER;
         let platform_ctx = PlatformContext {
@@ -866,18 +790,18 @@ mod tests {
             )),
             Box::new(FunctionPhase::new("B", "B", success_phase).with_deps(vec!["A"])),
         ];
-        
+
         let runner = PhaseRunner::from_phases(phases);
         let mut observer = RecordingObserver::new();
-        
+
         // This will return error because A fails
         let _ = runner.run(&ctx, &mut observer, None);
-        
+
         assert!(observer
             .events
             .iter()
             .any(|evt| evt.starts_with("failure:1:A:")));
-        
+
         // We can't easily check if B was skipped here because the runner stops on fatal error A.
         // Let's use Recoverable severity for A.
         Ok(())
@@ -896,12 +820,12 @@ mod tests {
             )),
             Box::new(FunctionPhase::new("B", "B", success_phase).with_deps(vec!["A"])),
         ];
-        
+
         let runner = PhaseRunner::with_policy(phases, PhaseErrorPolicy::ContinueOnError);
         let mut observer = RecordingObserver::new();
-        
+
         let result = runner.run(&ctx, &mut observer, None)?;
-        
+
         assert_eq!(result.completed_phases.len(), 0);
         assert!(observer
             .events
@@ -911,7 +835,7 @@ mod tests {
             .events
             .iter()
             .any(|evt| evt.starts_with("skipped:2:B")));
-            
+
         Ok(())
     }
 }

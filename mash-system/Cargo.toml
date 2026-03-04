@@ -1,0 +1,21 @@
+[package]
+name = "mash-system"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+dirs = { workspace = true }
+log = "0.4"
+tokio = { workspace = true }
+async-trait = { workspace = true }
+nix = { workspace = true }
+tracing-subscriber = { workspace = true }
+installer-model = { version = "0.1.0", path = "../installer-model" }
+
+[dev-dependencies]
+tempfile = { workspace = true }

@@ -9,17 +9,20 @@ use std::process::Command;
 use std::time::Duration;
 
 use crate::{
-    cmd, config,
+    config,
     context::{ConfigOverrides, ConfigService},
     scrubber,
     system::{RealSystem, SystemOps},
 };
+use mash_system::cmd;
 
+#[allow(dead_code)]
 pub struct Doctor<'a> {
     system: &'a dyn SystemOps,
     temp_files: Vec<std::path::PathBuf>,
 }
 
+#[allow(dead_code)]
 impl<'a> Doctor<'a> {
     pub fn new(system: &'a dyn SystemOps) -> Self {
         Self {
@@ -197,7 +200,12 @@ pub fn run_doctor(format: DoctorOutput, out: &mut dyn Write) -> Result<()> {
     let cargo_tools = [
         "cargo-watch",
         "cargo-audit",
+        "cargo-nextest",
         "cargo-maelstrom",
+        "cargo-machete",
+        "cargo-shear",
+        "cargo-deps",
+        "cargo-hakari",
         "cargo-add",
         "bacon",
         "just",
@@ -774,7 +782,7 @@ fn write_report(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::system::{RealSystem, SystemOps};
+    use mash_system::system::{RealSystem, SystemOps};
     use std::net::{TcpListener, TcpStream};
     use std::path::Path;
     use std::process::Command;

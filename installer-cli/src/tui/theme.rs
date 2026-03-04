@@ -52,6 +52,7 @@ pub fn dim_style() -> Style {
     Style::default().fg(DIM_GREEN)
 }
 
+#[allow(dead_code)]
 pub fn muted_style() -> Style {
     Style::default().fg(Color::DarkGray)
 }

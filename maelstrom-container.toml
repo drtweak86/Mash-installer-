@@ -1,0 +1,29 @@
+[[mounts]]
+type = "bind"
+host_path = "/tmp"
+mount_path = "/tmp"
+
+[[mounts]]
+type = "bind"
+host_path = "/proc"
+mount_path = "/proc"
+
+[[mounts]]
+type = "bind"
+host_path = "/sys"
+mount_path = "/sys"
+
+[[mounts]]
+type = "bind"
+host_path = "/dev"
+mount_path = "/dev"
+
+[[mounts]]
+type = "bind"
+host_path = "/run"
+mount_path = "/run"
+
+[[mounts]]
+type = "bind"
+host_path = "/etc/resolv.conf"
+mount_path = "/etc/resolv.conf"

@@ -1,7 +1,8 @@
 use anyhow::{anyhow, Context, Result};
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use crate::{backend::PkgBackend, cmd, distro, driver::DistroDriver};
+use crate::{backend::PkgBackend, distro, driver::DistroDriver};
+use mash_system::cmd;
 
 static PACMAN_SYNCED: AtomicBool = AtomicBool::new(false);
 

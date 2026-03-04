@@ -6,13 +6,13 @@ use tokio::task::JoinSet;
 use tracing::{info, warn};
 
 use crate::context::PhaseContext;
-use crate::system::{RealSystem, SystemOps};
 use crate::wallpaper::api::{
     pexels::PexelsApi, pixabay::PixabayApi, wallhaven::WallhavenApi, WallpaperApi,
 };
 use crate::wallpaper::config::WallpaperConfig;
 use crate::wallpaper::error::WallpaperError;
 use crate::wallpaper::types::{DownloadStats, WallpaperCategory, WallpaperImage};
+use mash_system::system::{RealSystem, SystemOps};
 
 /// Downloads wallpapers from multiple sources with concurrent downloads
 pub async fn download_wallpapers(

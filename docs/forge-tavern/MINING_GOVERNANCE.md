@@ -1,6 +1,6 @@
 # ⚒️ MASH MINING PROJECT GOVERNANCE
 
-This document outlines the governance and structure for managing **Mining Projects** (formerly work orders) within the MASH project. It ensures a standardized, transparent, and detailed approach to system excavation, adhering to the Bard’s Immutable Laws and Dr. Tweak's Guidelines.
+This document outlines the governance and structure for managing **Mining Projects** (formerly work orders) within the MASH project. It ensures a standardized, transparent, and detailed approach to system excavation, adhering to the Bard’s Immutable Laws (see `docs/forge-laws.md`) and Dr. Tweak's Guidelines.
 
 ## 📜 PRINCIPLES
 

@@ -110,6 +110,9 @@ fn build_install_context() -> Result<InstallContext> {
         distro_codename: "test".into(),
         distro_family: "debian".into(),
         pi_model: None,
+        cpu_model: "test".into(),
+        cpu_cores: 4,
+        ram_total_gb: 8.0,
     };
     let driver: &'static dyn DistroDriver = &DummyDriver;
     let platform_ctx = PlatformContext {

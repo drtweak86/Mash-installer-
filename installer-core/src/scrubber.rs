@@ -1,9 +1,10 @@
-use std::sync::{Arc, RwLock};
 use lazy_static::lazy_static;
 use std::collections::HashSet;
+use std::sync::{Arc, RwLock};
 
 lazy_static! {
-    static ref SENSITIVE_STRINGS: Arc<RwLock<HashSet<String>>> = Arc::new(RwLock::new(HashSet::new()));
+    static ref SENSITIVE_STRINGS: Arc<RwLock<HashSet<String>>> =
+        Arc::new(RwLock::new(HashSet::new()));
 }
 
 /// Register a string as sensitive so it can be scrubbed from logs and output.
@@ -29,7 +30,7 @@ pub fn scrub(input: &str) -> String {
             }
         }
     }
-    
+
     // Also scrub common patterns
     scrub_patterns(&output)
 }

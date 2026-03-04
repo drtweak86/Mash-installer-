@@ -43,6 +43,9 @@ fn build_mock_context(arch: &'static str) -> Result<InstallContext> {
         } else {
             None
         },
+        cpu_model: "test".into(),
+        cpu_cores: 4,
+        ram_total_gb: 8.0,
     };
 
     let options = UserOptionsContext {

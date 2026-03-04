@@ -43,7 +43,10 @@ impl DependencyGraph {
         }
 
         if visiting.contains(name) {
-            return Err(anyhow!("Circular dependency detected involving phase: {}", name));
+            return Err(anyhow!(
+                "Circular dependency detected involving phase: {}",
+                name
+            ));
         }
 
         visiting.insert(name.to_string());
@@ -80,7 +83,7 @@ mod tests {
         graph.add_node("D".into(), vec!["A".into(), "C".into()]);
 
         let sorted = graph.topological_sort()?;
-        
+
         let a_pos = sorted.iter().position(|x| x == "A").unwrap();
         let b_pos = sorted.iter().position(|x| x == "B").unwrap();
         let c_pos = sorted.iter().position(|x| x == "C").unwrap();
@@ -89,7 +92,7 @@ mod tests {
         assert!(a_pos < b_pos);
         assert!(b_pos < c_pos);
         assert!(c_pos < d_pos);
-        
+
         Ok(())
     }
 
@@ -101,14 +104,17 @@ mod tests {
 
         let result = graph.topological_sort();
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Circular dependency"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Circular dependency"));
     }
 
     #[test]
     fn test_missing_dependency_is_ignored() -> Result<()> {
         let mut graph = DependencyGraph::new();
         graph.add_node("B".into(), vec!["A".into()]);
-        
+
         let sorted = graph.topological_sort()?;
         assert_eq!(sorted, vec!["B"]);
         Ok(())

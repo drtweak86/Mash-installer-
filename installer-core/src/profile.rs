@@ -4,140 +4,72 @@
 //! It serves as the single source of truth for the machine's hardware, OS, and storage landscape.
 
 use anyhow::Result;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::collections::HashSet;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use sysinfo::{CpuRefreshKind, MemoryRefreshKind, RefreshKind, System};
 
-/// The complete pedigree of the machine we are inhabiting.
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct SystemProfile {
-    pub platform: PlatformInfo,
-    pub distro: DistroInfo,
-    pub cpu: CpuInfo,
-    pub memory: MemoryInfo,
-    pub gpu: GpuInfo,
-    pub network: NetworkInfo,
-    pub software: SoftwareInfo,
-    pub session: SessionInfo,
-    pub storage: StorageInfo,
-    pub timestamp: u64,
+pub use installer_model::profile::*;
+
+use mash_system::system::SystemOps;
+
+pub trait SystemProfileExt {
+    fn detect(system: &dyn SystemOps) -> Result<Self>
+    where
+        Self: Sized;
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct SoftwareInfo {
-    pub nodejs_version: Option<String>,
+pub trait PlatformInfoExt {
+    fn detect(system: &dyn SystemOps) -> Result<Self>
+    where
+        Self: Sized;
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct GpuInfo {
-    pub model: String,
-    pub driver: String,
+pub trait DistroInfoExt {
+    fn detect() -> Result<Self>
+    where
+        Self: Sized;
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct NetworkInfo {
-    pub interfaces: Vec<String>,
+pub trait CpuInfoExt {
+    fn detect(sys: &System) -> Self;
 }
 
-/// Hardware platform classification.
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
-pub enum PlatformType {
-    #[default]
-    Unknown,
-    RaspberryPi,
-    GenericArm,
-    PC,
+pub trait MemoryInfoExt {
+    fn detect(sys: &System, system: &dyn SystemOps) -> Self;
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct PlatformInfo {
-    pub platform_type: PlatformType,
-    pub model: String,
-    pub board_revision: Option<String>,
-    pub is_laptop: bool,
+pub trait GpuInfoExt {
+    fn detect(system: &dyn SystemOps) -> Result<Self>
+    where
+        Self: Sized;
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct DistroInfo {
-    pub id: String,
-    pub version: String,
-    pub pretty_name: String,
-    pub family: String,
-    pub init_system: String,
-    pub kernel: String,
+pub trait NetworkInfoExt {
+    fn detect(system: &dyn SystemOps) -> Result<Self>
+    where
+        Self: Sized;
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct CpuInfo {
-    pub model: String,
-    pub arch: String,
-    pub physical_cores: usize,
-    pub logical_cores: usize,
-    pub flags: HashSet<String>,
+pub trait SoftwareInfoExt {
+    fn detect(system: &dyn SystemOps) -> Result<Self>
+    where
+        Self: Sized;
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct MemoryInfo {
-    pub ram_total_kb: u64,
-    pub ram_avail_kb: u64,
-    pub swap_total_kb: u64,
-    pub zram_total_kb: u64,
+pub trait SessionInfoExt {
+    fn detect() -> Self;
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct SessionInfo {
-    pub desktop_environment: String,
-    pub window_manager: String,
-    pub session_type: String, // x11, wayland, tty
+pub trait StorageInfoExt {
+    fn detect(system: &dyn SystemOps) -> Result<Self>
+    where
+        Self: Sized;
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct StorageInfo {
-    pub devices: Vec<BlockDevice>,
-    pub mounts: Vec<MountInfo>,
-    pub btrfs_data: Option<BtrfsData>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct BlockDevice {
-    pub name: String,
-    pub type_name: String, // disk, part, etc.
-    pub size_bytes: u64,
-    pub model: Option<String>,
-    pub vendor: Option<String>,
-    pub is_removable: bool,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct MountInfo {
-    pub device: String,
-    pub destination: String,
-    pub fstype: String,
-    pub options: Vec<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct BtrfsData {
-    pub has_subvolumes: bool,
-    pub root_is_btrfs: bool,
-    pub subvolumes: Vec<String>,
-}
-
-impl SystemProfile {
-    /// Create a new skeleton profile.
-    pub fn new() -> Self {
-        Self {
-            timestamp: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_secs(),
-            ..Default::default()
-        }
-    }
-
+impl SystemProfileExt for SystemProfile {
     /// Full auto-detection of the system.
-    pub fn detect(system: &dyn crate::SystemOps) -> Result<Self> {
+    fn detect(system: &dyn SystemOps) -> Result<Self> {
         let mut sys = System::new_with_specifics(
             RefreshKind::nothing()
                 .with_cpu(CpuRefreshKind::everything())
@@ -158,35 +90,10 @@ impl SystemProfile {
 
         Ok(profile)
     }
-
-    pub fn to_json(&self) -> serde_json::Result<String> {
-        serde_json::to_string_pretty(self)
-    }
-
-    pub fn from_json(json: &str) -> serde_json::Result<Self> {
-        serde_json::from_str(json)
-    }
-
-    pub fn save_to_config(&self) -> Result<PathBuf> {
-        let config_dir = dirs::home_dir()
-            .unwrap_or_else(|| PathBuf::from("/root"))
-            .join(".config")
-            .join("mash-installer");
-
-        if !config_dir.exists() {
-            std::fs::create_dir_all(&config_dir)?;
-        }
-
-        let path = config_dir.join("system_profile.json");
-        let json = self.to_json()?;
-        std::fs::write(&path, json)?;
-
-        Ok(path)
-    }
 }
 
-impl StorageInfo {
-    pub fn detect(system: &dyn crate::SystemOps) -> Result<Self> {
+impl StorageInfoExt for StorageInfo {
+    fn detect(system: &dyn SystemOps) -> Result<Self> {
         let devices = detect_block_devices(system)?;
         let mounts = detect_mounts(system)?;
         let btrfs_data = detect_btrfs_data(system, &mounts);
@@ -216,7 +123,7 @@ struct LsblkDevice {
     children: Option<Vec<LsblkDevice>>,
 }
 
-fn detect_block_devices(system: &dyn crate::SystemOps) -> Result<Vec<BlockDevice>> {
+fn detect_block_devices(system: &dyn SystemOps) -> Result<Vec<BlockDevice>> {
     let mut cmd = std::process::Command::new("lsblk");
     cmd.args([
         "--json",
@@ -257,7 +164,7 @@ fn flatten_lsblk_devices(lsblk_devs: &[LsblkDevice], out: &mut Vec<BlockDevice>)
     }
 }
 
-fn detect_mounts(system: &dyn crate::SystemOps) -> Result<Vec<MountInfo>> {
+fn detect_mounts(system: &dyn SystemOps) -> Result<Vec<MountInfo>> {
     let content = system.read_to_string(Path::new("/proc/mounts"))?;
     let mut mounts = Vec::new();
 
@@ -276,7 +183,7 @@ fn detect_mounts(system: &dyn crate::SystemOps) -> Result<Vec<MountInfo>> {
     Ok(mounts)
 }
 
-fn detect_btrfs_data(system: &dyn crate::SystemOps, mounts: &[MountInfo]) -> Option<BtrfsData> {
+fn detect_btrfs_data(system: &dyn SystemOps, mounts: &[MountInfo]) -> Option<BtrfsData> {
     let root_mount = mounts.iter().find(|m| m.destination == "/")?;
     let root_is_btrfs = root_mount.fstype == "btrfs";
 
@@ -305,8 +212,8 @@ fn detect_btrfs_data(system: &dyn crate::SystemOps, mounts: &[MountInfo]) -> Opt
     })
 }
 
-impl PlatformInfo {
-    pub fn detect(system: &dyn crate::SystemOps) -> Result<Self> {
+impl PlatformInfoExt for PlatformInfo {
+    fn detect(system: &dyn SystemOps) -> Result<Self> {
         let model_path = Path::new("/proc/device-tree/model");
         if model_path.exists() {
             let model = system.read_to_string(model_path).unwrap_or_default();
@@ -339,7 +246,7 @@ impl PlatformInfo {
     }
 }
 
-fn detect_is_laptop(_system: &dyn crate::SystemOps) -> bool {
+fn detect_is_laptop(_system: &dyn SystemOps) -> bool {
     // Check for battery presence as a proxy for laptop
     let power_supply = Path::new("/sys/class/power_supply");
     if let Ok(entries) = std::fs::read_dir(power_supply) {
@@ -354,7 +261,7 @@ fn detect_is_laptop(_system: &dyn crate::SystemOps) -> bool {
     false
 }
 
-fn detect_board_revision(system: &dyn crate::SystemOps) -> Option<String> {
+fn detect_board_revision(system: &dyn SystemOps) -> Option<String> {
     if let Ok(cpuinfo) = system.read_to_string(Path::new("/proc/cpuinfo")) {
         for line in cpuinfo.lines() {
             if line.starts_with("Revision") {
@@ -367,8 +274,8 @@ fn detect_board_revision(system: &dyn crate::SystemOps) -> Option<String> {
     None
 }
 
-impl DistroInfo {
-    pub fn detect() -> Result<Self> {
+impl DistroInfoExt for DistroInfo {
+    fn detect() -> Result<Self> {
         let os_release = std::fs::read_to_string("/etc/os-release").unwrap_or_default();
         let id = parse_os_field(&os_release, "ID").unwrap_or_else(|| "unknown".into());
         let version = parse_os_field(&os_release, "VERSION_ID").unwrap_or_else(|| "0".into());
@@ -423,8 +330,8 @@ fn parse_os_field(content: &str, key: &str) -> Option<String> {
     None
 }
 
-impl CpuInfo {
-    pub fn detect(sys: &System) -> Self {
+impl CpuInfoExt for CpuInfo {
+    fn detect(sys: &System) -> Self {
         let cpu = sys.cpus().first();
         let model = cpu.map(|c| c.brand().to_string()).unwrap_or_default();
         let arch = std::env::consts::ARCH.to_string();
@@ -446,15 +353,15 @@ impl CpuInfo {
         Self {
             model,
             arch,
-            physical_cores: sys.physical_core_count().unwrap_or(0),
+            physical_cores: System::physical_core_count().unwrap_or(0),
             logical_cores: sys.cpus().len(),
             flags,
         }
     }
 }
 
-impl GpuInfo {
-    pub fn detect(system: &dyn crate::SystemOps) -> Result<Self> {
+impl GpuInfoExt for GpuInfo {
+    fn detect(system: &dyn SystemOps) -> Result<Self> {
         // Simple shim for GPU detection
         let mut model = "Unknown".to_string();
         let mut driver = "Unknown".to_string();
@@ -488,8 +395,8 @@ impl GpuInfo {
     }
 }
 
-impl NetworkInfo {
-    pub fn detect(_system: &dyn crate::SystemOps) -> Result<Self> {
+impl NetworkInfoExt for NetworkInfo {
+    fn detect(_system: &dyn SystemOps) -> Result<Self> {
         let mut interfaces = Vec::new();
         if let Ok(entries) = std::fs::read_dir("/sys/class/net") {
             for entry in entries.flatten() {
@@ -502,8 +409,8 @@ impl NetworkInfo {
     }
 }
 
-impl SoftwareInfo {
-    pub fn detect(system: &dyn crate::SystemOps) -> Result<Self> {
+impl SoftwareInfoExt for SoftwareInfo {
+    fn detect(system: &dyn SystemOps) -> Result<Self> {
         let mut nodejs_version = None;
 
         let mut cmd = std::process::Command::new("node");
@@ -519,8 +426,8 @@ impl SoftwareInfo {
     }
 }
 
-impl MemoryInfo {
-    pub fn detect(sys: &System, system: &dyn crate::SystemOps) -> Self {
+impl MemoryInfoExt for MemoryInfo {
+    fn detect(sys: &System, system: &dyn SystemOps) -> Self {
         let ram_total_kb = sys.total_memory() / 1024;
         let ram_avail_kb = sys.available_memory() / 1024;
         let swap_total_kb = sys.total_swap() / 1024;
@@ -547,8 +454,8 @@ impl MemoryInfo {
     }
 }
 
-impl SessionInfo {
-    pub fn detect() -> Self {
+impl SessionInfoExt for SessionInfo {
+    fn detect() -> Self {
         let desktop_environment =
             std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_else(|_| "unknown".into());
         let session_type = std::env::var("XDG_SESSION_TYPE").unwrap_or_else(|_| "tty".into());
@@ -578,7 +485,7 @@ impl SessionInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::system::REAL_SYSTEM;
+    use mash_system::system::REAL_SYSTEM;
 
     #[test]
     fn test_profile_serialization() {

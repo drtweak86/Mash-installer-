@@ -1,6 +1,6 @@
 //! Long Process Confirmation — Advisory dialogs for operations > 2 minutes
 
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use ratatui::text::{Line, Span, Text};
@@ -9,49 +9,8 @@ use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
 use crate::tui::app::TuiApp;
 use crate::tui::theme;
 
-/// Long process confirmation state
-#[derive(Debug, Clone)]
-pub struct LongProcessState {
-    pub operation_name: String,
-    pub estimated_duration: Duration,
-    pub start_time: Instant,
-    pub countdown: Option<u64>, // Countdown in seconds before auto-proceed
-    pub user_confirmed: bool,
-}
-
-impl LongProcessState {
-    #[allow(dead_code)]
-    pub fn new(operation_name: String, estimated_duration: Duration) -> Self {
-        Self {
-            operation_name,
-            estimated_duration,
-            start_time: Instant::now(),
-            countdown: if estimated_duration.as_secs() > 120 {
-                Some(30) // 30-second countdown for operations > 2 minutes
-            } else {
-                None
-            },
-            user_confirmed: false,
-        }
-    }
-
-    pub fn should_show_confirmation(&self) -> bool {
-        self.estimated_duration.as_secs() > 120
-    }
-
-    pub fn update_countdown(&mut self) -> bool {
-        if let Some(ref mut countdown) = self.countdown {
-            let elapsed = self.start_time.elapsed().as_secs();
-            if elapsed >= *countdown {
-                return true; // Countdown complete, auto-proceed
-            }
-            *countdown = countdown.saturating_sub(elapsed);
-        }
-        false
-    }
-}
-
 /// Draw long process confirmation dialog
+#[allow(dead_code)]
 pub fn draw_long_process_confirm(f: &mut ratatui::Frame, area: Rect, app: &TuiApp) {
     let Some(state) = &app.long_process_state else {
         return;
@@ -161,6 +120,7 @@ pub fn draw_long_process_confirm(f: &mut ratatui::Frame, area: Rect, app: &TuiAp
 }
 
 /// Helper function to center a rectangle within an area
+#[allow(dead_code)]
 fn centered_rect(width: u16, height: u16, area: Rect) -> Rect {
     let horizontal = Layout::default()
         .direction(Direction::Horizontal)

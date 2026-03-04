@@ -2,10 +2,10 @@ use anyhow::Result;
 use tokio::runtime::Runtime;
 
 use crate::context::PhaseContext;
-use crate::system::RealSystem;
 use crate::wallpaper::harvest::WallpaperHarvester;
 use crate::wallpaper::{download_wallpapers, HarvestConfig, WallpaperConfig};
 use crate::PhaseResult;
+use mash_system::system::RealSystem;
 
 /// Create a basic logger for wallpaper operations
 fn create_wallpaper_logger() -> slog::Logger {

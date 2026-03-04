@@ -24,13 +24,13 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
         PkgBackend::Apt => install_argon_oem(ctx)?,
     }
 
-    if ctx.options.interactive {
-        if !AuthorizationService::new(ctx.observer, ctx.options).is_authorized(AuthType::ArgonOneConfig) {
-            if ctx.observer.request_auth(AuthType::ArgonOneConfig)? {
-                AuthorizationService::new(ctx.observer, ctx.options).authorize(AuthType::ArgonOneConfig)?;
-                ctx.record_configured("Argon One fan thresholds");
-            }
-        }
+    if ctx.options.interactive
+        && !AuthorizationService::new(ctx.observer, ctx.options)
+            .is_authorized(AuthType::ArgonOneConfig)
+        && ctx.observer.request_auth(AuthType::ArgonOneConfig)?
+    {
+        AuthorizationService::new(ctx.observer, ctx.options).authorize(AuthType::ArgonOneConfig)?;
+        ctx.record_configured("Argon One fan thresholds");
     }
 
     Ok(PhaseResult::Success)

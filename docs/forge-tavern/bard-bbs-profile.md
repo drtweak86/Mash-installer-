@@ -79,7 +79,8 @@ Sci-Fi × Fantasy × Cyberpunk × Dwarven Forge Lore
    • Verify before overwrite
 
 2. ABT - Always Be Testing
-   • cargo test --all before any commit
+   • The Holy Trinity: cargo (or maelstrom-cargo), fmt, and clippy
+   • Green builds require all three to pass workspace-wide
    • Test-driven development for new features
    • Integration tests for critical paths
    • Dry-run modes for destructive operations
@@ -201,12 +202,13 @@ Sci-Fi × Fantasy × Cyberpunk × Dwarven Forge Lore
     • Premature abstraction is evil
     • If it's not used twice, don't abstract it
 
-13. Four Sources of Truth
+13. Five Sources of Truth
     • bard-bbs-profile.md - comprehensive bio
     • bard-quick-ref.md - cheatsheet reminder
     • maps.md - current work (APD updated)
     • maps-explored.md - completed work only
-    • All in docs/forge-tavern/
+    • CODE_QUALITY.md - mandatory standards
+    • All in docs/forge-tavern/ (except CODE_QUALITY.md in docs/)
 
 14. Document Hygiene
     • /docs/scratch = /tmp folder (<7 days only)

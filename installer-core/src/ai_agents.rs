@@ -7,8 +7,9 @@
 //!
 //! Entry point: [`install_phase`], called from [`crate::phase_registry`].
 
-use crate::{cmd, package_manager, PhaseContext, PhaseResult};
+use crate::{package_manager, PhaseContext, PhaseResult};
 use anyhow::Result;
+use mash_system::cmd;
 use std::process::Command;
 
 pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {

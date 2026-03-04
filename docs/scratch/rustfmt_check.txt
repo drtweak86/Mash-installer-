@@ -1,0 +1,20 @@
+Diff in /data/GitHub/Mash-installer/installer-core/src/argon.rs:27:
+     if ctx.options.interactive
+         && !AuthorizationService::new(ctx.observer, ctx.options)
+             .is_authorized(AuthType::ArgonOneConfig)
+-            && ctx.observer.request_auth(AuthType::ArgonOneConfig)? {
+-                AuthorizationService::new(ctx.observer, ctx.options)
+-                    .authorize(AuthType::ArgonOneConfig)?;
+-                ctx.record_configured("Argon One fan thresholds");
+-            }
++        && ctx.observer.request_auth(AuthType::ArgonOneConfig)?
++    {
++        AuthorizationService::new(ctx.observer, ctx.options).authorize(AuthType::ArgonOneConfig)?;
++        ctx.record_configured("Argon One fan thresholds");
++    }
+ 
+     Ok(PhaseResult::Success)
+ }
+Diff in /data/GitHub/Mash-installer/installer-core/src/docker.rs:58:
+ 
+     if ctx.options.interactive

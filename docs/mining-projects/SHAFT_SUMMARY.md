@@ -2,17 +2,18 @@
 
 ## ✅ COMPLETED SHAFTS
 
-### Shaft V: The Interactive Forge (Installation Flow & Authorizations)
+### Shaft X: The Sharpened Toolchain (Toolchain & Quality)
 **Status**: ✅ COMPLETE
 **Completed**: 2026-03-02
 **Owner**: Bard
 
 #### 🎯 Objective
-Perfecting the installation sequence and enabling "Living Installations" through interactive setup. Moves beyond simple binary installation to fully configured environments.
+Enhanced the Rust toolchain with modern distributed testing and auditing capabilities. Fixed a regression in hardware detection that broke the test suite.
+
 #### 📦 Deliverables
-1. **Dependency-First Orchestration**: Topological sorting and prerequisite gates.
-2. **Interactive Authorization Service**: Support for gh, ssh, git, rclone, borg, tailscale, ngrok, cloudflared, docker, argon-one.
-3. **The Doctor Reforged**: Secret scrubbing, cleanup, and detailed action tracking.
+1. **Distributed Testing**: Added `cargo-maelstrom` and `cargo-nextest`.
+2. **Audit & Watch**: Integrated `cargo-audit`, `cargo-watch`, `bacon`, and `just`.
+3. **Test Repair**: Restored green build status across the workspace.
 
 ### Shaft W: The Aesthetic Guild (Presets, Themes & Dotfiles)
 **Status**: ✅ COMPLETE
@@ -26,6 +27,50 @@ Empower the user with high-quality, opinionated configurations and aesthetic pre
 1. **The Preset Engine**: Intelligent combination of software, themes, and settings.
 2. **Dotfile Manager**: Conflict-aware config file management (backup & restore).
 3. **The Wardrobe**: Interactive TUI for theme selection.
+
+### Shaft V: The Interactive Forge (Installation Flow & Authorizations)
+**Status**: ✅ COMPLETE
+**Completed**: 2026-03-02
+**Owner**: Bard
+
+#### 🎯 Objective
+Perfecting the installation sequence and enabling "Living Installations" through interactive setup. Moves beyond simple binary installation to fully configured environments.
+
+#### 📦 Deliverables
+1. **Dependency-First Orchestration**: Topological sorting and prerequisite gates.
+2. **Interactive Authorization Service**: Support for gh, ssh, git, rclone, borg, tailscale, ngrok, cloudflared, docker, argon-one.
+3. **The Doctor Reforged**: Secret scrubbing, cleanup, and detailed action tracking.
+
+### Shaft T: The Bard's Wisdom (Advice Engine)
+**Status**: ✅ COMPLETE
+**Completed**: 2026-03-01
+**Owner**: Bard
+
+#### 🎯 Objective
+Implemented an intelligent Advice Engine that translates system profiles into actionable wisdom, providing performance hints and stability warnings.
+
+### Shaft S: The All-Seeing Eye (System Profiling)
+**Status**: ✅ COMPLETE
+**Completed**: 2026-03-01
+**Owner**: Bard
+
+#### 🎯 Objective
+Forged a comprehensive auto-detection and profiling system for hardware, OS, and storage structures.
+
+### Shaft I: Software Catalog & Installation Flow
+**Status**: ✅ COMPLETE
+**Completed**: 2026-03-01
+**Owner**: Bard
+
+### Shaft H: Installer Experience Overhaul
+**Status**: ✅ COMPLETE
+**Completed**: 2026-03-01
+**Owner**: Bard
+
+### Shaft A-L, J
+**Status**: ✅ COMPLETE
+**Completed**: Various (Feb 2026)
+**Owner**: Bard
 
 ---
 

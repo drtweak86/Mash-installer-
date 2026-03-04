@@ -1,0 +1,511 @@
+=== installer-core ===
+   Compiling mio v1.1.1
+   Compiling hashbrown v0.16.1
+   Compiling tokio v1.49.0
+   Compiling indexmap v2.13.0
+   Compiling rustix v1.1.4
+   Compiling regex-automata v0.4.14
+   Compiling toml_edit v0.22.27
+   Compiling hyper v1.8.1
+   Compiling num-traits v0.2.19
+   Compiling erased-serde v0.3.31
+   Compiling thiserror v1.0.69
+   Compiling lazy_static v1.5.0
+   Compiling getrandom v0.4.1
+   Compiling sharded-slab v0.1.7
+   Compiling hyper-util v0.1.20
+   Compiling toml v0.8.23
+   Compiling tower v0.5.3
+   Compiling slog v2.8.2
+   Compiling crossbeam-utils v0.8.21
+   Compiling tokio-rustls v0.26.4
+   Compiling matchers v0.2.0
+   Compiling nix v0.31.2
+   Compiling libsqlite3-sys v0.36.0
+   Compiling tracing-log v0.2.0
+   Compiling dirs-sys v0.4.1
+   Compiling sysinfo v0.38.3
+   Compiling tracing-serde v0.2.0
+   Compiling thiserror-impl v1.0.69
+   Compiling signal-hook v0.4.3
+   Compiling nu-ansi-term v0.50.3
+   Compiling iana-time-zone v0.1.65
+   Compiling slog-async v2.8.0
+   Compiling workspace-hack v0.1.0 (/data/GitHub/Mash-installer/workspace-hack)
+   Compiling tokio-util v0.7.18
+   Compiling console v0.16.2
+   Compiling serde_urlencoded v0.7.1
+   Compiling installer-model v0.1.0 (/data/GitHub/Mash-installer/installer-model)
+   Compiling tower-http v0.6.8
+   Compiling time v0.3.47
+   Compiling chrono v0.4.44
+   Compiling tracing-subscriber v0.3.22
+   Compiling dirs v5.0.1
+   Compiling hyper-rustls v0.27.7
+   Compiling crossbeam-channel v0.5.15
+   Compiling portable-atomic v1.13.1
+   Compiling url v2.5.8
+   Compiling toml_parser v1.0.9+spec-1.1.0
+   Compiling http-body-util v0.1.3
+   Compiling hashlink v0.11.0
+   Compiling toml_datetime v1.0.0+spec-1.1.0
+   Compiling serde_spanned v1.0.4
+   Compiling is-terminal v0.4.17
+   Compiling cpufeatures v0.2.17
+   Compiling async-trait v0.1.89
+   Compiling env_home v0.1.0
+   Compiling toml_writer v1.0.6+spec-1.1.0
+   Compiling fallible-iterator v0.3.0
+   Compiling take_mut v0.2.2
+   Compiling term v1.2.1
+   Compiling fastrand v2.3.0
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling unit-prefix v0.5.2
+   Compiling indicatif v0.18.4
+   Compiling rusqlite v0.38.0
+   Compiling tempfile v3.26.0
+   Compiling slog-term v2.9.2
+   Compiling toml v1.0.3+spec-1.1.0
+   Compiling which v8.0.0
+   Compiling mash-system v0.1.0 (/data/GitHub/Mash-installer/mash-system)
+   Compiling sha2 v0.10.9
+warning: unused import: `tracing::Span`
+ --> mash-system/src/logging.rs:8:5
+  |
+8 | use tracing::Span;
+  |     ^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `error`, `info`, and `warn`
+  --> mash-system/src/sudo.rs:12:22
+   |
+12 | use tracing::{debug, error, info, warn};
+   |                      ^^^^^  ^^^^  ^^^^
+
+warning: `mash-system` (lib) generated 2 warnings (run `cargo fix --lib -p mash-system` to apply 2 suggestions)
+   Compiling reqwest v0.13.2
+   Compiling num_cpus v1.17.0
+   Compiling installer-core v1.1.0-alpha.2 (/data/GitHub/Mash-installer/installer-core)
+warning: ignoring -C extra-filename flag due to -o flag
+
+error[E0432]: unresolved import `crate::cmd`
+  --> installer-core/src/ai_agents.rs:10:13
+   |
+10 | use crate::{cmd, package_manager, PhaseContext, PhaseResult};
+   |             ^^^ no `cmd` in the root
+   |
+   = help: consider importing this module instead:
+           mash_system::cmd
+
+error[E0432]: unresolved import `crate::cmd`
+ --> installer-core/src/apt_repo.rs:6:5
+  |
+6 |     cmd,
+  |     ^^^ no `cmd` in the root
+  |
+  = help: consider importing this module instead:
+          mash_system::cmd
+
+error[E0432]: unresolved import `crate::cmd`
+ --> installer-core/src/argon.rs:6:5
+  |
+6 |     cmd, driver::ServiceName, package_manager, systemd, AuthType, AuthorizationService,
+  |     ^^^ no `cmd` in the root
+  |
+  = help: consider importing this module instead:
+          mash_system::cmd
+
+error[E0432]: unresolved import `crate::cmd`
+ --> installer-core/src/authorization.rs:5:13
+  |
+5 | use crate::{cmd, context::UserOptionsContext, phase_runner::PhaseObserver};
+  |             ^^^ no `cmd` in the root
+  |
+  = help: consider importing this module instead:
+          mash_system::cmd
+
+error[E0432]: unresolved import `crate::dry_run`
+ --> installer-core/src/context.rs:6:12
+  |
+6 | use crate::dry_run::DryRunLog;
+  |            ^^^^^^^
+  |            |
+  |            unresolved import
+  |            help: a similar path exists: `mash_system::dry_run`
+
+error[E0432]: unresolved import `crate::error`
+ --> installer-core/src/desktop.rs:8:5
+  |
+8 |     error::{ErrorSeverity, InstallerError, InstallerStateSnapshot},
+  |     ^^^^^
+  |     |
+  |     unresolved import
+  |     help: a similar path exists: `clap::error`
+
+error[E0432]: unresolved import `crate::cmd`
+ --> installer-core/src/docker.rs:9:15
+  |
+9 |     apt_repo, cmd,
+  |               ^^^ no `cmd` in the root
+  |
+  = help: consider importing this module instead:
+          mash_system::cmd
+
+error[E0432]: unresolved imports `crate::cmd`, `crate::system`
+  --> installer-core/src/doctor.rs:12:5
+   |
+12 |     cmd, config,
+   |     ^^^ no `cmd` in the root
+...
+15 |     system::{RealSystem, SystemOps},
+   |     ^^^^^^
+   |     |
+   |     unresolved import
+   |     help: a similar path exists: `mash_system::system`
+   |
+   = help: consider importing this module instead:
+           mash_system::cmd
+
+error[E0432]: unresolved import `crate::cmd`
+ --> installer-core/src/fonts.rs:6:13
+  |
+6 | use crate::{cmd, package_manager, PhaseContext, PhaseResult};
+  |             ^^^ no `cmd` in the root
+  |
+  = help: consider importing this module instead:
+          mash_system::cmd
+
+error[E0432]: unresolved import `crate::cmd`
+ --> installer-core/src/github.rs:5:15
+  |
+5 |     apt_repo, cmd, driver::RepoKind, package_manager, AuthType, AuthorizationService, PhaseContext,
+  |               ^^^ no `cmd` in the root
+  |
+  = help: consider importing this module instead:
+          mash_system::cmd
+
+error[E0432]: unresolved imports `crate::dry_run`, `crate::error`, `crate::lockfile`, `crate::logging`, `crate::sudo_password`
+  --> installer-core/src/orchestrator.rs:9:5
+   |
+ 9 |     dry_run::DryRunLog,
+   |     ^^^^^^^ unresolved import
+10 |     error::{
+   |     ^^^^^ unresolved import
+...
+15 |     lockfile::InstallerLock,
+   |     ^^^^^^^^ unresolved import
+16 |     logging,
+   |     ^^^^^^^ no `logging` in the root
+...
+23 |     sudo_password, InstallContext,
+   |     ^^^^^^^^^^^^^ no `sudo_password` in the root
+   |
+   = help: consider importing this module instead:
+           mash_system::logging
+   = help: consider importing this module instead:
+           mash_system::sudo_password
+help: a similar path exists
+   |
+ 9 |     mash_system::dry_run::DryRunLog,
+   |     +++++++++++++
+help: a similar path exists
+   |
+10 |     clap::error::{
+   |     ++++++
+help: a similar path exists
+   |
+15 |     mash_system::lockfile::InstallerLock,
+   |     +++++++++++++
+
+error[E0432]: unresolved import `crate::cmd`
+ --> installer-core/src/package_manager.rs:4:34
+  |
+4 | use crate::{backend::PkgBackend, cmd, distro, driver::DistroDriver};
+  |                                  ^^^ no `cmd` in the root
+  |
+  = help: consider importing this module instead:
+          mash_system::cmd
+
+error[E0432]: unresolved imports `crate::error`, `crate::logging`
+ --> installer-core/src/phase_runner.rs:8:5
+  |
+8 |     error::{ErrorSeverity, InstallerError, InstallerStateSnapshot},
+  |     ^^^^^
+  |     |
+  |     unresolved import
+  |     help: a similar path exists: `clap::error`
+9 |     logging,
+  |     ^^^^^^^ no `logging` in the root
+  |
+  = help: consider importing this module instead:
+          mash_system::logging
+
+error[E0432]: unresolved import `crate::system`
+ --> installer-core/src/phases/wallpapers.rs:5:12
+  |
+5 | use crate::system::RealSystem;
+  |            ^^^^^^
+  |            |
+  |            unresolved import
+  |            help: a similar path exists: `mash_system::system`
+
+error[E0432]: unresolved import `crate::system`
+ --> installer-core/src/pi4b.rs:9:12
+  |
+9 | use crate::system::SystemOps;
+  |            ^^^^^^
+  |            |
+  |            unresolved import
+  |            help: a similar path exists: `mash_system::system`
+
+error[E0432]: unresolved import `crate::cmd`
+ --> installer-core/src/rclone.rs:4:13
+  |
+4 | use crate::{cmd, package_manager, AuthType, AuthorizationService, PhaseContext, PhaseResult};
+  |             ^^^ no `cmd` in the root
+  |
+  = help: consider importing this module instead:
+          mash_system::cmd
+
+error[E0432]: unresolved import `crate::cmd`
+  --> installer-core/src/rust.rs:13:13
+   |
+13 | use crate::{cmd, PhaseContext, PhaseResult};
+   |             ^^^ no `cmd` in the root
+   |
+   = help: consider importing this module instead:
+           mash_system::cmd
+
+error[E0432]: unresolved import `crate::cmd`
+ --> installer-core/src/snapshots.rs:1:13
+  |
+1 | use crate::{cmd, PhaseContext, PhaseResult};
+  |             ^^^ no `cmd` in the root
+  |
+  = help: consider importing this module instead:
+          mash_system::cmd
+
+error[E0432]: unresolved import `crate::cmd`
+  --> installer-core/src/software_tiers.rs:19:13
+   |
+19 | use crate::{cmd, package_manager, AuthType, AuthorizationService, PhaseContext, PhaseResult};
+   |             ^^^ no `cmd` in the root
+   |
+   = help: consider importing this module instead:
+           mash_system::cmd
+
+error[E0432]: unresolved import `crate::system`
+ --> installer-core/src/wallpaper/download.rs:9:12
+  |
+9 | use crate::system::{RealSystem, SystemOps};
+  |            ^^^^^^
+  |            |
+  |            unresolved import
+  |            help: a similar path exists: `mash_system::system`
+
+error[E0432]: unresolved import `crate::cmd`
+ --> installer-core/src/zsh.rs:8:13
+  |
+8 | use crate::{cmd, options::ProfileLevel, package_manager, PhaseContext, PhaseResult, PkgBackend};
+  |             ^^^ no `cmd` in the root
+  |
+  = help: consider importing this module instead:
+          mash_system::cmd
+
+error[E0433]: failed to resolve: unresolved import
+  --> installer-core/src/context.rs:90:37
+   |
+90 |     pub system: &'static dyn crate::system::SystemOps,
+   |                                     ^^^^^^ unresolved import
+   |
+help: a similar path exists
+   |
+90 |     pub system: &'static dyn crate::mash_system::system::SystemOps,
+   |                                     +++++++++++++
+help: consider importing this module
+   |
+ 1 + use mash_system::system;
+   |
+help: if you import `system`, refer to it directly
+   |
+90 -     pub system: &'static dyn crate::system::SystemOps,
+90 +     pub system: &'static dyn system::SystemOps,
+   |
+
+error[E0433]: failed to resolve: unresolved import
+  --> installer-core/src/orchestrator.rs:48:34
+   |
+48 |             audit_report: crate::dry_run::PreflightAuditReport::default(),
+   |                                  ^^^^^^^ unresolved import
+   |
+help: a similar path exists
+   |
+48 |             audit_report: crate::mash_system::dry_run::PreflightAuditReport::default(),
+   |                                  +++++++++++++
+help: consider importing this struct
+   |
+ 1 + use mash_system::dry_run::PreflightAuditReport;
+   |
+help: if you import `PreflightAuditReport`, refer to it directly
+   |
+48 -             audit_report: crate::dry_run::PreflightAuditReport::default(),
+48 +             audit_report: PreflightAuditReport::default(),
+   |
+
+error[E0433]: failed to resolve: unresolved import
+  --> installer-core/src/orchestrator.rs:87:34
+   |
+87 |             audit_report: crate::dry_run::PreflightAuditReport::default(),
+   |                                  ^^^^^^^ unresolved import
+   |
+help: a similar path exists
+   |
+87 |             audit_report: crate::mash_system::dry_run::PreflightAuditReport::default(),
+   |                                  +++++++++++++
+help: consider importing this struct
+   |
+ 1 + use mash_system::dry_run::PreflightAuditReport;
+   |
+help: if you import `PreflightAuditReport`, refer to it directly
+   |
+87 -             audit_report: crate::dry_run::PreflightAuditReport::default(),
+87 +             audit_report: PreflightAuditReport::default(),
+   |
+
+error[E0433]: failed to resolve: unresolved import
+   --> installer-core/src/orchestrator.rs:129:16
+    |
+129 |     if !crate::sudo::ensure_sudo_access(observer) {
+    |                ^^^^ unresolved import
+    |
+help: a similar path exists
+    |
+129 |     if !crate::mash_system::sudo::ensure_sudo_access(observer) {
+    |                +++++++++++++
+help: consider importing this module
+    |
+  1 + use mash_system::sudo;
+    |
+help: if you import `sudo`, refer to it directly
+    |
+129 -     if !crate::sudo::ensure_sudo_access(observer) {
+129 +     if !sudo::ensure_sudo_access(observer) {
+    |
+
+error[E0433]: failed to resolve: unresolved import
+   --> installer-core/src/orchestrator.rs:132:34
+    |
+132 |     let _sudo_keepalive = crate::sudo::start_sudo_keepalive();
+    |                                  ^^^^ unresolved import
+    |
+help: a similar path exists
+    |
+132 |     let _sudo_keepalive = crate::mash_system::sudo::start_sudo_keepalive();
+    |                                  +++++++++++++
+help: consider importing this module
+    |
+  1 + use mash_system::sudo;
+    |
+help: if you import `sudo`, refer to it directly
+    |
+132 -     let _sudo_keepalive = crate::sudo::start_sudo_keepalive();
+132 +     let _sudo_keepalive = sudo::start_sudo_keepalive();
+    |
+
+error[E0433]: failed to resolve: unresolved import
+   --> installer-core/src/orchestrator.rs:211:25
+    |
+211 |         system: &crate::system::REAL_SYSTEM,
+    |                         ^^^^^^ unresolved import
+    |
+help: a similar path exists
+    |
+211 |         system: &crate::mash_system::system::REAL_SYSTEM,
+    |                         +++++++++++++
+help: consider importing this module
+    |
+  1 + use mash_system::system;
+    |
+help: if you import `system`, refer to it directly
+    |
+211 -         system: &crate::system::REAL_SYSTEM,
+211 +         system: &system::REAL_SYSTEM,
+    |
+
+error[E0433]: failed to resolve: unresolved import
+   --> installer-core/src/orchestrator.rs:295:30
+    |
+295 |         audit_report: crate::dry_run::PreflightAuditReport::default(),
+    |                              ^^^^^^^ unresolved import
+    |
+help: a similar path exists
+    |
+295 |         audit_report: crate::mash_system::dry_run::PreflightAuditReport::default(),
+    |                              +++++++++++++
+help: consider importing this struct
+    |
+  1 + use mash_system::dry_run::PreflightAuditReport;
+    |
+help: if you import `PreflightAuditReport`, refer to it directly
+    |
+295 -         audit_report: crate::dry_run::PreflightAuditReport::default(),
+295 +         audit_report: PreflightAuditReport::default(),
+    |
+
+Some errors have detailed explanations: E0432, E0433.
+For more information about an error, try `rustc --explain E0432`.
+warning: `installer-core` (lib) generated 1 warning
+error: could not compile `installer-core` (lib) due to 28 previous errors; 1 warning emitted
+=== installer-cli ===
+   Compiling tokio v1.49.0
+   Compiling toml_edit v0.22.27
+   Compiling either v1.15.0
+   Compiling itertools v0.14.0
+   Compiling toml v0.8.23
+   Compiling darling_macro v0.23.0
+   Compiling strum_macros v0.27.2
+   Compiling castaway v0.2.4
+   Compiling unicode-segmentation v1.12.0
+   Compiling signal-hook v0.3.18
+   Compiling instability v0.3.11
+   Compiling indoc v2.0.7
+   Compiling static_assertions v1.1.0
+   Compiling compact_str v0.9.0
+   Compiling installer-model v0.1.0 (/data/GitHub/Mash-installer/installer-model)
+   Compiling hyper v1.8.1
+   Compiling tokio-rustls v0.26.4
+   Compiling tower v0.5.3
+   Compiling tower-http v0.6.8
+   Compiling tokio-util v0.7.18
+   Compiling hyper-util v0.1.20
+   Compiling unicode-truncate v2.0.1
+   Compiling convert_case v0.10.0
+   Compiling strum v0.27.2
+   Compiling darling v0.23.0
+   Compiling kasuari v0.4.11
+   Compiling hyper-rustls v0.27.7
+   Compiling hashlink v0.11.0
+   Compiling lru v0.16.3
+   Compiling slog-term v2.9.2
+   Compiling rusqlite v0.38.0
+   Compiling which v8.0.0
+   Compiling tempfile v3.26.0
+   Compiling mash-system v0.1.0 (/data/GitHub/Mash-installer/mash-system)
+   Compiling ratatui-core v0.1.0
+warning: unused import: `tracing::Span`
+ --> mash-system/src/logging.rs:8:5
+  |
+8 | use tracing::Span;
+  |     ^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `error`, `info`, and `warn`
+  --> mash-system/src/sudo.rs:12:22
+   |
+12 | use tracing::{debug, error, info, warn};
+   |                      ^^^^^  ^^^^  ^^^^
+
+warning: `mash-system` (lib) generated 2 warnings (run `cargo fix --lib -p mash-system` to apply 2 suggestions)
+   Compiling reqwest v0.13.2

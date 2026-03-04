@@ -147,6 +147,9 @@ fn build_context_for_driver(driver: &'static dyn DistroDriver) -> Result<Install
         }
         .into(),
         pi_model: None,
+        cpu_model: "test".into(),
+        cpu_cores: 4,
+        ram_total_gb: 8.0,
     };
 
     let options = UserOptionsContext {
@@ -356,6 +359,9 @@ fn test_driver_matches_correct_platform() -> Result<()> {
         distro_codename: "".into(),
         distro_family: "arch".into(),
         pi_model: None,
+        cpu_model: "test".into(),
+        cpu_cores: 4,
+        ram_total_gb: 8.0,
     };
     assert!(arch.matches(&arch_platform));
     assert!(!debian.matches(&arch_platform));
@@ -369,6 +375,9 @@ fn test_driver_matches_correct_platform() -> Result<()> {
         distro_codename: "jammy".into(),
         distro_family: "debian".into(),
         pi_model: None,
+        cpu_model: "test".into(),
+        cpu_cores: 4,
+        ram_total_gb: 8.0,
     };
     assert!(!arch.matches(&debian_platform));
     assert!(debian.matches(&debian_platform));
@@ -382,6 +391,9 @@ fn test_driver_matches_correct_platform() -> Result<()> {
         distro_codename: "".into(),
         distro_family: "fedora".into(),
         pi_model: None,
+        cpu_model: "test".into(),
+        cpu_cores: 4,
+        ram_total_gb: 8.0,
     };
     assert!(!arch.matches(&fedora_platform));
     assert!(!debian.matches(&fedora_platform));

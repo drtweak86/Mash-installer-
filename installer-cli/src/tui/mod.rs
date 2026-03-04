@@ -7,6 +7,7 @@ pub mod info_box;
 pub mod menus;
 pub mod observer;
 pub mod render;
+pub mod state;
 pub mod sysinfo_poller;
 pub mod theme;
 

@@ -56,6 +56,15 @@ jobs:
       - name: cargo clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 
+      - name: Build Performance Monitor (Debug)
+        run: |
+          echo "### Build Performance (Debug)" >> $GITHUB_STEP_SUMMARY
+          /usr/bin/time -v cargo build --all --all-features 2>&1 | tee build_stats.txt
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep "Elapsed (wall clock) time" build_stats.txt >> $GITHUB_STEP_SUMMARY
+          grep "Maximum resident set size" build_stats.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
       - name: cargo test
         run: cargo test --all --all-features
 

@@ -7,8 +7,30 @@ members = [
   "installer-fedora",
   "installer-debian",
   "wallpaper-downloader",
-  "xtask",
+  "xtask", "installer-model", "workspace-hack",
+  "mash-system",
 ]
+
+[workspace.dependencies]
+anyhow = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0.18"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
+tokio = { version = "1.0", features = ["rt-multi-thread", "macros", "process", "fs", "signal", "time", "sync"] }
+dirs = "6.0.0"
+sysinfo = "0.38.3"
+clap = { version = "4.0", features = ["derive"] }
+nix = { version = "0.31.2", features = ["fs"] }
+async-trait = "0.1"
+toml = "1.0.3"
+chrono = "0.4"
+indicatif = "0.18.4"
+lazy_static = "1.4"
+which = "8.0.0"
+tempfile = "3"
+whoami = "1.5"
 
 [profile.release]
 lto = true
@@ -23,3 +45,7 @@ incremental = true # Fast rebuilds
 # Keep dependencies fast even in debug mode
 [profile.dev.package."*"]
 opt-level = 3
+
+[profile.dev.package.installer-cli]
+opt-level = 1
+debug = true

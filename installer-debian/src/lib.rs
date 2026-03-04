@@ -125,6 +125,9 @@ mod tests {
             distro_codename: "lunar".to_string(),
             distro_family: "debian".to_string(),
             pi_model: None,
+            cpu_model: "test".into(),
+            cpu_cores: 4,
+            ram_total_gb: 8.0,
         }
     }
 

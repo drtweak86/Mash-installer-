@@ -8,72 +8,16 @@
 //! **Boundary note**: UI rendering (menus, prompts, selection) lives exclusively in
 //! `installer-cli/src/software_tiers.rs`. Nothing in this module should touch stdio.
 
-use std::collections::{BTreeMap, BTreeSet};
+use anyhow::{Context, Result};
+use std::collections::BTreeSet;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
-use anyhow::{Context, Result};
-use serde::{Deserialize, Serialize};
+
+pub use installer_model::software::{SoftwareTierPlan, ThemePlan};
 
 use crate::catalog::{Catalog, Program};
-use crate::{
-    cmd, package_manager, AuthType, AuthorizationService, PhaseContext, PhaseResult, Validator,
-};
-
-#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
-pub enum ThemePlan {
-    #[default]
-    None,
-    RetroOnly,
-    RetroWithWallpapers,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct SoftwareTierPlan {
-    pub full_install: bool,
-    /// Selections mapping Category ID -> Program ID
-    pub selections: BTreeMap<String, String>,
-    pub theme_plan: ThemePlan,
-    pub preset_id: Option<String>,
-}
-
-impl Validator for SoftwareTierPlan {
-    fn validate(&self) -> Vec<String> {
-        // Since we'll load the catalog dynamically, we might need to pass it here or just validate IDs.
-        // For now, we'll keep it simple and assume IDs are valid if they come from the UI.
-        Vec::new()
-    }
-}
-
-impl SoftwareTierPlan {
-    pub fn new(
-        full_install: bool,
-        selections: BTreeMap<String, String>,
-        theme_plan: ThemePlan,
-        preset_id: Option<String>,
-    ) -> Self {
-        Self {
-            full_install,
-            selections,
-            theme_plan,
-            preset_id,
-        }
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.selections.is_empty()
-    }
-}
-
-impl Default for SoftwareTierPlan {
-    fn default() -> Self {
-        Self {
-            full_install: true,
-            selections: BTreeMap::new(),
-            theme_plan: ThemePlan::None,
-            preset_id: None,
-        }
-    }
-}
+use crate::{package_manager, AuthType, AuthorizationService, PhaseContext, PhaseResult};
+use mash_system::cmd;
 
 pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
     let plan = &ctx.options.software_plan;
@@ -127,43 +71,45 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
 
     if ctx.options.interactive {
         let has_borg = plan.selections.values().any(|v| v == "borgbackup");
-        if has_borg {
-            if !AuthorizationService::new(ctx.observer, ctx.options).is_authorized(AuthType::BorgSetup) {
-                if ctx.observer.request_auth(AuthType::BorgSetup)? {
-                    AuthorizationService::new(ctx.observer, ctx.options).authorize(AuthType::BorgSetup)?;
-                    ctx.record_configured("Borg backup repository");
-                }
-            }
+        if has_borg
+            && !AuthorizationService::new(ctx.observer, ctx.options)
+                .is_authorized(AuthType::BorgSetup)
+            && ctx.observer.request_auth(AuthType::BorgSetup)?
+        {
+            AuthorizationService::new(ctx.observer, ctx.options).authorize(AuthType::BorgSetup)?;
+            ctx.record_configured("Borg backup repository");
         }
 
         let has_tailscale = plan.selections.values().any(|v| v == "tailscale");
-        if has_tailscale {
-            if !AuthorizationService::new(ctx.observer, ctx.options).is_authorized(AuthType::TailscaleAuth) {
-                if ctx.observer.request_auth(AuthType::TailscaleAuth)? {
-                    AuthorizationService::new(ctx.observer, ctx.options).authorize(AuthType::TailscaleAuth)?;
-                    ctx.record_configured("Tailscale (Authorized)");
-                }
-            }
+        if has_tailscale
+            && !AuthorizationService::new(ctx.observer, ctx.options)
+                .is_authorized(AuthType::TailscaleAuth)
+            && ctx.observer.request_auth(AuthType::TailscaleAuth)?
+        {
+            AuthorizationService::new(ctx.observer, ctx.options)
+                .authorize(AuthType::TailscaleAuth)?;
+            ctx.record_configured("Tailscale (Authorized)");
         }
 
         let has_ngrok = plan.selections.values().any(|v| v == "ngrok");
-        if has_ngrok {
-            if !AuthorizationService::new(ctx.observer, ctx.options).is_authorized(AuthType::NgrokAuth) {
-                if ctx.observer.request_auth(AuthType::NgrokAuth)? {
-                    AuthorizationService::new(ctx.observer, ctx.options).authorize(AuthType::NgrokAuth)?;
-                    ctx.record_configured("Ngrok authtoken");
-                }
-            }
+        if has_ngrok
+            && !AuthorizationService::new(ctx.observer, ctx.options)
+                .is_authorized(AuthType::NgrokAuth)
+            && ctx.observer.request_auth(AuthType::NgrokAuth)?
+        {
+            AuthorizationService::new(ctx.observer, ctx.options).authorize(AuthType::NgrokAuth)?;
+            ctx.record_configured("Ngrok authtoken");
         }
 
         let has_cloudflared = plan.selections.values().any(|v| v == "cloudflared");
-        if has_cloudflared {
-            if !AuthorizationService::new(ctx.observer, ctx.options).is_authorized(AuthType::CloudflaredAuth) {
-                if ctx.observer.request_auth(AuthType::CloudflaredAuth)? {
-                    AuthorizationService::new(ctx.observer, ctx.options).authorize(AuthType::CloudflaredAuth)?;
-                    ctx.record_configured("Cloudflared (Authorized)");
-                }
-            }
+        if has_cloudflared
+            && !AuthorizationService::new(ctx.observer, ctx.options)
+                .is_authorized(AuthType::CloudflaredAuth)
+            && ctx.observer.request_auth(AuthType::CloudflaredAuth)?
+        {
+            AuthorizationService::new(ctx.observer, ctx.options)
+                .authorize(AuthType::CloudflaredAuth)?;
+            ctx.record_configured("Cloudflared (Authorized)");
         }
     }
 

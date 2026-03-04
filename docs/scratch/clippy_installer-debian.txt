@@ -1,0 +1,18 @@
+=== installer-debian ===
+    Checking mash-system v0.1.0 (/data/GitHub/Mash-installer/mash-system)
+error: unused import: `tracing::Span`
+ --> mash-system/src/logging.rs:8:5
+  |
+8 | use tracing::Span;
+  |     ^^^^^^^^^^^^^
+  |
+  = note: `-D unused-imports` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(unused_imports)]`
+
+error: unused imports: `error`, `info`, and `warn`
+  --> mash-system/src/sudo.rs:12:22
+   |
+12 | use tracing::{debug, error, info, warn};
+   |                      ^^^^^  ^^^^  ^^^^
+
+error: could not compile `mash-system` (lib) due to 2 previous errors

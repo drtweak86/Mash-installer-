@@ -1,9 +1,8 @@
 use anyhow::{Context, Result};
 use std::process::Command;
 
-use crate::{
-    cmd, package_manager, AuthType, AuthorizationService, PhaseContext, PhaseResult,
-};
+use crate::{package_manager, AuthType, AuthorizationService, PhaseContext, PhaseResult};
+use mash_system::cmd;
 
 pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
     if which::which("rclone").is_err() {
@@ -18,11 +17,13 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
 
     if ctx.options.interactive {
         // Rclone Config
-        if !AuthorizationService::new(ctx.observer, ctx.options).is_authorized(AuthType::RcloneConfig) {
-            if ctx.observer.request_auth(AuthType::RcloneConfig)? {
-                AuthorizationService::new(ctx.observer, ctx.options).authorize(AuthType::RcloneConfig)?;
-                ctx.record_configured("rclone cloud remotes");
-            }
+        if !AuthorizationService::new(ctx.observer, ctx.options)
+            .is_authorized(AuthType::RcloneConfig)
+            && ctx.observer.request_auth(AuthType::RcloneConfig)?
+        {
+            AuthorizationService::new(ctx.observer, ctx.options)
+                .authorize(AuthType::RcloneConfig)?;
+            ctx.record_configured("rclone cloud remotes");
         }
     }
 

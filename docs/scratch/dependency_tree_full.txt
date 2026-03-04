@@ -1,0 +1,22 @@
+installer-arch v1.1.0-alpha.2 (/data/GitHub/Mash-installer/installer-arch)
+└── installer-core v1.1.0-alpha.2 (/data/GitHub/Mash-installer/installer-core)
+    ├── anyhow v1.0.102
+    ├── async-trait v0.1.89 (proc-macro)
+    │   ├── proc-macro2 v1.0.106
+    │   │   └── unicode-ident v1.0.24
+    │   ├── quote v1.0.44
+    │   │   └── proc-macro2 v1.0.106 (*)
+    │   └── syn v2.0.117
+    │       ├── proc-macro2 v1.0.106 (*)
+    │       ├── quote v1.0.44 (*)
+    │       └── unicode-ident v1.0.24
+    ├── bytes v1.11.1
+    ├── chrono v0.4.44
+    │   ├── iana-time-zone v0.1.65
+    │   └── num-traits v0.2.19
+    │       [build-dependencies]
+    │       └── autocfg v1.5.0
+    ├── clap v4.5.60
+    │   ├── clap_builder v4.5.60
+    │   │   ├── anstream v0.6.21
+    │   │   │   ├── anstyle v1.0.13

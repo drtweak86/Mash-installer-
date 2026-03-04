@@ -3,25 +3,13 @@ use std::path::{Path, PathBuf};
 use crate::backend::PkgBackend;
 use crate::config::{self, ConfigError};
 use crate::driver::DistroDriver;
-use crate::dry_run::DryRunLog;
 use crate::localization::Localization;
 use crate::platform::PlatformInfo;
 use crate::rollback::RollbackManager;
 use crate::staging;
-use crate::SoftwareTierPlan;
 use anyhow::Result;
-
-/// CLI-supplied options that guide the installation.
-pub struct UserOptionsContext {
-    pub profile: crate::ProfileLevel,
-    pub staging_dir: PathBuf,
-    pub dry_run: bool,
-    pub interactive: bool,
-    pub enable_argon: bool,
-    pub enable_p10k: bool,
-    pub docker_data_root: bool,
-    pub software_plan: SoftwareTierPlan,
-}
+pub use installer_model::options::UserOptionsContext;
+use mash_system::dry_run::DryRunLog;
 
 /// Options that override values in the persisted Mash config.
 #[derive(Debug, Clone, Default)]
@@ -207,6 +195,9 @@ mod tests {
             distro_codename: "test".into(),
             distro_family: "debian".into(),
             pi_model: model.map(|s| s.to_string()),
+            cpu_model: "test".into(),
+            cpu_cores: 4,
+            ram_total_gb: 8.0,
         };
         PlatformContext {
             config_service,
@@ -258,6 +249,7 @@ pub struct PhaseContext<'a> {
 }
 
 impl<'a> PhaseContext<'a> {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         options: &'a UserOptionsContext,
         platform: &'a PlatformContext,
@@ -360,15 +352,7 @@ impl<'a> PhaseContext<'a> {
     }
 }
 
-/// Collected metadata that each phase can report to the runner.
-pub struct PhaseMetadata {
-    pub actions_taken: Vec<String>,
-    pub configured_actions: Vec<String>,
-    pub tweaked_actions: Vec<String>,
-    pub rollback_actions: Vec<String>,
-    pub warnings: Vec<String>,
-    pub dry_run: bool,
-}
+pub use installer_model::phase::PhaseMetadata;
 
 pub trait DryRunDefault {
     fn dry_run_default() -> Self;

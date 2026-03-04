@@ -1,8 +1,8 @@
 use anyhow::{Context, Result};
+use chrono::Local;
 use std::fs;
 use std::path::Path;
 use tracing::{info, warn};
-use chrono::Local;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeployStrategy {
@@ -24,15 +24,22 @@ impl<'a> DotfileManager<'a> {
     /// target_rel is relative to the base_path (home).
     pub fn deploy(&self, source: &Path, target_rel: &Path, strategy: DeployStrategy) -> Result<()> {
         let target = self.base_path.join(target_rel);
-        
+
         if self.dry_run {
-            info!("[dry-run] Would deploy {} to {} using {:?}", source.display(), target.display(), strategy);
+            info!(
+                "[dry-run] Would deploy {} to {} using {:?}",
+                source.display(),
+                target.display(),
+                strategy
+            );
             return Ok(());
         }
 
         // 1. Create parent directories
         if let Some(parent) = target.parent() {
-            fs::create_dir_all(parent).with_context(|| format!("Failed to create parent directory for {}", target.display()))?;
+            fs::create_dir_all(parent).with_context(|| {
+                format!("Failed to create parent directory for {}", target.display())
+            })?;
         }
 
         // 2. Handle existing file
@@ -47,15 +54,28 @@ impl<'a> DotfileManager<'a> {
         // 3. Perform deployment
         match strategy {
             DeployStrategy::Copy => {
-                fs::copy(source, &target).with_context(|| format!("Failed to copy {} to {}", source.display(), target.display()))?;
+                fs::copy(source, &target).with_context(|| {
+                    format!(
+                        "Failed to copy {} to {}",
+                        source.display(),
+                        target.display()
+                    )
+                })?;
             }
             DeployStrategy::Symlink => {
                 #[cfg(unix)]
-                std::os::unix::fs::symlink(source, &target)
-                    .with_context(|| format!("Failed to symlink {} to {}", source.display(), target.display()))?;
-                
+                std::os::unix::fs::symlink(source, &target).with_context(|| {
+                    format!(
+                        "Failed to symlink {} to {}",
+                        source.display(),
+                        target.display()
+                    )
+                })?;
+
                 #[cfg(windows)]
-                return Err(anyhow::anyhow!("Symlinking not supported on Windows in this forge."));
+                return Err(anyhow::anyhow!(
+                    "Symlinking not supported on Windows in this forge."
+                ));
             }
         }
 
@@ -86,12 +106,21 @@ impl<'a> DotfileManager<'a> {
     fn backup(&self, path: &Path) -> Result<()> {
         let timestamp = Local::now().format("%Y%m%d_%H%M%S");
         let backup_path = path.with_extension(format!("bak.{}", timestamp));
-        
-        warn!("Target file {} exists and differs. Backing up to {}...", path.display(), backup_path.display());
-        
-        fs::rename(path, &backup_path)
-            .with_context(|| format!("Failed to backup {} to {}", path.display(), backup_path.display()))?;
-            
+
+        warn!(
+            "Target file {} exists and differs. Backing up to {}...",
+            path.display(),
+            backup_path.display()
+        );
+
+        fs::rename(path, &backup_path).with_context(|| {
+            format!(
+                "Failed to backup {} to {}",
+                path.display(),
+                backup_path.display()
+            )
+        })?;
+
         Ok(())
     }
 }
@@ -110,9 +139,9 @@ mod tests {
 
         let mgr = DotfileManager::new(root.path(), false);
         let target_rel = Path::new(".config/myapp/config");
-        
+
         mgr.deploy(&source_file, target_rel, DeployStrategy::Copy)?;
-        
+
         let target_full = root.path().join(target_rel);
         assert!(target_full.exists());
         assert_eq!(fs::read_to_string(target_full)?, "original content");
@@ -134,7 +163,7 @@ mod tests {
         mgr.deploy(&source_file, target_rel, DeployStrategy::Copy)?;
 
         assert_eq!(fs::read_to_string(&target_full)?, "new content");
-        
+
         // Check if a backup file exists
         let mut entries = fs::read_dir(root.path())?;
         let backup_exists = entries.any(|e| {

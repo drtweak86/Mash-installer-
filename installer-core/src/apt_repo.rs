@@ -3,11 +3,11 @@ use std::path::Path;
 use std::process::Command;
 
 use crate::{
-    cmd,
     context::PhaseContext,
     driver::{AptRepoConfig, RepoKind},
     package_manager,
 };
+use mash_system::cmd;
 
 /// Ensure the named apt repository is configured according to the distro driver.
 pub fn ensure_repo(ctx: &mut PhaseContext, repo: RepoKind) -> Result<()> {

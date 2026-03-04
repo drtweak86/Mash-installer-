@@ -204,7 +204,10 @@ fn build_info_lines(app: &TuiApp) -> Vec<Line<'static>> {
         ],
 
         Screen::Authorization => vec![
-            Line::from(Span::styled("Interactive Authorization", theme::accent_style())),
+            Line::from(Span::styled(
+                "Interactive Authorization",
+                theme::accent_style(),
+            )),
             Line::from(Span::styled(
                 "Complete tool configuration in terminal",
                 theme::dim_style(),
@@ -274,6 +277,7 @@ fn build_info_lines(app: &TuiApp) -> Vec<Line<'static>> {
     }
 }
 
+#[allow(dead_code)]
 pub fn get_main_area_with_info_box(area: Rect) -> (Rect, Rect) {
     let vertical = Layout::default()
         .direction(Direction::Vertical)

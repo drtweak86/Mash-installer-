@@ -1,0 +1,50 @@
+./installer-cli/src/tui/confirmation.rs:94:    let header_text = Text::from(vec![Line::from(vec![
+./installer-cli/src/tui/confirmation.rs:105:    let content_text = Text::from(vec![
+./installer-cli/src/tui/confirmation.rs:111:        Line::from(vec![Span::styled(
+./installer-cli/src/tui/confirmation.rs:112:            format!("{} minutes", duration_minutes),
+./installer-cli/src/tui/confirmation.rs:133:        vec![
+./installer-cli/src/tui/confirmation.rs:134:            Line::from(vec![
+./installer-cli/src/tui/confirmation.rs:136:                Span::styled(format!("{}s", countdown), theme::success_style()),
+./installer-cli/src/tui/confirmation.rs:138:            Line::from(vec![
+./installer-cli/src/tui/confirmation.rs:147:        vec![Line::from(vec![
+./installer-cli/src/tui/confirmation.rs:194:    format!(
+./installer-cli/src/tui/info_box.rs:50:        Screen::Welcome => vec![
+./installer-cli/src/tui/info_box.rs:61:        Screen::ArchDetected => vec![
+./installer-cli/src/tui/info_box.rs:72:        Screen::DistroSelect => vec![
+./installer-cli/src/tui/info_box.rs:83:        Screen::ProfileSelect => vec![
+./installer-cli/src/tui/info_box.rs:94:        Screen::ModuleSelect => vec![
+./installer-cli/src/tui/info_box.rs:105:        Screen::DeSelect => vec![
+./installer-cli/src/tui/info_box.rs:116:        Screen::ProtocolSelect => vec![
+./installer-cli/src/tui/info_box.rs:127:        Screen::DeConfirm => vec![
+./installer-cli/src/tui/info_box.rs:138:        Screen::ThemeSelect => vec![
+./installer-cli/src/tui/info_box.rs:146:        Screen::SoftwareMode => vec![
+./installer-cli/src/tui/info_box.rs:157:        Screen::SoftwareSelect => vec![
+./installer-cli/src/tui/info_box.rs:168:        Screen::Confirm => vec![
+./installer-cli/src/tui/info_box.rs:179:        Screen::SystemSummary => vec![
+./installer-cli/src/tui/info_box.rs:190:        Screen::FontPrep => vec![
+./installer-cli/src/tui/info_box.rs:198:        Screen::Wardrobe => vec![
+./installer-cli/src/tui/info_box.rs:206:        Screen::Authorization => vec![
+./installer-cli/src/tui/info_box.rs:231:            vec![
+./installer-cli/src/tui/info_box.rs:232:                Line::from(vec![
+./installer-cli/src/tui/info_box.rs:234:                    Span::styled(format!("{}% ", progress), theme::success_style()),
+./installer-cli/src/tui/info_box.rs:236:                        format!("Phase {} of {}", app.current_phase, app.total_phases),
+./installer-cli/src/tui/info_box.rs:240:                Line::from(vec![
+./installer-cli/src/tui/info_box.rs:242:                    Span::styled(format!("{}s elapsed", elapsed), theme::success_style()),
+./installer-cli/src/tui/info_box.rs:244:                        format!(" ~{}s remaining", estimated_remaining),
+./installer-cli/src/tui/info_box.rs:251:        Screen::Done => vec![
+./installer-cli/src/tui/info_box.rs:259:        Screen::Error => vec![
+./installer-cli/src/tui/info_box.rs:270:        Screen::Password => vec![
+./installer-cli/src/tui/render.rs:157:    let text = Paragraph::new(format!(" > {}", app.bbs_msg))
+./installer-cli/src/tui/render.rs:184:    let stats_text = vec![
+./installer-cli/src/tui/render.rs:185:        Line::from(vec![
+./installer-cli/src/tui/render.rs:187:            Span::styled(format!("{:3}%", s.cpu_pct), theme::success_style()),
+./installer-cli/src/tui/render.rs:189:        Line::from(vec![
+./installer-cli/src/tui/render.rs:191:            Span::styled(format!("{:3}%", ram_pct), theme::success_style()),
+./installer-cli/src/tui/render.rs:193:        Line::from(vec![
+./installer-cli/src/tui/render.rs:195:            Span::styled(format!("{:.1}kB/s", s.net_rx_kbps), theme::success_style()),
+./installer-cli/src/tui/render.rs:197:        Line::from(vec![
+./installer-cli/src/tui/render.rs:205:                Span::styled(format!("{:3}%", progress), theme::accent_style())
+./installer-cli/src/tui/render.rs:231:        info.push(Line::from(vec![
+./installer-cli/src/tui/render.rs:235:        info.push(Line::from(vec![
+./installer-cli/src/tui/render.rs:241:        info.push(Line::from(vec![
+./installer-cli/src/t

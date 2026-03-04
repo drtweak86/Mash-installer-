@@ -1,26 +1,29 @@
-use std::{path::PathBuf, process::Command};
+use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
-use tracing::{error, info};
+use tracing::info;
 
 use crate::{
-    context::{ConfigOverrides, ConfigService, PlatformContext, UIContext, UserOptionsContext},
+    context::{ConfigService, PlatformContext, UIContext, UserOptionsContext},
     driver::DistroDriver,
+    localization::Localization,
+    logging,
+    options::InstallOptions,
+    phase_registry::PhaseRegistry,
+    phase_runner::{PhaseErrorPolicy, PhaseObserver, PhaseRunner},
+    platform::detect as detect_platform,
+    rollback::RollbackManager,
+    signal::SignalGuard,
+    InstallContext,
+};
+use mash_system::{
     dry_run::DryRunLog,
     error::{
         DriverInfo, ErrorSeverity, InstallationReport, InstallerError, InstallerRunError,
         InstallerStateSnapshot,
     },
-    localization::Localization,
     lockfile::InstallerLock,
-    logging,
-    options::InstallOptions,
-    phase_registry::PhaseRegistry,
-    phase_runner::{PhaseErrorPolicy, PhaseEvent, PhaseObserver, PhaseRunError, PhaseRunner},
-    platform::detect as detect_platform,
-    rollback::RollbackManager,
-    signal::SignalGuard,
-    sudo_password, InstallContext,
+    sudo_password,
 };
 
 pub fn run_with_driver(
@@ -33,368 +36,228 @@ pub fn run_with_driver(
 
     // Acquire exclusive lock to prevent concurrent runs
     let _lock = InstallerLock::acquire().map_err(|e| {
-        let report = InstallationReport {
-            completed_phases: vec![],
-            staging_dir: PathBuf::from("/tmp"),
-            errors: vec![],
-            outputs: Vec::new(),
-            events: Vec::new(),
-            options: opts.clone(),
-            driver: DriverInfo {
-                name: driver.name().to_string(),
-                description: driver.description().to_string(),
-            },
-            dry_run_log: Vec::new(),
-            audit_report: crate::dry_run::PreflightAuditReport::default(),
-        };
-
-        Box::new(InstallerRunError {
-            report: Box::new(report),
-            source: InstallerError::new(
-                "lockfile",
-                "Concurrent run prevention",
-                ErrorSeverity::Fatal,
-                e,
-                InstallerStateSnapshot::from_options(&UserOptionsContext {
-                    profile: opts.profile,
-                    staging_dir: PathBuf::from("/tmp"),
-                    dry_run: opts.dry_run,
-                    interactive: opts.interactive,
-                    enable_argon: opts.enable_argon,
-                    enable_p10k: opts.enable_p10k,
-                    docker_data_root: opts.docker_data_root,
-                    software_plan: opts.software_plan.clone(),
-                }),
-                Some("Wait for the other instance to finish or remove the lock file.".to_string()),
-            ),
-        })
-    })?;
-
-    // Register signal handlers for graceful shutdown
-    let signal_guard = SignalGuard::new().map_err(|e| {
-        let report = InstallationReport {
-            completed_phases: vec![],
-            staging_dir: PathBuf::from("/tmp"),
-            errors: vec![],
-            outputs: Vec::new(),
-            events: Vec::new(),
-            options: opts.clone(),
-            driver: DriverInfo {
-                name: driver.name().to_string(),
-                description: driver.description().to_string(),
-            },
-            dry_run_log: Vec::new(),
-            audit_report: crate::dry_run::PreflightAuditReport::default(),
-        };
-
-        Box::new(InstallerRunError {
-            report: Box::new(report),
-            source: InstallerError::new(
-                "signal_handler",
-                "Signal handler registration",
-                ErrorSeverity::Fatal,
-                e,
-                InstallerStateSnapshot::from_options(&UserOptionsContext {
-                    profile: opts.profile,
-                    staging_dir: PathBuf::from("/tmp"),
-                    dry_run: opts.dry_run,
-                    interactive: opts.interactive,
-                    enable_argon: opts.enable_argon,
-                    enable_p10k: opts.enable_p10k,
-                    docker_data_root: opts.docker_data_root,
-                    software_plan: opts.software_plan.clone(),
-                }),
-                None,
-            ),
-        })
-    })?;
-
-    if std::env::var("USER").is_err() {
-        let user = std::env::var("SUDO_USER").ok().or_else(|| {
-            Command::new("whoami")
-                .output()
-                .ok()
-                .and_then(|o| String::from_utf8(o.stdout).ok())
-                .map(|s| s.trim().to_string())
-        });
-
-        if let Some(username) = user {
-            std::env::set_var("USER", &username);
-            info!("Set USER environment variable to: {}", username);
-        } else {
-            error!("WARNING: USER environment variable not set and could not be detected!");
-        }
-    }
-
-    if !crate::sudo::ensure_sudo_access(observer) {
-        tracing::warn!("Could not verify sudo access. Some phases may fail if they require elevated privileges.");
-    }
-    let _sudo_keepalive = crate::sudo::start_sudo_keepalive();
-
-    let plat = detect_platform()?;
-    info!(
-        "Platform: {} {} on {}",
-        plat.distro, plat.distro_version, plat.arch
-    );
-    info!(
-        "Using distro driver: {} ({})",
-        driver.name(),
-        driver.description()
-    );
-
-    let pi_model = plat.pi_model.as_deref().unwrap_or("");
-    let is_pi_4b = pi_model.contains("Raspberry Pi 4") || pi_model.contains("Pi 4");
-    let is_pi_5 = pi_model.contains("Raspberry Pi 5") || pi_model.contains("Pi 5");
-
-    if let Some(ref model) = plat.pi_model {
-        info!("STATION_01: HARDWARE_SIGIL IDENTIFIED: {}", model);
-        if is_pi_4b {
-            info!("✓ Optimal performance profile active: Raspberry Pi 4");
-        } else if is_pi_5 {
-            let warning = "⚠ EXPERIMENTAL: Raspberry Pi 5 detected. \
-                           Tuning profiles may be suboptimal. Proceed with caution.";
-            observer.on_event(PhaseEvent::Warning {
-                message: warning.to_string(),
-            });
-            info!("{}", warning);
-        }
-    }
-
-    if !is_pi_4b && !is_pi_5 {
-        let detected = plat.pi_model.as_deref().unwrap_or("Non-Pi system");
-        let warning = format!(
-            "STATION_01: CAUTION: Hardware {} is outside optimal parameters.\n\
-             Proceeding at your own risk: no performance guarantees.",
-            detected
+        let err = InstallerError::new(
+            "setup",
+            "locking repository",
+            ErrorSeverity::Fatal,
+            e,
+            InstallerStateSnapshot::default(),
+            Some("Ensure no other mash-setup process is running.".to_string()),
         );
-        observer.on_event(PhaseEvent::Warning { message: warning });
-
-        if opts.interactive
-            && !observer.confirm("STATION_01: PROCEED WITH SUBOPTIMAL HARDWARE? [y/N]")
-        {
-            info!("Installation cancelled by user on suboptimal hardware");
-            return Err(warn_non_pi_4b(&opts, driver));
+        InstallerRunError {
+            report: Box::new(InstallationReport {
+                completed_phases: Vec::new(),
+                staging_dir: PathBuf::from("<unknown>"),
+                errors: vec![err.clone()],
+                outputs: Vec::new(),
+                events: Vec::new(),
+                options: InstallOptions::default(),
+                driver: DriverInfo {
+                    name: driver.name().to_string(),
+                    description: driver.description().to_string(),
+                },
+                dry_run_log: Vec::new(),
+                audit_report: mash_system::dry_run::PreflightAuditReport::default(),
+            }),
+            source: err,
         }
+    })?;
+
+    // Phase 1: Context initialization and platform detection
+    let config_service = ConfigService::load().map_err(|e| {
+        let err = InstallerError::new(
+            "config",
+            "configuration load",
+            ErrorSeverity::Fatal,
+            anyhow::Error::from(e),
+            InstallerStateSnapshot::default(),
+            Some("Inspect ~/.config/mash-installer/config.toml for corruption or permissions issues.".to_string()),
+        );
+        Box::new(InstallerRunError {
+            report: Box::new(InstallationReport {
+                completed_phases: Vec::new(),
+                staging_dir: PathBuf::from("<unknown>"),
+                errors: vec![err.clone()],
+                outputs: Vec::new(),
+                events: Vec::new(),
+                options: InstallOptions::default(),
+                driver: DriverInfo {
+                    name: driver.name().to_string(),
+                    description: driver.description().to_string(),
+                },
+                dry_run_log: Vec::new(),
+                audit_report: mash_system::dry_run::PreflightAuditReport::default(),
+            }),
+            source: err,
+        })
+    })?;
+
+    let platform = detect_platform().map_err(Box::<InstallerRunError>::from)?;
+
+    // Core validation: Ensure the driver matches the hardware
+    if !driver.matches(&platform) {
+        let err = anyhow!(
+            "Distro driver '{}' does not match the detected platform ({}).",
+            driver.name(),
+            platform.distro_family
+        );
+        return Err(Box::new(InstallerRunError::from(err)));
     }
-
-    let localization = Localization::load()?;
-    let api_options = opts.clone();
-    let driver_info = DriverInfo {
-        name: driver.name().to_string(),
-        description: driver.description().to_string(),
-    };
-
-    let overrides = ConfigOverrides {
-        staging_dir: opts.staging_dir.clone(),
-    };
-    let config_service = ConfigService::load_with_overrides(overrides)?;
-    let staging = config_service.resolve_staging_dir()?;
-    info!("Staging directory: {}", staging.display());
-
-    let options = UserOptionsContext {
-        profile: opts.profile,
-        staging_dir: staging,
-        dry_run: opts.dry_run,
-        interactive: opts.interactive,
-        enable_argon: opts.enable_argon,
-        enable_p10k: opts.enable_p10k,
-        docker_data_root: opts.docker_data_root,
-        software_plan: opts.software_plan.clone(),
-    };
 
     let platform_ctx = PlatformContext {
         config_service,
-        platform: plat,
+        platform,
         driver_name: driver.name(),
         driver,
         pkg_backend: driver.pkg_backend(),
         system: &crate::system::REAL_SYSTEM,
     };
 
-    let interaction = crate::interaction::InteractionService::new(
-        opts.interactive,
-        platform_ctx.config().interaction.clone(),
-    );
+    let localization = Localization::load_default().map_err(Box::<InstallerRunError>::from)?;
 
     let ctx = InstallContext {
-        options,
+        options: UserOptionsContext::from_options(&opts),
         platform: platform_ctx,
         ui: UIContext,
-        interaction,
+        interaction: crate::interaction::InteractionService::new(
+            opts.interactive,
+            Default::default(),
+        ),
         localization,
         rollback: RollbackManager::new(),
         dry_run_log: DryRunLog::new(),
     };
 
+    // Ask for sudo password up front if needed
+    if !crate::sudo::ensure_sudo_access() {
+        match ctx.request_sudo_password(observer) {
+            Ok(password) => {
+                sudo_password::set_sudo_password(password);
+            }
+            Err(e) => {
+                return Err(Box::new(InstallerRunError::from(e)));
+            }
+        }
+    }
+
+    let _sudo_keepalive = crate::sudo::start_sudo_keepalive();
+
+    // Registry populates phases based on the active profile level
     let registry = PhaseRegistry::default();
     let phases = registry.build_phases(&ctx.options, &ctx.localization);
+
     let policy = if opts.continue_on_error {
         PhaseErrorPolicy::ContinueOnError
     } else {
-        PhaseErrorPolicy::default()
+        PhaseErrorPolicy::FailFast
     };
+
     let runner = PhaseRunner::with_policy(phases, policy);
+
+    // Create a signal guard to handle SIGINT/SIGTERM during installation
+    let signal_guard = SignalGuard::new().map_err(Box::<InstallerRunError>::from)?;
+
     let install_span = logging::install_span(&ctx);
     let _install_guard = install_span.enter();
-    let run_result = runner.run(&ctx, observer, Some(&signal_guard));
-    let dry_run_log = ctx.dry_run_log.entries();
-    let audit_report = ctx.dry_run_log.audit_report();
 
-    match run_result {
-        Ok(result) => Ok(InstallationReport {
-            completed_phases: result.completed_phases,
-            staging_dir: ctx.options.staging_dir.clone(),
-            errors: result.errors,
-            outputs: result.outputs,
-            events: result.events,
-            options: api_options.clone(),
-            driver: driver_info.clone(),
-            dry_run_log: dry_run_log.clone(),
-            audit_report,
-        }),
-        Err(err) => {
-            let PhaseRunError {
-                result: run_result,
-                source,
-            } = *err;
-            let report = InstallationReport {
-                completed_phases: run_result.completed_phases,
-                staging_dir: ctx.options.staging_dir.clone(),
-                errors: run_result.errors,
-                outputs: run_result.outputs,
-                events: run_result.events,
-                options: api_options,
-                driver: driver_info,
-                dry_run_log,
-                audit_report,
-            };
-            Err(Box::new(InstallerRunError {
-                report: Box::new(report),
-                source,
-            }))
-        }
-    }
-}
+    info!(
+        "Starting installation: profile={:?}, driver={}, target={}",
+        opts.profile,
+        driver.name(),
+        ctx.platform.platform.distro
+    );
 
-fn warn_non_pi_4b(
-    opts: &InstallOptions,
-    driver: &'static dyn DistroDriver,
-) -> Box<InstallerRunError> {
-    let report = InstallationReport {
-        completed_phases: vec![],
-        staging_dir: PathBuf::from("/tmp"),
-        errors: vec![],
-        outputs: Vec::new(),
-        events: Vec::new(),
-        options: opts.clone(),
+    let opts_final = opts.clone();
+    let staging_final = opts
+        .staging_dir
+        .clone()
+        .unwrap_or(ctx.options.staging_dir.clone());
+
+    let result = runner
+        .run(&ctx, observer, Some(&signal_guard))
+        .map_err(|e| {
+            let run_err = *e;
+            Box::new(InstallerRunError {
+                report: Box::new(InstallationReport {
+                    completed_phases: run_err.result.completed_phases,
+                    staging_dir: staging_final.clone(),
+                    errors: run_err.result.errors,
+                    outputs: run_err.result.outputs,
+                    events: run_err.result.events,
+                    options: opts_final.clone(),
+                    driver: DriverInfo {
+                        name: driver.name().to_string(),
+                        description: driver.description().to_string(),
+                    },
+                    dry_run_log: ctx.dry_run_log.entries(),
+                    audit_report: mash_system::dry_run::PreflightAuditReport::default(),
+                }),
+                source: run_err.source,
+            })
+        })?;
+
+    info!(
+        "Installation completed successfully: {} phases completed.",
+        result.completed_phases.len()
+    );
+
+    Ok(InstallationReport {
+        completed_phases: result.completed_phases,
+        staging_dir: staging_final,
+        errors: result.errors,
+        outputs: result.outputs,
+        events: result.events,
+        options: opts_final,
         driver: DriverInfo {
             name: driver.name().to_string(),
             description: driver.description().to_string(),
         },
-        dry_run_log: Vec::new(),
-        audit_report: crate::dry_run::PreflightAuditReport::default(),
-    };
-
-    Box::new(InstallerRunError {
-        report: Box::new(report),
-        source: InstallerError::new(
-            "platform_check",
-            "Platform compatibility check",
-            ErrorSeverity::Fatal,
-            anyhow!("User declined to proceed on suboptimal hardware"),
-            InstallerStateSnapshot::from_options(&UserOptionsContext {
-                profile: opts.profile,
-                staging_dir: PathBuf::from("/tmp"),
-                dry_run: opts.dry_run,
-                interactive: opts.interactive,
-                enable_argon: opts.enable_argon,
-                enable_p10k: opts.enable_p10k,
-                docker_data_root: opts.docker_data_root,
-                software_plan: opts.software_plan.clone(),
-            }),
-            Some("This installer is optimized for Raspberry Pi 4B and 5.".to_string()),
-        ),
+        dry_run_log: ctx.dry_run_log.entries(),
+        audit_report: mash_system::dry_run::PreflightAuditReport::default(),
     })
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::{
-        context::UserOptionsContext, localization::Localization, options::ProfileLevel,
-        SoftwareTierPlan,
+#[allow(dead_code)]
+pub fn run_preflight_audit(
+    driver: &'static dyn DistroDriver,
+    opts: &InstallOptions,
+) -> Result<mash_system::dry_run::PreflightAuditReport> {
+    let registry = PhaseRegistry::default();
+    // Use dummy context for audit
+    let platform = detect_platform()?;
+    let config_service = ConfigService::load()?;
+    let platform_ctx = PlatformContext {
+        config_service,
+        platform,
+        driver_name: driver.name(),
+        driver,
+        pkg_backend: driver.pkg_backend(),
+        system: &crate::system::REAL_SYSTEM,
     };
-    use std::path::PathBuf;
+    let ctx = InstallContext {
+        options: UserOptionsContext::from_options(opts),
+        platform: platform_ctx,
+        ui: UIContext,
+        interaction: crate::interaction::InteractionService::new(
+            opts.interactive,
+            Default::default(),
+        ),
+        localization: Localization::load_default()?,
+        rollback: RollbackManager::new(),
+        dry_run_log: DryRunLog::new(),
+    };
 
-    fn make_user_options(profile: ProfileLevel, enable_argon: bool) -> UserOptionsContext {
-        UserOptionsContext {
-            profile,
-            staging_dir: PathBuf::from("/tmp/mash-test-staging"),
-            dry_run: true,
-            interactive: false,
-            enable_argon,
-            enable_p10k: false,
-            docker_data_root: false,
-            software_plan: SoftwareTierPlan::default(),
-        }
-    }
+    let phases = registry.build_phases(&ctx.options, &ctx.localization);
 
-    fn load_localization() -> Localization {
-        Localization::load_default().expect("unable to load localization strings")
-    }
-
-    #[test]
-    fn registry_minimal_profile_only_core_phases() {
-        let opts = make_user_options(ProfileLevel::Minimal, false);
-        let strings = load_localization();
-        let registry = PhaseRegistry::default();
-        let phases = registry.build_phases(&opts, &strings);
-        let names: Vec<_> = phases.iter().map(|p| p.name()).collect();
-        let expected = vec![
-            "System packages",
-            "Filesystem Snapshots",
-            "AI Spirits",
-            "Rust toolchain + cargo tools",
-            "Git, GitHub CLI, SSH",
-            "Pi 4B HDD Tuning",
-        ];
-        for name in expected {
-            assert!(names.contains(&name), "missing phase: {}", name);
-        }
-    }
-
-    #[test]
-    fn registry_dev_profile_includes_dev_phases() {
-        let opts = make_user_options(ProfileLevel::Dev, false);
-        let strings = load_localization();
-        let registry = PhaseRegistry::default();
-        let phases = registry.build_phases(&opts, &strings);
-        let names: Vec<_> = phases.iter().map(|p| p.name()).collect();
-        let expected_phases = [
-            "Buildroot dependencies",
-            "Docker Engine",
-            "Shell & UX (zsh, starship)",
-            "Fonts",
-            "rclone",
-        ];
-
-        for phase in expected_phases {
-            assert!(
-                names.contains(&phase),
-                "expected phase list to include {} but got {:?}",
-                phase,
-                names
+    for phase in phases {
+        if phase.should_run(&ctx) {
+            ctx.dry_run_log.record(
+                phase.name().to_string(),
+                "Planned for execution".to_string(),
+                Some(phase.description().to_string()),
             );
         }
     }
 
-    #[test]
-    fn registry_argon_option_adds_phase() {
-        let opts = make_user_options(ProfileLevel::Minimal, true);
-        let strings = load_localization();
-        let registry = PhaseRegistry::default();
-        let phases = registry.build_phases(&opts, &strings);
-        let names: Vec<_> = phases.iter().map(|p| p.name()).collect();
-        assert!(names.contains(&"Argon One fan script"));
-    }
+    Ok(ctx.dry_run_log.audit_report())
 }

@@ -1,0 +1,10 @@
+  48937 total
+  20562 ./target/debug/build/typenum-8675ffda5deea7a5/out/tests.rs
+   3589 ./target/debug/build/libsqlite3-sys-32310b2fc8b812b1/out/bindgen.rs
+   1558 ./installer-cli/src/tui/app.rs
+   1351 ./installer-cli/src/tui/menus.rs
+    939 ./installer-core/src/pi_overlord.rs
+    926 ./installer-core/src/phase_runner.rs
+    917 ./installer-core/src/doctor.rs
+    843 ./installer-core/src/wallpaper/harvest.rs
+    750 ./installer-core/src/pi4b.rs

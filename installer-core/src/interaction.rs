@@ -1,32 +1,5 @@
 use anyhow::{anyhow, Result};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-
-/// Configuration-driven defaults for interaction points.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
-#[serde(default)]
-pub struct InteractionConfig {
-    #[serde(default)]
-    pub confirm_defaults: HashMap<String, bool>,
-    #[serde(default)]
-    pub text_defaults: HashMap<String, String>,
-    #[serde(default)]
-    pub selection_defaults: HashMap<String, usize>,
-}
-
-impl InteractionConfig {
-    fn confirm_default(&self, key: &str) -> Option<bool> {
-        self.confirm_defaults.get(key).copied()
-    }
-
-    fn text_default(&self, key: &str) -> Option<String> {
-        self.text_defaults.get(key).cloned()
-    }
-
-    fn selection_default(&self, key: &str) -> Option<usize> {
-        self.selection_defaults.get(key).copied()
-    }
-}
+pub use installer_model::config::InteractionConfig;
 
 /// Central gatekeeper for every prompt or interactive decision.
 #[derive(Debug, Clone)]
@@ -57,7 +30,7 @@ impl InteractionService {
     where
         F: FnMut() -> Result<bool>,
     {
-        if let Some(value) = self.config.confirm_default(key) {
+        if let Some(value) = self.config.confirm_defaults.get(key).copied() {
             return Ok(value);
         }
         if !self.interactive {
@@ -77,7 +50,7 @@ impl InteractionService {
     where
         F: FnMut(&str, bool) -> Result<String>,
     {
-        if let Some(value) = self.config.text_default(key) {
+        if let Some(value) = self.config.text_defaults.get(key).cloned() {
             return Ok(value);
         }
         if !self.interactive {
@@ -103,7 +76,7 @@ impl InteractionService {
     where
         F: FnMut(&str, &[&str]) -> Result<usize>,
     {
-        if let Some(value) = self.config.selection_default(key) {
+        if let Some(value) = self.config.selection_defaults.get(key).copied() {
             return Ok(value);
         }
         if !self.interactive {

@@ -6,7 +6,7 @@ pub mod authorization;
 mod backend;
 mod buildroot;
 pub mod catalog;
-pub mod cmd;
+
 mod config;
 mod context;
 mod dependency_graph;
@@ -16,14 +16,14 @@ mod docker;
 mod doctor;
 pub mod dotfiles;
 mod driver;
-pub mod dry_run;
-mod error;
+pub use mash_system::error;
+
 pub mod fonts;
 mod github;
 pub mod interaction;
 pub mod localization;
-mod lockfile;
-mod logging;
+pub mod logging;
+
 mod options;
 mod orchestrator;
 mod package_manager;
@@ -46,17 +46,16 @@ mod snapshots;
 mod software_tiers;
 mod staging;
 mod status;
-mod sudo;
-mod sudo_password;
-mod system;
+
 mod systemd;
 pub mod theme;
 pub mod verify;
 mod wallpaper;
 mod zsh;
 
-use crate::{dry_run::DryRunLog, localization::Localization};
+use crate::localization::Localization;
 pub use advice::{AdviceEngine, AdviceEntry, Rule, Severity as AdviceSeverity};
+pub use mash_system::{cmd, dry_run, logging as sys_logging, sudo, system};
 
 // --- Core API ---
 pub use authorization::{AuthType, AuthorizationService};
@@ -67,11 +66,12 @@ pub use context::{
 };
 pub use doctor::{run_doctor, DoctorOutput};
 pub use driver::{AptRepoConfig, DistroDriver, RepoKind, ServiceName};
-pub use error::{
+pub use mash_system::error::{
     DriverInfo, ErrorSeverity, InstallationReport, InstallerError, InstallerRunError,
     InstallerStateSnapshot,
 };
-pub use logging::init as init_logging;
+pub use mash_system::logging::init as init_logging;
+pub use mash_system::system::{SystemOps, REAL_SYSTEM};
 pub use options::{InstallOptions, ProfileLevel};
 pub use orchestrator::run_with_driver;
 pub use package_spec::{PackageIntent, PackageSpec};
@@ -84,13 +84,12 @@ pub use pi_overlord::{PackageCategory, PackageMapping, PiOverlord};
 pub use platform::{detect as detect_platform, PlatformInfo};
 pub use profile::{
     BlockDevice, CpuInfo, DistroInfo, MemoryInfo, MountInfo, PlatformInfo as ProfilePlatformInfo,
-    PlatformType, SessionInfo, StorageInfo, SystemProfile,
+    PlatformType, SessionInfo, StorageInfo, SystemProfile, SystemProfileExt,
 };
 pub use rollback::RollbackManager;
 pub use software_tiers::SoftwareTierPlan;
 pub use software_tiers::ThemePlan;
 pub use status::{run_status, StatusOutput};
-pub use system::{SystemOps, REAL_SYSTEM};
 pub use wallpaper::{download_wallpapers, WallpaperConfig, WallpaperError};
 
 /// Trait for validating configuration and options.
@@ -113,7 +112,7 @@ pub struct InstallContext {
     pub interaction: interaction::InteractionService,
     pub localization: Localization,
     pub rollback: RollbackManager,
-    pub dry_run_log: DryRunLog,
+    pub dry_run_log: mash_system::dry_run::DryRunLog,
 }
 
 impl InstallContext {

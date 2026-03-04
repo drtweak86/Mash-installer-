@@ -27,7 +27,7 @@ jobs:
           - target: aarch64-unknown-linux-gnu
             cross: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -92,7 +92,7 @@ jobs:
           - target: x86_64-unknown-linux-gnu
           - target: aarch64-unknown-linux-gnu
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - name: Install cargo-deb
         run: cargo install cargo-deb
@@ -127,7 +127,7 @@ jobs:
           - target: x86_64-unknown-linux-gnu
           - target: aarch64-unknown-linux-gnu
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - name: Install cargo-generate-rpm
         run: cargo install cargo-generate-rpm
@@ -157,7 +157,7 @@ jobs:
     needs: [build-release, package-deb, package-rpm]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 

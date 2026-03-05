@@ -58,13 +58,13 @@ fn build_info_lines(app: &TuiApp) -> Vec<Line<'static>> {
             )),
         ],
 
-        Screen::ArchDetected => vec![
+        Screen::SystemScan => vec![
             Line::from(Span::styled(
-                "Architecture detection complete",
-                theme::success_style(),
+                "Active station scrying...",
+                theme::accent_style(),
             )),
             Line::from(Span::styled(
-                "Proceeding to distribution selection...",
+                "Establishing host pedigree and network status",
                 theme::dim_style(),
             )),
         ],

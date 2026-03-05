@@ -40,19 +40,12 @@ impl TuiApp {
         match screen {
             Screen::Welcome => {
                 if code == KeyCode::Enter || code == KeyCode::Char(' ') {
-                    self.screen = Screen::DistroSelect;
-                    self.menu_cursor = 0;
+                    self.advance_from_list();
                 }
             }
-            Screen::ArchDetected => {
-                if code == KeyCode::Enter || code == KeyCode::Char(' ') {
-                    self.screen = Screen::DistroSelect;
-                    self.arch_timer = None;
-                }
-                if code == KeyCode::Char('c') || code == KeyCode::Char('C') || code == KeyCode::Esc
-                {
-                    self.screen = Screen::DistroSelect;
-                    self.arch_timer = None;
+            Screen::SystemScan => {
+                if code == KeyCode::Esc {
+                    self.go_back();
                 }
             }
             Screen::DistroSelect => {
@@ -274,8 +267,7 @@ impl TuiApp {
     fn handle_system_summary_key(&mut self, code: KeyCode) {
         match code {
             KeyCode::Enter | KeyCode::Char(' ') => {
-                self.screen = Screen::Wardrobe;
-                self.menu_cursor = 0;
+                self.advance_from_list();
             }
             KeyCode::Esc => self.go_back(),
             _ => {}
@@ -285,8 +277,7 @@ impl TuiApp {
     fn handle_font_prep_key(&mut self, code: KeyCode) {
         match code {
             KeyCode::Enter | KeyCode::Char(' ') => {
-                self.screen = Screen::Confirm;
-                self.menu_cursor = 0;
+                self.advance_from_list();
             }
             KeyCode::Esc => self.go_back(),
             _ => {}

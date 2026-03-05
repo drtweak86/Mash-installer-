@@ -44,6 +44,32 @@ impl TuiApp {
                 });
                 self.screen = Screen::Authorization;
             }
+            TuiMessage::ScanComplete { platform, profile } => {
+                self.platform_info = platform;
+                self.system_profile = Some(profile);
+
+                // Auto-select driver based on scan results
+                let matches: Vec<usize> = self
+                    .drivers
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(i, d)| {
+                        if d.matches(&self.platform_info) {
+                            Some(i)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+
+                if matches.len() == 1 {
+                    self.selected_driver_idx = matches[0];
+                    self.navigate_to(Screen::SystemSummary, "System Results & Wisdom");
+                } else {
+                    // Fallback to manual selection if multiple or zero matches
+                    self.navigate_to(Screen::DistroSelect, "Distribution Selection");
+                }
+            }
             TuiMessage::Done(report) => {
                 self.report = Some(report);
                 self.screen = Screen::Done;

@@ -20,7 +20,7 @@ impl TuiApp {
             continue_on_error: self.continue_on_error,
             software_plan: self.build_software_plan(),
             system_profile: self.system_profile.clone(),
-            environment: installer_core::model::options::EnvironmentTag::Home, // Default for TUI for now
+            environment: self.environment,
         }
     }
 

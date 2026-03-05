@@ -9,6 +9,7 @@ use crate::tui::menus::helpers::{
     command_prompt_line, draw_navigation_info, module_checks, station_block,
 };
 use crate::tui::theme;
+use installer_core::desktop::DesktopEnvironment;
 
 pub fn draw_distro_select(f: &mut Frame, area: Rect, app: &TuiApp) {
     let block = station_block("DISTRO_SIGIL_SELECTION");
@@ -332,28 +333,47 @@ pub fn draw_pre_install_confirm(f: &mut Frame, area: Rect, app: &TuiApp) {
 
     let mut lines = vec![
         Line::from(vec![
-            Span::styled("DRIVER:  ", theme::dim_style()),
+            Span::styled("DRIVER:      ", theme::dim_style()),
             Span::styled(
                 app.drivers[app.selected_driver_idx].name().to_uppercase(),
                 theme::success_style(),
             ),
         ]),
         Line::from(vec![
-            Span::styled("PROFILE: ", theme::dim_style()),
+            Span::styled("PROFILE:     ", theme::dim_style()),
             Span::styled(
                 format!("{:?}", app.profile_level()).to_uppercase(),
                 theme::success_style(),
             ),
         ]),
         Line::from(vec![
-            Span::styled("THEME:   ", theme::dim_style()),
+            Span::styled("ENVIRONMENT: ", theme::dim_style()),
+            Span::styled(
+                format!("{:?}", app.environment()).to_uppercase(),
+                theme::success_style(),
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled("DESKTOP:     ", theme::dim_style()),
+            Span::styled(
+                format!(
+                    "{:?} ({:?})",
+                    app.desktop_environment.unwrap_or(DesktopEnvironment::None),
+                    app.display_protocol
+                )
+                .to_uppercase(),
+                theme::success_style(),
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled("THEME:       ", theme::dim_style()),
             Span::styled(
                 app.theme_plan_label().to_uppercase(),
                 theme::success_style(),
             ),
         ]),
         Line::from(vec![
-            Span::styled("SOFTWARE:", theme::dim_style()),
+            Span::styled("SOFTWARE:    ", theme::dim_style()),
             Span::styled(
                 app.software_plan_label().to_uppercase(),
                 theme::success_style(),
@@ -515,13 +535,17 @@ pub fn draw_wardrobe(f: &mut Frame, area: Rect, app: &TuiApp) {
 }
 
 pub fn draw_system_summary(f: &mut Frame, area: Rect, app: &TuiApp) {
-    let block = station_block("SYSTEM_PEDIGREE_SUMMARY");
+    let block = station_block("SYSTEM_PEDIGREE_RESULTS");
     f.render_widget(&block, area);
     let inner = block.inner(area);
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Min(0), Constraint::Length(3)])
+        .constraints([
+            Constraint::Percentage(40),
+            Constraint::Min(0),
+            Constraint::Length(3),
+        ])
         .split(inner);
 
     let mut summary = vec![
@@ -536,6 +560,17 @@ pub fn draw_system_summary(f: &mut Frame, area: Rect, app: &TuiApp) {
             Span::styled("ARCH:    ", theme::dim_style()),
             Span::styled(
                 app.platform_info.arch.to_uppercase(),
+                theme::success_style(),
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled("MODEL:   ", theme::dim_style()),
+            Span::styled(
+                app.platform_info
+                    .pi_model
+                    .clone()
+                    .unwrap_or_else(|| "Generic Station".to_string())
+                    .to_uppercase(),
                 theme::success_style(),
             ),
         ]),
@@ -558,17 +593,19 @@ pub fn draw_system_summary(f: &mut Frame, area: Rect, app: &TuiApp) {
     if let Some(ref profile) = app.system_profile {
         summary.push(Line::from(""));
         summary.push(Line::from(Span::styled(
-            "HARDWARE PROFILE:",
+            "HARDWARE LANDSCAPE:",
             theme::accent_style(),
         )));
         summary.push(Line::from(format!(
-            "  {} Cores detected",
+            "  {} PHYSICAL CORES DETECTED",
             profile.cpu.physical_cores
         )));
-        summary.push(Line::from(format!(
-            "  {:.1} GB Memory total",
-            profile.memory.ram_total_kb as f32 / 1024.0 / 1024.0
-        )));
+        if profile.memory.zram_total_kb > 0 {
+            summary.push(Line::from(format!(
+                "  {:.1} GB ZRAM OPTIMIZED",
+                profile.memory.zram_total_kb as f32 / 1024.0 / 1024.0
+            )));
+        }
     }
 
     f.render_widget(
@@ -576,10 +613,44 @@ pub fn draw_system_summary(f: &mut Frame, area: Rect, app: &TuiApp) {
         chunks[0],
     );
 
-    let prompt = Paragraph::new("PRESS [ENTER] TO PROCEED TO WARDROBE")
+    // BARD'S WISDOM (Advice Engine)
+    let mut wisdom = vec![Line::from(Span::styled(
+        "── BARD'S ANCESTRAL WISDOM ──────────────────────────",
+        theme::title_style(),
+    ))];
+
+    if let Some(ref profile) = app.system_profile {
+        let engine = installer_core::advice::AdviceEngine::default();
+        let advice = engine.run(profile);
+
+        if advice.is_empty() {
+            wisdom.push(Line::from("  THE FORGE IS OPTIMAL. NO CRITICAL OMENS DETECTED."));
+        } else {
+            for entry in advice {
+                let color = match entry.level {
+                    installer_core::advice::Severity::Critical => theme::error_style(),
+                    installer_core::advice::Severity::Warning => theme::warning_style(),
+                    installer_core::advice::Severity::Info => theme::accent_style(),
+                };
+                wisdom.push(Line::from(vec![
+                    Span::styled(format!("  [{:?}] ", entry.level).to_uppercase(), color),
+                    Span::styled(entry.message.to_uppercase(), theme::default_style()),
+                ]));
+            }
+        }
+    } else {
+        wisdom.push(Line::from("  WAITING FOR STATION TELEMETRY..."));
+    }
+
+    f.render_widget(
+        Paragraph::new(wisdom).wrap(Wrap { trim: false }),
+        chunks[1],
+    );
+
+    let prompt = Paragraph::new("PRESS [ENTER] TO ACKNOWLEDGE WISDOM")
         .style(theme::warning_style())
         .alignment(Alignment::Center);
-    f.render_widget(prompt, chunks[1]);
+    f.render_widget(prompt, chunks[2]);
 
     draw_navigation_info(f, area, app);
 }

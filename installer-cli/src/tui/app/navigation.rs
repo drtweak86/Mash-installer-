@@ -1,47 +1,21 @@
 use crate::tui::app::SoftwareMode;
 use crate::tui::state::{Screen, TuiApp};
 use installer_core::desktop::DesktopEnvironment;
-use installer_core::ThemePlan;
 
 impl TuiApp {
     pub fn advance_from_list(&mut self) {
         let screen = self.screen;
         match screen {
+            Screen::Welcome => {
+                self.navigate_to(Screen::SystemScan, "Active Scrying...");
+            }
             Screen::DistroSelect => {
                 self.selected_driver_idx = self.menu_cursor;
-                self.navigate_to(Screen::ProfileSelect, "Profile Selection");
-                self.menu_cursor = 1; // Default to Dev
+                self.navigate_to(Screen::SystemSummary, "System Results & Wisdom");
             }
-            Screen::ProfileSelect => {
-                self.profile_idx = self.menu_cursor;
-                self.navigate_to(Screen::ModuleSelect, "Module Selection");
+            Screen::SystemSummary => {
+                self.navigate_to(Screen::DeSelect, "Desktop Environment Selection");
                 self.menu_cursor = 0;
-            }
-            Screen::ThemeSelect => {
-                self.theme_plan = match self.menu_cursor {
-                    0 => ThemePlan::RetroOnly,
-                    1 => ThemePlan::RetroWithWallpapers,
-                    2 => ThemePlan::None,
-                    _ => ThemePlan::None,
-                };
-                self.navigate_to(Screen::SoftwareMode, "Software Mode Selection");
-                self.menu_cursor = 0;
-            }
-            Screen::SoftwareMode => {
-                self.software_mode = match self.menu_cursor {
-                    0 => SoftwareMode::BardsRecommendations,
-                    1 => SoftwareMode::Auto,
-                    2 => SoftwareMode::Manual,
-                    _ => SoftwareMode::BardsRecommendations,
-                };
-                if self.software_mode == SoftwareMode::Manual {
-                    self.navigate_to(Screen::SoftwareSelect, "Software Selection");
-                    self.software_category_idx = 0;
-                    self.menu_cursor = 0;
-                } else {
-                    self.navigate_to(Screen::Confirm, "Installation Confirmation");
-                    self.menu_cursor = 0;
-                }
             }
             Screen::DeSelect => {
                 self.desktop_environment = Some(match self.menu_cursor {
@@ -70,6 +44,36 @@ impl TuiApp {
                 self.navigate_to(Screen::DeConfirm, "Desktop Environment Confirmation");
                 self.menu_cursor = 0;
             }
+            Screen::DeConfirm => {
+                if self.menu_cursor == 0 {
+                    // YES
+                    self.navigate_to(Screen::FontPrep, "Font Curation");
+                    self.menu_cursor = 0;
+                } else {
+                    // NO
+                    self.go_back();
+                }
+            }
+            Screen::FontPrep => {
+                self.navigate_to(Screen::SoftwareMode, "Software Selection Mode");
+                self.menu_cursor = 0;
+            }
+            Screen::SoftwareMode => {
+                self.software_mode = match self.menu_cursor {
+                    0 => SoftwareMode::BardsRecommendations,
+                    1 => SoftwareMode::Auto,
+                    2 => SoftwareMode::Manual,
+                    _ => SoftwareMode::BardsRecommendations,
+                };
+                if self.software_mode == SoftwareMode::Manual {
+                    self.navigate_to(Screen::SoftwareSelect, "Software Selection");
+                    self.software_category_idx = 0;
+                    self.menu_cursor = 0;
+                } else {
+                    self.navigate_to(Screen::Confirm, "Final Provisioning Summary");
+                    self.menu_cursor = 0;
+                }
+            }
             _ => {}
         }
     }
@@ -80,34 +84,41 @@ impl TuiApp {
         }
         self.screen = new_screen;
         self.navigation_context = context.to_string();
+
+        if new_screen == Screen::SystemScan {
+            self.spawn_system_scan();
+        }
     }
 
     pub fn navigate_back(&mut self) {
         if let Some(previous_screen) = self.navigation_history.pop() {
             self.screen = previous_screen;
-            self.navigation_context = match previous_screen {
-                Screen::Welcome => "Welcome to MASH Installer",
-                Screen::ArchDetected => "Architecture Detection",
-                Screen::DistroSelect => "Distribution Selection",
-                Screen::ProfileSelect => "Profile Selection",
-                Screen::ModuleSelect => "Module Selection",
-                Screen::ThemeSelect => "Theme Selection",
-                Screen::SoftwareMode => "Software Mode Selection",
-                Screen::SoftwareSelect => "Software Selection",
-                Screen::Confirm => "Installation Confirmation",
-                Screen::DeSelect => "Desktop Environment Selection",
-                Screen::ProtocolSelect => "Display Protocol Selection",
-                Screen::DeConfirm => "Desktop Environment Confirmation",
-                Screen::FontPrep => "Font Preparation",
-                Screen::Wardrobe => "The Wardrobe (Presets)",
-                Screen::SystemSummary => "System Pedigree Summary",
-                Screen::Password => "Password Prompt",
-                Screen::Authorization => "Interactive Authorization",
-                Screen::Installing => "Installation in Progress",
-                Screen::Done => "Installation Complete",
-                Screen::Error => "Error Encountered",
-            }
-            .to_string();
+            self.navigation_context = self.context_for_screen(previous_screen).to_string();
+        }
+    }
+
+    fn context_for_screen(&self, screen: Screen) -> &'static str {
+        match screen {
+            Screen::Welcome => "Welcome to MASH Installer",
+            Screen::SystemScan => "Active Scrying...",
+            Screen::DistroSelect => "Distribution Selection",
+            Screen::ProfileSelect => "Profile Selection",
+            Screen::ModuleSelect => "Module Selection",
+            Screen::ThemeSelect => "Theme Selection",
+            Screen::SoftwareMode => "Software Selection Mode",
+            Screen::SoftwareSelect => "Software Selection",
+            Screen::Confirm => "Final Provisioning Summary",
+            Screen::DeSelect => "Desktop Environment Selection",
+            Screen::ProtocolSelect => "Display Protocol Selection",
+            Screen::DeConfirm => "Desktop Environment Confirmation",
+            Screen::FontPrep => "Font Curation",
+            Screen::Wardrobe => "The Wardrobe (Presets)",
+            Screen::SystemSummary => "System Results & Wisdom",
+            Screen::Password => "Password Prompt",
+            Screen::Authorization => "Interactive Authorization",
+            Screen::Installing => "Installation Forge",
+            Screen::Done => "Installation Complete",
+            Screen::Error => "Error Encountered",
         }
     }
 
@@ -122,23 +133,13 @@ impl TuiApp {
         }
 
         match self.screen {
-            Screen::DistroSelect => self.screen = Screen::Welcome,
-            Screen::ProfileSelect => {
-                self.screen = Screen::DistroSelect;
-                self.menu_cursor = self.selected_driver_idx;
-            }
-            Screen::ModuleSelect => {
-                self.screen = Screen::ProfileSelect;
-                self.menu_cursor = self.profile_idx;
-            }
-            Screen::ThemeSelect => {
-                self.screen = Screen::ModuleSelect;
-                self.menu_cursor = 0;
-            }
-            Screen::SoftwareMode => {
-                self.screen = Screen::ThemeSelect;
-                self.menu_cursor = 0;
-            }
+            Screen::SystemScan => self.screen = Screen::Welcome,
+            Screen::SystemSummary => self.screen = Screen::SystemScan,
+            Screen::DeSelect => self.screen = Screen::SystemSummary,
+            Screen::ProtocolSelect => self.screen = Screen::DeSelect,
+            Screen::DeConfirm => self.screen = Screen::ProtocolSelect,
+            Screen::FontPrep => self.screen = Screen::DeConfirm,
+            Screen::SoftwareMode => self.screen = Screen::FontPrep,
             Screen::SoftwareSelect => {
                 if self.software_category_idx == 0 {
                     self.screen = Screen::SoftwareMode;
@@ -154,29 +155,7 @@ impl TuiApp {
             _ => {}
         }
 
-        self.navigation_context = match self.screen {
-            Screen::Welcome => "Welcome to MASH Installer",
-            Screen::ArchDetected => "Architecture Detection",
-            Screen::DistroSelect => "Distribution Selection",
-            Screen::ProfileSelect => "Profile Selection",
-            Screen::ModuleSelect => "Module Selection",
-            Screen::ThemeSelect => "Theme Selection",
-            Screen::SoftwareMode => "Software Mode Selection",
-            Screen::SoftwareSelect => "Software Selection",
-            Screen::Confirm => "Installation Confirmation",
-            Screen::DeSelect => "Desktop Environment Selection",
-            Screen::ProtocolSelect => "Display Protocol Selection",
-            Screen::DeConfirm => "Desktop Environment Confirmation",
-            Screen::FontPrep => "Font Preparation",
-            Screen::Wardrobe => "The Wardrobe (Presets)",
-            Screen::SystemSummary => "System Pedigree Summary",
-            Screen::Password => "Password Prompt",
-            Screen::Authorization => "Interactive Authorization",
-            Screen::Installing => "Installation in Progress",
-            Screen::Done => "Installation Complete",
-            Screen::Error => "Error Encountered",
-        }
-        .to_string();
+        self.navigation_context = self.context_for_screen(self.screen).to_string();
     }
 
     pub fn update_long_process_confirmation(&mut self) -> bool {

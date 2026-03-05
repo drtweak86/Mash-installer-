@@ -35,6 +35,11 @@ pub enum TuiMessage {
         reply: Sender<bool>,
     },
 
+    ScanComplete {
+        platform: PlatformInfo,
+        profile: SystemProfile,
+    },
+
     Done(Box<InstallationReport>),
     InstallError(String),
 }
@@ -44,7 +49,7 @@ pub enum TuiMessage {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Screen {
     Welcome,
-    ArchDetected,
+    SystemScan,
     DistroSelect,
     ProfileSelect,
     ModuleSelect,
@@ -57,9 +62,7 @@ pub enum Screen {
     DeConfirm,
     FontPrep,
     Wardrobe,
-    #[allow(dead_code)]
     SystemSummary,
-    #[allow(dead_code)]
     Password,
     Authorization,
     Installing,
@@ -252,8 +255,6 @@ pub struct TuiApp {
     pub sys_stats: SysStats,
     // BBS message
     pub bbs_msg: String,
-    // Arch detection timer
-    pub arch_timer: Option<Instant>,
     // Presets
     pub available_presets: Vec<Preset>,
     pub selected_preset_idx: usize,
@@ -277,6 +278,7 @@ pub struct TuiApp {
     // Scry state
     pub scry: bool,
     pub scry_port: u16,
+    pub environment: installer_core::model::options::EnvironmentTag,
     // Should quit
     pub should_quit: bool,
 }

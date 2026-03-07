@@ -3,8 +3,8 @@
 //! This module provides an intelligent advice engine that analyzes a `SystemProfile`
 //! and returns actionable wisdom, performance hints, and critical warnings.
 
-use crate::desktop::{DesktopEnvironment, DisplayProtocol};
 use crate::context::UserOptionsContext;
+use crate::desktop::{DesktopEnvironment, DisplayProtocol};
 use crate::SystemProfile;
 use serde::{Deserialize, Serialize};
 
@@ -531,9 +531,9 @@ impl Rule for ChezmoiHeuristicRule {
 mod tests {
     use super::*;
     use crate::context::UserOptionsContext;
-    use crate::options::ProfileLevel;
-    use crate::profile::{SystemProfile, PlatformType};
     use crate::desktop::{DesktopEnvironment, DisplayProtocol};
+    use crate::options::ProfileLevel;
+    use crate::profile::{PlatformType, SystemProfile};
     use std::path::PathBuf;
 
     fn default_options() -> UserOptionsContext {
@@ -580,9 +580,9 @@ mod tests {
         profile.platform.platform_type = crate::profile::PlatformType::RaspberryPi;
         profile.session.session_type = "wayland".into();
         let advice = engine.run(&profile, &options);
-        assert!(advice.iter().any(|a| a
-            .message
-            .contains("Wayland selection on Raspberry Pi 4B")));
+        assert!(advice
+            .iter()
+            .any(|a| a.message.contains("Wayland selection on Raspberry Pi 4B")));
 
         // Test: Laptop
         profile.platform.is_laptop = true;
@@ -667,7 +667,7 @@ mod tests {
         let mut options = default_options();
 
         profile.platform.platform_type = PlatformType::RaspberryPi;
-        
+
         // 1. GNOME intended -> Warning
         options.desktop_environment = Some(DesktopEnvironment::Gnome);
         let advice = engine.run(&profile, &options);

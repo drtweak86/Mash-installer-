@@ -4,6 +4,7 @@
 //! and returns actionable wisdom, performance hints, and critical warnings.
 
 use crate::context::UserOptionsContext;
+use crate::desktop::{DesktopEnvironment, DisplayProtocol};
 use crate::SystemProfile;
 use serde::{Deserialize, Serialize};
 
@@ -74,6 +75,7 @@ impl Default for AdviceEngine {
             Box::new(LowRamRule),
             Box::new(NoSwapRule),
             Box::new(PiWaylandWarning),
+            Box::new(PiGnomeWarning),
             Box::new(PiSdCardWarning),
             Box::new(LaptopDetectedRule),
             Box::new(HighCoreCountOptimization),
@@ -391,16 +393,48 @@ impl Rule for PiWaylandWarning {
     fn name(&self) -> &'static str {
         "pi_wayland"
     }
-    fn check(&self, profile: &SystemProfile, _options: &UserOptionsContext) -> Option<AdviceEntry> {
+    fn check(&self, profile: &SystemProfile, options: &UserOptionsContext) -> Option<AdviceEntry> {
         use crate::profile::PlatformType;
-        if profile.platform.platform_type == PlatformType::RaspberryPi
-            && profile.session.session_type == "wayland"
-        {
+        let is_pi = profile.platform.platform_type == PlatformType::RaspberryPi;
+        let intended_wayland = options.display_protocol == DisplayProtocol::Wayland;
+        let current_wayland = profile.session.session_type == "wayland";
+
+        if is_pi && (intended_wayland || current_wayland) {
             Some(AdviceEntry {
                 name: "todo",
                 level: Severity::Warning,
-                message: "Wayland session detected on Raspberry Pi.".into(),
-                advice: "While supported, X11 often provides better performance and stability for heavy desktop use on Pi 4 hardware.".into(),
+                message: "Wayland selection on Raspberry Pi 4B.".into(),
+                advice: "Recommend NOT using Wayland on Pi 4B. X11 provides significantly better performance and hardware acceleration for this forge.".into(),
+            })
+        } else {
+            None
+        }
+    }
+}
+
+struct PiGnomeWarning;
+impl Rule for PiGnomeWarning {
+    fn name(&self) -> &'static str {
+        "pi_gnome"
+    }
+    fn check(&self, profile: &SystemProfile, options: &UserOptionsContext) -> Option<AdviceEntry> {
+        use crate::profile::PlatformType;
+        let is_pi = profile.platform.platform_type == PlatformType::RaspberryPi;
+        let intended_gnome = options.desktop_environment == Some(DesktopEnvironment::Gnome);
+
+        // Check if GNOME is already installed/running
+        let current_gnome = profile
+            .session
+            .desktop_environment
+            .to_lowercase()
+            .contains("gnome");
+
+        if is_pi && (intended_gnome || current_gnome) {
+            Some(AdviceEntry {
+                name: "todo",
+                level: Severity::Warning,
+                message: "GNOME Desktop selection on Raspberry Pi.".into(),
+                advice: "Recommend NOT using GNOME on Pi hardware. It is too resource-heavy. Prefer 'LXQt' or 'XFCE' for a smooth experience.".into(),
             })
         } else {
             None
@@ -497,8 +531,9 @@ impl Rule for ChezmoiHeuristicRule {
 mod tests {
     use super::*;
     use crate::context::UserOptionsContext;
+    use crate::desktop::{DesktopEnvironment, DisplayProtocol};
     use crate::options::ProfileLevel;
-    use crate::profile::SystemProfile;
+    use crate::profile::{PlatformType, SystemProfile};
     use std::path::PathBuf;
 
     fn default_options() -> UserOptionsContext {
@@ -514,6 +549,8 @@ mod tests {
             system_profile: None,
             environment: crate::options::EnvironmentTag::Home,
             chezmoi: crate::model::options::ChezmoiOptions::default(),
+            desktop_environment: None,
+            display_protocol: DisplayProtocol::Auto,
         }
     }
 
@@ -524,6 +561,7 @@ mod tests {
         let options = default_options();
 
         // Test: Low RAM
+
         profile.memory.ram_total_kb = 4 * 1024 * 1024;
         let advice = engine.run(&profile, &options);
         assert!(advice
@@ -542,9 +580,9 @@ mod tests {
         profile.platform.platform_type = crate::profile::PlatformType::RaspberryPi;
         profile.session.session_type = "wayland".into();
         let advice = engine.run(&profile, &options);
-        assert!(advice.iter().any(|a| a
-            .message
-            .contains("Wayland session detected on Raspberry Pi")));
+        assert!(advice
+            .iter()
+            .any(|a| a.message.contains("Wayland selection on Raspberry Pi 4B")));
 
         // Test: Laptop
         profile.platform.is_laptop = true;
@@ -620,5 +658,50 @@ mod tests {
         options.chezmoi.enabled = false;
         let advice = engine.run(&profile, &options);
         assert!(!advice.iter().any(|a| a.name() == "chezmoi_recommendation"));
+    }
+
+    #[test]
+    fn test_pi_gnome_rule() {
+        let engine = AdviceEngine::default();
+        let mut profile = SystemProfile::default();
+        let mut options = default_options();
+
+        profile.platform.platform_type = PlatformType::RaspberryPi;
+
+        // 1. GNOME intended -> Warning
+        options.desktop_environment = Some(DesktopEnvironment::Gnome);
+        let advice = engine.run(&profile, &options);
+        assert!(advice.iter().any(|a| a.name() == "pi_gnome"));
+
+        // 2. KDE intended -> No warning
+        options.desktop_environment = Some(DesktopEnvironment::Kde);
+        let advice = engine.run(&profile, &options);
+        assert!(!advice.iter().any(|a| a.name() == "pi_gnome"));
+
+        // 3. GNOME running -> Warning
+        options.desktop_environment = None;
+        profile.session.desktop_environment = "GNOME".into();
+        let advice = engine.run(&profile, &options);
+        assert!(advice.iter().any(|a| a.name() == "pi_gnome"));
+    }
+
+    #[test]
+    fn test_pi_wayland_rule_prescriptive() {
+        let engine = AdviceEngine::default();
+        let mut profile = SystemProfile::default();
+        let mut options = default_options();
+
+        profile.platform.platform_type = PlatformType::RaspberryPi;
+
+        // 1. Wayland intended -> Warning
+        options.display_protocol = DisplayProtocol::Wayland;
+        let advice = engine.run(&profile, &options);
+        let entry = advice.iter().find(|a| a.name() == "pi_wayland").unwrap();
+        assert!(entry.advice.contains("Recommend NOT using Wayland"));
+
+        // 2. X11 intended -> No warning
+        options.display_protocol = DisplayProtocol::X11;
+        let advice = engine.run(&profile, &options);
+        assert!(!advice.iter().any(|a| a.name() == "pi_wayland"));
     }
 }

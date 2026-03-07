@@ -164,6 +164,8 @@ fn build_context_for_driver(driver: &'static dyn DistroDriver) -> Result<Install
         system_profile: None,
         environment: EnvironmentTag::Home,
         chezmoi: Default::default(),
+        desktop_environment: None,
+        display_protocol: installer_core::desktop::DisplayProtocol::Auto,
     };
     let localization = installer_core::localization::Localization::load_default()?;
 

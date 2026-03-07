@@ -237,6 +237,8 @@ fn main() -> Result<()> {
         system_profile: None,
         environment,
         chezmoi: Default::default(),
+        desktop_environment: None,
+        display_protocol: installer_core::desktop::DisplayProtocol::Auto,
     };
 
     info!(

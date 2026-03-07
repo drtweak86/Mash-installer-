@@ -34,6 +34,8 @@ impl TuiApp {
                     Some(self.chezmoi_branch.clone())
                 },
             },
+            desktop_environment: self.desktop_environment,
+            display_protocol: self.display_protocol,
         }
     }
 

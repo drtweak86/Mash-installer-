@@ -1,3 +1,4 @@
+use crate::desktop::{DesktopEnvironment, DisplayProtocol};
 use crate::model::software::SoftwareTierPlan;
 use crate::model::Validator;
 use crate::profile::SystemProfile;
@@ -46,6 +47,8 @@ pub struct InstallOptions {
     pub system_profile: Option<SystemProfile>,
     pub environment: EnvironmentTag,
     pub chezmoi: ChezmoiOptions,
+    pub desktop_environment: Option<DesktopEnvironment>,
+    pub display_protocol: DisplayProtocol,
 }
 
 impl Validator for InstallOptions {
@@ -83,6 +86,8 @@ impl Default for InstallOptions {
             system_profile: None,
             environment: EnvironmentTag::Home,
             chezmoi: ChezmoiOptions::default(),
+            desktop_environment: None,
+            display_protocol: DisplayProtocol::Auto,
         }
     }
 }
@@ -109,6 +114,8 @@ pub struct UserOptionsContext {
     pub system_profile: Option<SystemProfile>,
     pub environment: EnvironmentTag,
     pub chezmoi: ChezmoiOptions,
+    pub desktop_environment: Option<DesktopEnvironment>,
+    pub display_protocol: DisplayProtocol,
 }
 
 impl UserOptionsContext {
@@ -128,6 +135,8 @@ impl UserOptionsContext {
             system_profile: opts.system_profile.clone(),
             environment: opts.environment,
             chezmoi: opts.chezmoi.clone(),
+            desktop_environment: opts.desktop_environment,
+            display_protocol: opts.display_protocol,
         }
     }
 }

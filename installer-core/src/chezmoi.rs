@@ -180,6 +180,8 @@ mod tests {
             system_profile: None,
             environment: EnvironmentTag::Home,
             chezmoi,
+            desktop_environment: None,
+            display_protocol: crate::desktop::DisplayProtocol::Auto,
         };
         let localization = Localization::load_default()?;
         let cache = crate::ArtifactCache::new(&PathBuf::from("/tmp/mash-test-cache"));

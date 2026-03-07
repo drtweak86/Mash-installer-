@@ -19,6 +19,8 @@ fn build_user_options() -> UserOptionsContext {
         system_profile: None,
         environment: EnvironmentTag::Home,
         chezmoi: Default::default(),
+        desktop_environment: None,
+        display_protocol: installer_core::desktop::DisplayProtocol::Auto,
     }
 }
 

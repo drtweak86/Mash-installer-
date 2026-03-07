@@ -136,6 +136,8 @@ fn build_install_context() -> Result<InstallContext> {
         system_profile: None,
         environment: EnvironmentTag::Home,
         chezmoi: Default::default(),
+        desktop_environment: None,
+        display_protocol: installer_core::desktop::DisplayProtocol::Auto,
     };
     let localization = Localization::load_default()?;
 

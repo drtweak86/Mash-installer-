@@ -9,10 +9,11 @@ use crate::{
     package_manager,
 };
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Supported desktop environments
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum DesktopEnvironment {
     Gnome,
     Kde,
@@ -95,7 +96,7 @@ impl DesktopEnvironment {
 }
 
 /// Display protocol selection
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DisplayProtocol {
     X11,
     Wayland,

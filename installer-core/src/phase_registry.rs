@@ -305,6 +305,8 @@ mod tests {
             system_profile: None,
             environment: crate::model::options::EnvironmentTag::Home,
             chezmoi: Default::default(),
+            desktop_environment: None,
+            display_protocol: crate::desktop::DisplayProtocol::Auto,
         };
 
         let strings = Localization::load_default()?;

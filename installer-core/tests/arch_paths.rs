@@ -60,6 +60,8 @@ fn build_mock_context(arch: &'static str) -> Result<InstallContext> {
         system_profile: None,
         environment: EnvironmentTag::Home,
         chezmoi: Default::default(),
+        desktop_environment: None,
+        display_protocol: installer_core::desktop::DisplayProtocol::Auto,
     };
     let localization = installer_core::localization::Localization::load_default()?;
 

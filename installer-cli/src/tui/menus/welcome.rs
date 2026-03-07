@@ -5,7 +5,6 @@ use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use ratatui::widgets::{Paragraph, Wrap};
 use ratatui::Frame;
 
-
 const WELCOME_BANNER: &str = r"
   __  __    _    ____  _   _ 
  |  \/  |  / \  / ___|| | | |

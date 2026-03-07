@@ -35,6 +35,11 @@ pub enum TuiMessage {
         reply: Sender<bool>,
     },
 
+    ScanComplete {
+        platform: PlatformInfo,
+        profile: Box<SystemProfile>,
+    },
+
     Done(Box<InstallationReport>),
     InstallError(String),
 }
@@ -42,9 +47,10 @@ pub enum TuiMessage {
 // ── Screen state machine ─────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(dead_code)]
 pub enum Screen {
     Welcome,
-    ArchDetected,
+    SystemScan,
     DistroSelect,
     ProfileSelect,
     ModuleSelect,
@@ -57,9 +63,8 @@ pub enum Screen {
     DeConfirm,
     FontPrep,
     Wardrobe,
-    #[allow(dead_code)]
+    ChezmoiConfig,
     SystemSummary,
-    #[allow(dead_code)]
     Password,
     Authorization,
     Installing,
@@ -235,6 +240,10 @@ pub struct TuiApp {
     pub catalog: Catalog,
     pub software_picks: BTreeMap<SoftwareCategory, Vec<String>>,
     pub software_category_idx: usize,
+    // Chezmoi configuration
+    pub chezmoi_enabled: bool,
+    pub chezmoi_repo: String,
+    pub chezmoi_branch: String,
     // Dry-run flag
     pub dry_run: bool,
     pub continue_on_error: bool,
@@ -252,8 +261,6 @@ pub struct TuiApp {
     pub sys_stats: SysStats,
     // BBS message
     pub bbs_msg: String,
-    // Arch detection timer
-    pub arch_timer: Option<Instant>,
     // Presets
     pub available_presets: Vec<Preset>,
     pub selected_preset_idx: usize,
@@ -277,6 +284,7 @@ pub struct TuiApp {
     // Scry state
     pub scry: bool,
     pub scry_port: u16,
+    pub environment: installer_core::model::options::EnvironmentTag,
     // Should quit
     pub should_quit: bool,
 }

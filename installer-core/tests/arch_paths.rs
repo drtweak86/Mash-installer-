@@ -59,6 +59,7 @@ fn build_mock_context(arch: &'static str) -> Result<InstallContext> {
         software_plan: SoftwareTierPlan::default(),
         system_profile: None,
         environment: EnvironmentTag::Home,
+        chezmoi: Default::default(),
     };
     let localization = installer_core::localization::Localization::load_default()?;
 

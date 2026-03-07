@@ -71,15 +71,41 @@ impl SystemProfileExt for SystemProfile {
     /// Full auto-detection of the system.
     fn detect(system: &dyn SystemOps) -> Result<Self> {
         let mut profile = Self::new();
-        profile.platform = PlatformInfo::detect(system)?;
-        profile.distro = DistroInfo::detect()?;
+
+        profile.platform = PlatformInfo::detect(system).unwrap_or_else(|e| {
+            tracing::error!("Platform detection failed: {}", e);
+            PlatformInfo::default()
+        });
+
+        profile.distro = DistroInfo::detect().unwrap_or_else(|e| {
+            tracing::error!("Distro detection failed: {}", e);
+            DistroInfo::default()
+        });
+
         profile.cpu = CpuInfo::detect();
         profile.memory = MemoryInfo::detect(system);
-        profile.gpu = GpuInfo::detect(system)?;
-        profile.network = NetworkInfo::detect(system)?;
-        profile.software = SoftwareInfo::detect(system)?;
+
+        profile.gpu = GpuInfo::detect(system).unwrap_or_else(|e| {
+            tracing::error!("GPU detection failed: {}", e);
+            GpuInfo::default()
+        });
+
+        profile.network = NetworkInfo::detect(system).unwrap_or_else(|e| {
+            tracing::error!("Network detection failed: {}", e);
+            NetworkInfo::default()
+        });
+
+        profile.software = SoftwareInfo::detect(system).unwrap_or_else(|e| {
+            tracing::error!("Software detection failed: {}", e);
+            SoftwareInfo::default()
+        });
+
         profile.session = SessionInfo::detect();
-        profile.storage = StorageInfo::detect(system)?;
+
+        profile.storage = StorageInfo::detect(system).unwrap_or_else(|e| {
+            tracing::error!("Storage detection failed: {}", e);
+            StorageInfo::default()
+        });
 
         Ok(profile)
     }
@@ -125,8 +151,21 @@ fn detect_block_devices(system: &dyn SystemOps) -> Result<Vec<BlockDevice>> {
         "NAME,TYPE,SIZE,FSTYPE,MOUNTPOINT,MODEL,VENDOR,RM",
     ]);
 
-    let output = system.command_output(&mut cmd)?;
-    let lsblk: LsblkOutput = serde_json::from_slice(&output.stdout)?;
+    let output = match system.command_output(&mut cmd) {
+        Ok(out) => out,
+        Err(err) => {
+            tracing::warn!("Failed to detect block devices: {}", err);
+            return Ok(Vec::new());
+        }
+    };
+
+    let lsblk: LsblkOutput = match serde_json::from_slice(&output.stdout) {
+        Ok(data) => data,
+        Err(err) => {
+            tracing::warn!("Failed to parse lsblk output: {}", err);
+            return Ok(Vec::new());
+        }
+    };
 
     let mut devices = Vec::new();
     flatten_lsblk_devices(&lsblk.blockdevices, &mut devices);
@@ -158,7 +197,13 @@ fn flatten_lsblk_devices(lsblk_devs: &[LsblkDevice], out: &mut Vec<BlockDevice>)
 }
 
 fn detect_mounts(system: &dyn SystemOps) -> Result<Vec<MountInfo>> {
-    let content = system.read_to_string(Path::new("/proc/mounts"))?;
+    let content = match system.read_to_string(Path::new("/proc/mounts")) {
+        Ok(c) => c,
+        Err(err) => {
+            tracing::warn!("Failed to read /proc/mounts: {}", err);
+            return Ok(Vec::new());
+        }
+    };
     let mut mounts = Vec::new();
 
     for line in content.lines() {

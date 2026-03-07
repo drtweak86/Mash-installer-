@@ -346,7 +346,7 @@ mod tests {
             };
             let options = UserOptionsContext {
                 profile: ProfileLevel::Minimal,
-                staging_dir: PathBuf::from("/tmp/mash-dry-run"),
+                staging_dir: PathBuf::from("/tmp"),
                 dry_run,
                 interactive: false,
                 enable_argon: false,
@@ -355,7 +355,9 @@ mod tests {
                 software_plan: SoftwareTierPlan::default(),
                 system_profile: None,
                 environment: EnvironmentTag::Home,
+                chezmoi: Default::default(),
             };
+
             let localization = Localization::load_default()?;
             let cache_dir = PathBuf::from("/tmp/mash-test-cache");
             let cache = crate::ArtifactCache::new(&cache_dir);

@@ -1065,6 +1065,7 @@ dependencies = [
  "installer-drivers",
  "ratatui",
  "serde_json",
+ "strum",
  "tracing",
  "tracing-subscriber",
  "whoami",

@@ -65,7 +65,7 @@ pub fn draw(f: &mut Frame, app: &TuiApp) {
 
     match app.screen {
         Screen::Welcome => menus::draw_welcome(f, main_area, app),
-        Screen::ArchDetected => menus::draw_arch_detected(f, main_area, app),
+        Screen::SystemScan => menus::draw_system_scan(f, main_area, app),
         Screen::DistroSelect => menus::draw_distro_select(f, main_area, app),
         Screen::ProfileSelect => menus::draw_profile_select(f, main_area, app),
         Screen::ModuleSelect => menus::draw_module_select(f, main_area, app),
@@ -78,6 +78,7 @@ pub fn draw(f: &mut Frame, app: &TuiApp) {
         Screen::Confirm => menus::draw_pre_install_confirm(f, main_area, app),
         Screen::FontPrep => menus::draw_font_prep(f, main_area, app),
         Screen::Wardrobe => menus::draw_wardrobe(f, main_area, app),
+        Screen::ChezmoiConfig => menus::draw_chezmoi_config(f, main_area, app),
         Screen::SystemSummary => menus::draw_system_summary(f, main_area, app),
         Screen::Password => menus::draw_password_screen(f, main_area, app),
         Screen::Authorization => menus::draw_auth_screen(f, main_area, app),

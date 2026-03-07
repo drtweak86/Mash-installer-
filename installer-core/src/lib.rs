@@ -10,6 +10,7 @@ pub mod authorization;
 mod backend;
 mod buildroot;
 pub mod catalog;
+pub mod chezmoi;
 
 mod config;
 mod context;

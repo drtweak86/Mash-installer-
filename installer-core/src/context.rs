@@ -281,6 +281,23 @@ impl<'a> PhaseContext<'a> {
         }
     }
 
+    pub fn from_ctx(
+        install_ctx: &'a crate::InstallContext,
+        observer: &'a mut dyn crate::PhaseObserver,
+    ) -> Self {
+        Self::new(
+            &install_ctx.options,
+            &install_ctx.platform,
+            &install_ctx.ui,
+            &install_ctx.interaction,
+            &install_ctx.localization,
+            &install_ctx.rollback,
+            &install_ctx.dry_run_log,
+            &install_ctx.cache,
+            observer,
+        )
+    }
+
     /// Register a rollback action associated with the provided label.
     pub fn register_rollback_action(
         &mut self,

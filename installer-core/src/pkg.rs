@@ -113,6 +113,7 @@ fn system_package_specs() -> Vec<PackageSpec<'static>> {
         PackageSpec::required_for("bat", ProfileLevel::Dev),
         PackageSpec::required_for("eza", ProfileLevel::Dev),
         PackageSpec::required_for("yq", ProfileLevel::Dev),
+        PackageSpec::optional_for("chezmoi", ProfileLevel::Dev),
     ]);
 
     specs

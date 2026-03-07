@@ -3,6 +3,48 @@
 
 ---
 
+## Session: 2026-03-06 — Shaft AC: Chezmoi Integration
+
+### Summary
+Successfully integrated `chezmoi` as a first-class dotfile management option. This enables users to restore their personal configurations automatically during the MASH provisioning flow.
+
+### Key Achievements
+- **Core Engine**: Implemented `chezmoi` phase with automatic tool installation and `init`/`apply` logic.
+- **TUI Flow**: Added a dedicated `ChezmoiConfig` screen between software selection and final confirmation.
+- **Intelligent Advice**: Added a heuristic rule to suggest `chezmoi` for Developer profiles missing dotfile configuration.
+- **Verified Integrity**: 100% test pass rate across the workspace, including new `chezmoi` and `advice` unit tests.
+
+---
+
+## Session: 2026-03-05 — Shaft AB: Menu Flow Overhaul Completion
+
+### Summary
+Successfully completed a comprehensive overhaul of the TUI menu sequence. The installer now follows a streamlined, scry-first linear flow that prioritizes host intelligence and Bardic wisdom before any software selection.
+
+### Key Achievements
+- [x] **8-Step Ritual**: Implemented the new sequence: Welcome -> Scan -> Results -> DE -> Fonts -> Software -> Summary -> Install.
+- [x] **Active Scrying**: Forged the `SystemScan` screen with a background detection thread, creating an interactive "Active station scrying" experience.
+- [x] **Bardic Wisdom Integration**: Updated the `SystemSummary` results page to process and display actionable wisdom from the `AdviceEngine` based on the live scan.
+- [x] **Simplified Configuration**: Merged and streamlined fragmented selection screens (Profile, Module, Theme) into a single logical progression.
+- [x] **Comprehensive Audit**: Enhanced the final provisioning summary to include Environment tags and detailed Desktop Environment coordination.
+- [x] **Stability**: Verified that all navigation paths (forward and back) correctly preserve the complex application state.
+
+---
+
+## Session: 2026-03-05 — Shaft AB: Menu Flow Overhaul (Initiated)
+
+### Summary
+Initiated a complete overhaul of the TUI menu sequence to provide a more logical, intelligence-first user experience. Transitioned the flow to a scry-heavy linear sequence guided by the Bard's Advice Engine.
+
+### Key Achievements
+- [x] **Navigation Core Refactor**: Re-engineered the `Screen` state machine and navigation logic to support the new 8-step ritual.
+- [x] **Active Scrying Implementation**: Forged the `SystemScan` screen and background detection thread, ensuring host pedigree is established before user selection.
+- [x] **Wisdom Integration**: Enhanced the `SystemSummary` screen to process and display results from the `AdviceEngine`, grounding the installation in expert wisdom.
+- [x] **Simplified Sequence**: Merged fragmented selection screens and removed the legacy `ArchDetected` gate to streamline the journey.
+- [x] **Audit Expansion**: Updated the final mission briefing to provide a comprehensive audit of Desktop, Environment, and Software selections.
+
+---
+
 ## Session: 2026-03-04 — Shaft AA: Phase 5 Roaming Agent Completion
 
 ### Summary

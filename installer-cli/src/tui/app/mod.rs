@@ -43,6 +43,9 @@ impl TuiApp {
             catalog: installer_core::catalog::Catalog::load_s_tier().unwrap_or_default(),
             software_picks: BTreeMap::new(),
             software_category_idx: 0,
+            chezmoi_enabled: false,
+            chezmoi_repo: String::new(),
+            chezmoi_branch: String::new(),
             dry_run: false,
             continue_on_error: false,
             platform_info: installer_core::platform::PlatformInfo {
@@ -56,8 +59,7 @@ impl TuiApp {
                 cpu_cores: 0,
                 ram_total_gb: 0.0,
             },
-            system_profile: installer_core::SystemProfile::detect(&installer_core::REAL_SYSTEM)
-                .ok(),
+            system_profile: None,
             phases: Vec::new(),
             current_phase: 0,
             total_phases: 0,
@@ -66,7 +68,6 @@ impl TuiApp {
             log: VecDeque::with_capacity(500),
             sys_stats: SysStats::default(),
             bbs_msg: "⚡ Initialising the forge...".to_string(),
-            arch_timer: None,
             available_presets: installer_core::preset::PresetRegistry::load_all()
                 .map(|r| r.presets.into_values().collect())
                 .unwrap_or_default(),
@@ -82,6 +83,7 @@ impl TuiApp {
             summary_scroll: 0,
             scry: false,
             scry_port: 3030,
+            environment: installer_core::model::options::EnvironmentTag::Home,
             should_quit: false,
         }
     }
@@ -100,25 +102,10 @@ impl TuiApp {
     }
 
     pub fn tick(&mut self) {
-        if self.screen == Screen::ArchDetected {
-            if let Some(start) = self.arch_timer {
-                if start.elapsed().as_secs() >= 15 {
-                    self.screen = Screen::DistroSelect;
-                    self.arch_timer = None;
-                }
-            }
-        }
-
         // Update long process confirmation countdown
         if self.long_process_state.is_some() {
             let _ = self.update_long_process_confirmation();
         }
-    }
-
-    pub fn handle_auto_arch(&mut self, arch: String) {
-        self.screen = Screen::ArchDetected;
-        self.bbs_msg = format!("STATION_01: ARCH_SIGIL_{} identified.", arch.to_uppercase());
-        self.arch_timer = Some(Instant::now());
     }
 
     pub fn profile_level(&self) -> ProfileLevel {
@@ -127,6 +114,39 @@ impl TuiApp {
             1 => ProfileLevel::Dev,
             _ => ProfileLevel::Full,
         }
+    }
+
+    pub fn environment(&self) -> installer_core::model::options::EnvironmentTag {
+        self.environment
+    }
+
+    pub fn spawn_system_scan(&self) {
+        let tx = self.tx.clone();
+        thread::spawn(move || {
+            // Give the UI a moment to show the scan screen
+            thread::sleep(Duration::from_millis(1500));
+
+            let platform =
+                detect_platform().unwrap_or_else(|_| installer_core::platform::PlatformInfo {
+                    arch: std::env::consts::ARCH.to_string(),
+                    distro: "unknown".to_string(),
+                    distro_version: "unknown".to_string(),
+                    distro_codename: "unknown".to_string(),
+                    distro_family: "unknown".to_string(),
+                    pi_model: None,
+                    cpu_model: "Unknown".to_string(),
+                    cpu_cores: 0,
+                    ram_total_gb: 0.0,
+                });
+
+            let profile = installer_core::SystemProfile::detect(&installer_core::REAL_SYSTEM)
+                .unwrap_or_default();
+
+            let _ = tx.send(TuiMessage::ScanComplete {
+                platform,
+                profile: Box::new(profile),
+            });
+        });
     }
 
     pub fn spawn_installer(&self, driver: &'static dyn DistroDriver) {
@@ -218,33 +238,8 @@ pub fn run(
     app.scry = scry;
     app.scry_port = scry_port;
 
-    match detect_platform().ok().and_then(|info| {
-        let matches: Vec<usize> = app
-            .drivers
-            .iter()
-            .enumerate()
-            .filter_map(|(i, d)| if d.matches(&info) { Some(i) } else { None })
-            .collect();
-        if matches.len() == 1 {
-            Some((matches[0], info.arch))
-        } else {
-            None
-        }
-    }) {
-        Some((idx, arch)) => {
-            app.selected_driver_idx = idx;
-            app.screen = Screen::DistroSelect;
-            app.bbs_msg = format!(
-                "STATION_01: ARCH_SIGIL_{} — {} auto-selected.",
-                arch.to_uppercase(),
-                app.drivers[idx].name()
-            );
-        }
-        None => {
-            let arch = std::env::consts::ARCH.to_string();
-            app.handle_auto_arch(arch);
-        }
-    }
+    // Start at Welcome screen
+    app.screen = Screen::Welcome;
 
     let tick_rate = Duration::from_millis(250);
     let mut last_tick = Instant::now();

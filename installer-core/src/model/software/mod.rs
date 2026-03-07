@@ -1,7 +1,7 @@
 use crate::model::Validator;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use strum::{Display, EnumString};
+use strum::{Display, EnumIter, EnumString, VariantNames};
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ThemePlan {
@@ -48,7 +48,9 @@ impl Tier {
     PartialOrd,
     Ord,
     Display,
+    EnumIter,
     EnumString,
+    VariantNames,
 )]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]

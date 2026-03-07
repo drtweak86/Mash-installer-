@@ -33,3 +33,7 @@ description = "rclone ready"
 [phases.argon_one]
 label = "Argon One fan script"
 description = "Argon One installed"
+
+[phases.chezmoi]
+label = "Chezmoi dotfile restoration"
+description = "Dotfiles restored via chezmoi"

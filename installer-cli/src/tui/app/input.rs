@@ -40,19 +40,12 @@ impl TuiApp {
         match screen {
             Screen::Welcome => {
                 if code == KeyCode::Enter || code == KeyCode::Char(' ') {
-                    self.screen = Screen::DistroSelect;
-                    self.menu_cursor = 0;
+                    self.advance_from_list();
                 }
             }
-            Screen::ArchDetected => {
-                if code == KeyCode::Enter || code == KeyCode::Char(' ') {
-                    self.screen = Screen::DistroSelect;
-                    self.arch_timer = None;
-                }
-                if code == KeyCode::Char('c') || code == KeyCode::Char('C') || code == KeyCode::Esc
-                {
-                    self.screen = Screen::DistroSelect;
-                    self.arch_timer = None;
+            Screen::SystemScan => {
+                if code == KeyCode::Esc {
+                    self.go_back();
                 }
             }
             Screen::DistroSelect => {
@@ -72,6 +65,7 @@ impl TuiApp {
             Screen::DeConfirm => self.handle_confirm_key(code),
             Screen::FontPrep => self.handle_font_prep_key(code),
             Screen::Wardrobe => self.handle_wardrobe_key(code),
+            Screen::ChezmoiConfig => self.handle_chezmoi_config_key(code),
             Screen::SystemSummary => self.handle_system_summary_key(code),
             Screen::Authorization => self.handle_auth_key(code),
             Screen::Installing => self.handle_installing_key(code),
@@ -233,6 +227,61 @@ impl TuiApp {
         }
     }
 
+    fn handle_chezmoi_config_key(&mut self, code: KeyCode) {
+        let max_cursor = if self.chezmoi_enabled { 3 } else { 1 };
+
+        match code {
+            KeyCode::Up | KeyCode::Char('k') => {
+                if self.menu_cursor > 0 {
+                    self.menu_cursor -= 1;
+                } else {
+                    self.menu_cursor = max_cursor;
+                }
+            }
+            KeyCode::Down | KeyCode::Char('j') => {
+                if self.menu_cursor < max_cursor {
+                    self.menu_cursor += 1;
+                } else {
+                    self.menu_cursor = 0;
+                }
+            }
+            KeyCode::Enter => match self.menu_cursor {
+                0 => {
+                    self.chezmoi_enabled = !self.chezmoi_enabled;
+                }
+                1 => {
+                    if !self.chezmoi_enabled {
+                        self.advance_from_list();
+                    }
+                }
+                3 => {
+                    self.advance_from_list();
+                }
+                _ => {}
+            },
+            KeyCode::Backspace => match self.menu_cursor {
+                1 if self.chezmoi_enabled => {
+                    self.chezmoi_repo.pop();
+                }
+                2 if self.chezmoi_enabled => {
+                    self.chezmoi_branch.pop();
+                }
+                _ => {}
+            },
+            KeyCode::Char(c) => match self.menu_cursor {
+                1 if self.chezmoi_enabled => {
+                    self.chezmoi_repo.push(c);
+                }
+                2 if self.chezmoi_enabled => {
+                    self.chezmoi_branch.push(c);
+                }
+                _ => {}
+            },
+            KeyCode::Esc => self.go_back(),
+            _ => {}
+        }
+    }
+
     fn handle_confirm_key(&mut self, code: KeyCode) {
         match code {
             KeyCode::Left
@@ -274,8 +323,7 @@ impl TuiApp {
     fn handle_system_summary_key(&mut self, code: KeyCode) {
         match code {
             KeyCode::Enter | KeyCode::Char(' ') => {
-                self.screen = Screen::Wardrobe;
-                self.menu_cursor = 0;
+                self.advance_from_list();
             }
             KeyCode::Esc => self.go_back(),
             _ => {}
@@ -285,8 +333,7 @@ impl TuiApp {
     fn handle_font_prep_key(&mut self, code: KeyCode) {
         match code {
             KeyCode::Enter | KeyCode::Char(' ') => {
-                self.screen = Screen::Confirm;
-                self.menu_cursor = 0;
+                self.advance_from_list();
             }
             KeyCode::Esc => self.go_back(),
             _ => {}

@@ -20,7 +20,20 @@ impl TuiApp {
             continue_on_error: self.continue_on_error,
             software_plan: self.build_software_plan(),
             system_profile: self.system_profile.clone(),
-            environment: installer_core::model::options::EnvironmentTag::Home, // Default for TUI for now
+            environment: self.environment,
+            chezmoi: installer_core::model::options::ChezmoiOptions {
+                enabled: self.chezmoi_enabled,
+                repo_url: if self.chezmoi_repo.is_empty() {
+                    None
+                } else {
+                    Some(self.chezmoi_repo.clone())
+                },
+                branch: if self.chezmoi_branch.is_empty() {
+                    None
+                } else {
+                    Some(self.chezmoi_branch.clone())
+                },
+            },
         }
     }
 

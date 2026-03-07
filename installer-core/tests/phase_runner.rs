@@ -135,6 +135,7 @@ fn build_install_context() -> Result<InstallContext> {
         software_plan: SoftwareTierPlan::default(),
         system_profile: None,
         environment: EnvironmentTag::Home,
+        chezmoi: Default::default(),
     };
     let localization = Localization::load_default()?;
 

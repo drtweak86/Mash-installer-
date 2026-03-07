@@ -18,6 +18,7 @@ fn build_user_options() -> UserOptionsContext {
         software_plan: SoftwareTierPlan::default(),
         system_profile: None,
         environment: EnvironmentTag::Home,
+        chezmoi: Default::default(),
     }
 }
 

@@ -24,6 +24,13 @@ pub enum EnvironmentTag {
     Traveling,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq, Eq)]
+pub struct ChezmoiOptions {
+    pub enabled: bool,
+    pub repo_url: Option<String>,
+    pub branch: Option<String>,
+}
+
 /// Options provided by the CLI that drive `run_with_driver`.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct InstallOptions {
@@ -38,6 +45,7 @@ pub struct InstallOptions {
     pub software_plan: SoftwareTierPlan,
     pub system_profile: Option<SystemProfile>,
     pub environment: EnvironmentTag,
+    pub chezmoi: ChezmoiOptions,
 }
 
 impl Validator for InstallOptions {
@@ -48,6 +56,10 @@ impl Validator for InstallOptions {
             if !path.is_absolute() {
                 errors.push(format!("staging_dir must be absolute: {}", path.display()));
             }
+        }
+
+        if self.chezmoi.enabled && self.chezmoi.repo_url.is_none() {
+            errors.push("Chezmoi is enabled but no repository URL was provided.".to_string());
         }
 
         errors.extend(self.software_plan.validate());
@@ -70,6 +82,7 @@ impl Default for InstallOptions {
             software_plan: SoftwareTierPlan::default(),
             system_profile: None,
             environment: EnvironmentTag::Home,
+            chezmoi: ChezmoiOptions::default(),
         }
     }
 }
@@ -95,6 +108,7 @@ pub struct UserOptionsContext {
     pub software_plan: SoftwareTierPlan,
     pub system_profile: Option<SystemProfile>,
     pub environment: EnvironmentTag,
+    pub chezmoi: ChezmoiOptions,
 }
 
 impl UserOptionsContext {
@@ -113,6 +127,7 @@ impl UserOptionsContext {
             software_plan: opts.software_plan.clone(),
             system_profile: opts.system_profile.clone(),
             environment: opts.environment,
+            chezmoi: opts.chezmoi.clone(),
         }
     }
 }

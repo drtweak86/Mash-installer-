@@ -1,6 +1,7 @@
 use crate::ai_agents;
 use crate::argon;
 use crate::buildroot;
+use crate::chezmoi;
 use crate::context::UserOptionsContext;
 use crate::docker;
 use crate::fonts;
@@ -196,6 +197,14 @@ impl Default for PhaseRegistry {
                 PhaseGate::ModuleArgon,
             )
             .with_deps(&["system_packages"]),
+            PhaseEntry::new(
+                "chezmoi",
+                "Chezmoi dotfile restoration",
+                "Dotfiles restored via chezmoi",
+                chezmoi::install_phase,
+                PhaseGate::Chezmoi,
+            )
+            .with_deps(&["system_packages", "git_cli"]),
         ])
     }
 }
@@ -251,6 +260,7 @@ enum PhaseGate {
     Profile(ProfileLevel),
     ModuleArgon,
     SoftwareTiers,
+    Chezmoi,
 }
 
 impl PhaseGate {
@@ -260,6 +270,7 @@ impl PhaseGate {
             PhaseGate::Profile(level) => options.profile >= *level,
             PhaseGate::ModuleArgon => options.enable_argon,
             PhaseGate::SoftwareTiers => !options.software_plan.is_empty(),
+            PhaseGate::Chezmoi => options.chezmoi.enabled,
         }
     }
 }
@@ -267,7 +278,7 @@ impl PhaseGate {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::options::EnvironmentTag;
+    use crate::SoftwareTierPlan;
     use std::path::PathBuf;
 
     fn dummy_run(_ctx: &mut PhaseContext) -> Result<PhaseResult> {
@@ -285,15 +296,17 @@ mod tests {
         let options = UserOptionsContext {
             profile: ProfileLevel::Minimal,
             staging_dir: PathBuf::from("/tmp"),
-            dry_run: true,
+            dry_run: false,
             interactive: false,
             enable_argon: false,
             enable_p10k: false,
             docker_data_root: false,
-            software_plan: Default::default(),
+            software_plan: SoftwareTierPlan::default(),
             system_profile: None,
-            environment: EnvironmentTag::Home,
+            environment: crate::model::options::EnvironmentTag::Home,
+            chezmoi: Default::default(),
         };
+
         let strings = Localization::load_default()?;
 
         let phases = registry.build_phases(&options, &strings);

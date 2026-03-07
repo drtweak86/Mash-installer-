@@ -236,6 +236,7 @@ fn main() -> Result<()> {
         software_plan,
         system_profile: None,
         environment,
+        chezmoi: Default::default(),
     };
 
     info!(

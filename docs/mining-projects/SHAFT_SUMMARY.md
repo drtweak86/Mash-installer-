@@ -73,27 +73,24 @@ Forged a comprehensive auto-detection and profiling system for hardware, OS, and
 **Owner**: Bard
 
 ---
+## ✅ COMPLETED SHAFTS
 
-## 🏗️ ACTIVE SHAFTS
-### Shaft H: Installer Experience Overhaul ✅ PLANNING COMPLETE
-**Status**: ✅ PLANNING COMPLETE | ⏳ IMPLEMENTATION PENDING
-**Branch**: `work-shaft-h-experience` (to be created)
-**Duration**: 31 days
-**Risk/Reward**: MEDIUM/HIGH
+### Shaft AC: Chezmoi Integration (Dotfile Restoration)
+**Status**: ✅ COMPLETE
+**Completed**: 2026-03-06
+**Owner**: Bard
 
 #### 🎯 Objective
-Transform the MASH installer into a retro-futuristic powerhouse while preserving the existing 4-tile UI layout. Enhance user experience with comprehensive font management, desktop environment support, improved flow, and engaging retro aesthetics.
+Integrate `chezmoi` as a first-class dotfile management option in the MASH flow, empowering users to restore their personal configurations during the initial system provisioning.
 
-#### 📦 Key Deliverables (9 Features)
-1. **Font Management**: 35+ Nerd Fonts with GitHub integration
-2. **Desktop Environments**: KDE, GNOME, Xfce, MATE, Hyprland, COSMIC
-3. **Improved Flow**: Enhanced progression within 4-tile layout
-4. **Information Display**: Real-time updates, time estimates, progress tracking
-5. **Long Process Confirmation**: Modal dialogs with advisory messages
-6. **Wallpaper Integration**: 5,999 retro-futuristic wallpapers
-7. **Pi Overlord**: Cross-distro package mapping
-8. **Zsh Enhancement**: colorls, plugins, 50+ aliases, ALIAS.md
-9. **Retro-Futuristic Experience**: ASCII art, BBS messages, completion sound
+#### 📦 Key Deliverables
+1. **Core Foundation**: `ChezmoiOptions` and `installer-core/src/chezmoi.rs` logic.
+2. **TUI Integration**: `ChezmoiConfig` screen and navigation flow update.
+3. **Verification**: Advice Engine rules and dry-run safety validation.
+
+---
+
+## 🏗️ ACTIVE SHAFTS
 
 #### 📁 Files Created
 - **New Modules**: 10 files (fonts_all.rs, desktop_environments.rs, etc.)

@@ -3,6 +3,48 @@
 
 ---
 
+## 🏗️ ACTIVE SHAFT: AD - Future Excavations
+> *Status*: ⏳ **PLANNING**
+
+### 🎯 Objective
+Defining the next stage of the MASH evolution.
+
+---
+
+## 🏗️ ACTIVE SHAFT: AC - Chezmoi Integration
+> *Status*: ✅ **SHAFT AC SEALED**
+
+### 🎯 Objective
+Integrate `chezmoi` as a first-class dotfile management option in the MASH flow, empowering users to restore their personal configurations during provisioning.
+
+### 📋 Phase Progress
+| Phase | Status | Completion | ETA |
+|-------|--------|------------|-----|
+| Phase 1: Core Foundation | ✅ Complete | 100% | 2026-03-08 |
+| Phase 2: TUI Integration | ✅ Complete | 100% | 2026-03-08 |
+| Phase 3: Verification | ✅ Complete | 100% | 2026-03-08 |
+| **Overall** | **✅ Complete** | **100%** | **2026-03-08** |
+
+---
+
+## 🏗️ ACTIVE SHAFT: AB - The Ascended Flow
+> *Status*: ✅ **SHAFT AB SEALED** | ✅ **SHAFT AA SEALED**
+
+### 🎯 Objective
+Overhaul the TUI menu sequence into a streamlined, scry-first linear flow (Welcome -> Scan -> Results -> DE -> Fonts -> Software -> Summary -> Install).
+
+### 📋 Phase Progress
+| Phase | Status | Completion | ETA |
+|-------|--------|------------|-----|
+| Phase 1: Navigation | ✅ Complete | 100% | 2026-03-05 |
+| Phase 2: System Scan | ✅ Complete | 100% | 2026-03-05 |
+| Phase 3: Wisdom | ✅ Complete | 100% | 2026-03-06 |
+| Phase 4: Simplification | ✅ Complete | 100% | 2026-03-06 |
+| Phase 5: Verification | ✅ Complete | 100% | 2026-03-07 |
+| **Overall** | **✅ Complete** | **100%** | **2026-03-07** |
+
+---
+
 ## 🏗️ ACTIVE SHAFT: AA - The Ascended Architecture
 > *Status*: ✅ **SHAFT AA SEALED** | ✅ **SHAFT Z SEALED**
 

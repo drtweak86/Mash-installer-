@@ -78,6 +78,31 @@ pub fn run_with_mode(cmd: &mut StdCommand, mode: RunMode) -> Result<Output> {
         child
             .wait_with_output()
             .with_context(|| format!("waiting for command: {desc}"))?
+    } else if is_sudo {
+        // Use -n (non-interactive) for sudo when no password is known
+        let args: Vec<_> = cmd.get_args().collect();
+        let has_n = args.iter().any(|a| a.to_string_lossy() == "-n");
+
+        let mut new_cmd = StdCommand::new(cmd.get_program());
+        if !has_n {
+            new_cmd.arg("-n");
+        }
+        new_cmd.args(args);
+        // Copy env and current_dir
+        for (k, v) in cmd.get_envs() {
+            if let Some(v) = v {
+                new_cmd.env(k, v);
+            } else {
+                new_cmd.env_remove(k);
+            }
+        }
+        if let Some(dir) = cmd.get_current_dir() {
+            new_cmd.current_dir(dir);
+        }
+
+        new_cmd
+            .output()
+            .with_context(|| format!("running non-interactive sudo command: {desc}"))?
     } else {
         cmd.output()
             .with_context(|| format!("running command: {desc}"))?

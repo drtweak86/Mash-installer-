@@ -37,7 +37,7 @@ pub enum TuiMessage {
 
     ScanComplete {
         platform: PlatformInfo,
-        profile: SystemProfile,
+        profile: Box<SystemProfile>,
     },
 
     Done(Box<InstallationReport>),
@@ -47,6 +47,7 @@ pub enum TuiMessage {
 // ── Screen state machine ─────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(dead_code)]
 pub enum Screen {
     Welcome,
     SystemScan,

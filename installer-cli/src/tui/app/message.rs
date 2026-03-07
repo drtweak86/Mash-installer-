@@ -46,7 +46,7 @@ impl TuiApp {
             }
             TuiMessage::ScanComplete { platform, profile } => {
                 self.platform_info = platform;
-                self.system_profile = Some(profile);
+                self.system_profile = Some(*profile);
 
                 // Auto-select driver based on scan results
                 let matches: Vec<usize> = self

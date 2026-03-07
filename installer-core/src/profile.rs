@@ -71,37 +71,37 @@ impl SystemProfileExt for SystemProfile {
     /// Full auto-detection of the system.
     fn detect(system: &dyn SystemOps) -> Result<Self> {
         let mut profile = Self::new();
-        
+
         profile.platform = PlatformInfo::detect(system).unwrap_or_else(|e| {
             tracing::error!("Platform detection failed: {}", e);
             PlatformInfo::default()
         });
-        
+
         profile.distro = DistroInfo::detect().unwrap_or_else(|e| {
             tracing::error!("Distro detection failed: {}", e);
             DistroInfo::default()
         });
-        
+
         profile.cpu = CpuInfo::detect();
         profile.memory = MemoryInfo::detect(system);
-        
+
         profile.gpu = GpuInfo::detect(system).unwrap_or_else(|e| {
             tracing::error!("GPU detection failed: {}", e);
             GpuInfo::default()
         });
-        
+
         profile.network = NetworkInfo::detect(system).unwrap_or_else(|e| {
             tracing::error!("Network detection failed: {}", e);
             NetworkInfo::default()
         });
-        
+
         profile.software = SoftwareInfo::detect(system).unwrap_or_else(|e| {
             tracing::error!("Software detection failed: {}", e);
             SoftwareInfo::default()
         });
-        
+
         profile.session = SessionInfo::detect();
-        
+
         profile.storage = StorageInfo::detect(system).unwrap_or_else(|e| {
             tracing::error!("Storage detection failed: {}", e);
             StorageInfo::default()
@@ -158,7 +158,7 @@ fn detect_block_devices(system: &dyn SystemOps) -> Result<Vec<BlockDevice>> {
             return Ok(Vec::new());
         }
     };
-    
+
     let lsblk: LsblkOutput = match serde_json::from_slice(&output.stdout) {
         Ok(data) => data,
         Err(err) => {

@@ -77,7 +77,11 @@ impl TuiApp {
             }
             Screen::SoftwareSelect => {
                 // If we finished all categories, move to chezmoi
-                if self.software_category_idx >= installer_core::SoftwareCategory::iter().count().saturating_sub(1) {
+                if self.software_category_idx
+                    >= installer_core::SoftwareCategory::iter()
+                        .count()
+                        .saturating_sub(1)
+                {
                     self.navigate_to(Screen::ChezmoiConfig, "Dotfile Restoration");
                     self.menu_cursor = 0;
                 } else {
@@ -168,7 +172,9 @@ impl TuiApp {
             Screen::ChezmoiConfig => {
                 if self.software_mode == SoftwareMode::Manual {
                     self.screen = Screen::SoftwareSelect;
-                    self.software_category_idx = installer_core::SoftwareCategory::iter().count().saturating_sub(1);
+                    self.software_category_idx = installer_core::SoftwareCategory::iter()
+                        .count()
+                        .saturating_sub(1);
                 } else {
                     self.screen = Screen::SoftwareMode;
                 }

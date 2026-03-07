@@ -2,9 +2,9 @@ use crate::tui::app::TuiApp;
 use crate::tui::menus::helpers::station_block;
 use crate::tui::theme;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use ratatui::text::{Line, Span};
 use ratatui::widgets::{Paragraph, Wrap};
 use ratatui::Frame;
+
 
 const WELCOME_BANNER: &str = r"
   __  __    _    ____  _   _ 

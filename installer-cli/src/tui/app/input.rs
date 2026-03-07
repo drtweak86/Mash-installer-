@@ -229,7 +229,7 @@ impl TuiApp {
 
     fn handle_chezmoi_config_key(&mut self, code: KeyCode) {
         let max_cursor = if self.chezmoi_enabled { 3 } else { 1 };
-        
+
         match code {
             KeyCode::Up | KeyCode::Char('k') => {
                 if self.menu_cursor > 0 {
@@ -245,44 +245,38 @@ impl TuiApp {
                     self.menu_cursor = 0;
                 }
             }
-            KeyCode::Enter => {
-                match self.menu_cursor {
-                    0 => {
-                        self.chezmoi_enabled = !self.chezmoi_enabled;
-                    }
-                    1 => {
-                        if !self.chezmoi_enabled {
-                            self.advance_from_list();
-                        }
-                    }
-                    3 => {
+            KeyCode::Enter => match self.menu_cursor {
+                0 => {
+                    self.chezmoi_enabled = !self.chezmoi_enabled;
+                }
+                1 => {
+                    if !self.chezmoi_enabled {
                         self.advance_from_list();
                     }
-                    _ => {}
                 }
-            }
-            KeyCode::Backspace => {
-                match self.menu_cursor {
-                    1 if self.chezmoi_enabled => {
-                        self.chezmoi_repo.pop();
-                    }
-                    2 if self.chezmoi_enabled => {
-                        self.chezmoi_branch.pop();
-                    }
-                    _ => {}
+                3 => {
+                    self.advance_from_list();
                 }
-            }
-            KeyCode::Char(c) => {
-                match self.menu_cursor {
-                    1 if self.chezmoi_enabled => {
-                        self.chezmoi_repo.push(c);
-                    }
-                    2 if self.chezmoi_enabled => {
-                        self.chezmoi_branch.push(c);
-                    }
-                    _ => {}
+                _ => {}
+            },
+            KeyCode::Backspace => match self.menu_cursor {
+                1 if self.chezmoi_enabled => {
+                    self.chezmoi_repo.pop();
                 }
-            }
+                2 if self.chezmoi_enabled => {
+                    self.chezmoi_branch.pop();
+                }
+                _ => {}
+            },
+            KeyCode::Char(c) => match self.menu_cursor {
+                1 if self.chezmoi_enabled => {
+                    self.chezmoi_repo.push(c);
+                }
+                2 if self.chezmoi_enabled => {
+                    self.chezmoi_branch.push(c);
+                }
+                _ => {}
+            },
             KeyCode::Esc => self.go_back(),
             _ => {}
         }

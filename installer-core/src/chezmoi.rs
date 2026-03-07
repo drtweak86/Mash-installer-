@@ -14,7 +14,7 @@ use crate::{PhaseContext, PhaseResult};
 /// Main entry point for the chezmoi dotfile restoration phase.
 pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
     let opts = &ctx.options.chezmoi;
-    
+
     if !opts.enabled {
         info!("Chezmoi integration is disabled; skipping.");
         return Ok(PhaseResult::Success);
@@ -66,10 +66,12 @@ fn ensure_installed(ctx: &mut PhaseContext) -> Result<()> {
     }
 
     let mut install_cmd = Command::new("sh");
-    install_cmd.arg("-c").arg("curl -sfL https://git.io/chezmoi | sh -s -- -b ~/.local/bin");
-    
+    install_cmd
+        .arg("-c")
+        .arg("curl -sfL https://git.io/chezmoi | sh -s -- -b ~/.local/bin");
+
     cmd::run(&mut install_cmd).context("Executing chezmoi installation script")?;
-    
+
     ctx.record_action("Installed chezmoi to ~/.local/bin");
     Ok(())
 }
@@ -78,10 +80,15 @@ fn init_and_apply(ctx: &mut PhaseContext, repo_url: &str, branch: Option<&str>) 
     info!("Initializing chezmoi from repository: {}", repo_url);
 
     if ctx.options.dry_run {
-        let branch_info = branch.map(|b| format!(" (branch: {})", b)).unwrap_or_default();
+        let branch_info = branch
+            .map(|b| format!(" (branch: {})", b))
+            .unwrap_or_default();
         ctx.record_dry_run(
             "chezmoi",
-            format!("Would initialize and apply dotfiles from {}{}", repo_url, branch_info),
+            format!(
+                "Would initialize and apply dotfiles from {}{}",
+                repo_url, branch_info
+            ),
             Some(format!("chezmoi init --apply --purge-binary {}", repo_url)),
         );
         return Ok(());
@@ -89,11 +96,11 @@ fn init_and_apply(ctx: &mut PhaseContext, repo_url: &str, branch: Option<&str>) 
 
     let mut init_cmd = Command::new("chezmoi");
     init_cmd.arg("init").arg("--apply").arg("--purge-binary");
-    
+
     if let Some(b) = branch {
         init_cmd.arg("--branch").arg(b);
     }
-    
+
     init_cmd.arg(repo_url);
 
     // We use cmd::run which logs output and handles failure
@@ -106,22 +113,32 @@ fn init_and_apply(ctx: &mut PhaseContext, repo_url: &str, branch: Option<&str>) 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::context::{ConfigService, PhaseContext, PlatformContext, UIContext, UserOptionsContext};
+    use crate::context::{
+        ConfigService, PhaseContext, PlatformContext, UIContext, UserOptionsContext,
+    };
     use crate::driver::DistroDriver;
     use crate::dry_run::DryRunLog;
     use crate::localization::Localization;
+    use crate::model::options::{ChezmoiOptions, EnvironmentTag, ProfileLevel};
     use crate::platform::PlatformInfo;
     use crate::rollback::RollbackManager;
-    use crate::model::options::{ChezmoiOptions, EnvironmentTag, ProfileLevel};
     use crate::{InstallContext, SoftwareTierPlan};
     use std::path::PathBuf;
 
     struct TestDriver;
     impl DistroDriver for TestDriver {
-        fn name(&self) -> &'static str { "test" }
-        fn description(&self) -> &'static str { "test" }
-        fn matches(&self, _: &PlatformInfo) -> bool { true }
-        fn pkg_backend(&self) -> crate::PkgBackend { crate::PkgBackend::Apt }
+        fn name(&self) -> &'static str {
+            "test"
+        }
+        fn description(&self) -> &'static str {
+            "test"
+        }
+        fn matches(&self, _: &PlatformInfo) -> bool {
+            true
+        }
+        fn pkg_backend(&self) -> crate::PkgBackend {
+            crate::PkgBackend::Apt
+        }
     }
 
     struct NoopObserver;
@@ -181,7 +198,11 @@ mod tests {
 
     #[test]
     fn test_chezmoi_skipped_if_disabled() -> Result<()> {
-        let chezmoi = ChezmoiOptions { enabled: false, repo_url: None, branch: None };
+        let chezmoi = ChezmoiOptions {
+            enabled: false,
+            repo_url: None,
+            branch: None,
+        };
         let install_ctx = build_test_context(chezmoi)?;
         let mut observer = NoopObserver;
         let mut phase_ctx = PhaseContext::from_ctx(&install_ctx, &mut observer);
@@ -194,7 +215,11 @@ mod tests {
 
     #[test]
     fn test_chezmoi_skipped_if_no_url() -> Result<()> {
-        let chezmoi = ChezmoiOptions { enabled: true, repo_url: None, branch: None };
+        let chezmoi = ChezmoiOptions {
+            enabled: true,
+            repo_url: None,
+            branch: None,
+        };
         let install_ctx = build_test_context(chezmoi)?;
         let mut observer = NoopObserver;
         let mut phase_ctx = PhaseContext::from_ctx(&install_ctx, &mut observer);
@@ -217,10 +242,15 @@ mod tests {
 
         let result = install_phase(&mut phase_ctx)?;
         assert_eq!(result, PhaseResult::Success);
-        
+
         let report = install_ctx.dry_run_log.audit_report();
-        let chezmoi_entries = report.phases.get("chezmoi").expect("chezmoi phase not found in report");
-        assert!(chezmoi_entries.iter().any(|entry| entry.action.contains("initialize and apply")));
+        let chezmoi_entries = report
+            .phases
+            .get("chezmoi")
+            .expect("chezmoi phase not found in report");
+        assert!(chezmoi_entries
+            .iter()
+            .any(|entry| entry.action.contains("initialize and apply")));
         Ok(())
     }
 }

@@ -126,22 +126,26 @@ impl TuiApp {
             // Give the UI a moment to show the scan screen
             thread::sleep(Duration::from_millis(1500));
 
-            let platform = detect_platform().unwrap_or_else(|_| installer_core::platform::PlatformInfo {
-                arch: std::env::consts::ARCH.to_string(),
-                distro: "unknown".to_string(),
-                distro_version: "unknown".to_string(),
-                distro_codename: "unknown".to_string(),
-                distro_family: "unknown".to_string(),
-                pi_model: None,
-                cpu_model: "Unknown".to_string(),
-                cpu_cores: 0,
-                ram_total_gb: 0.0,
-            });
+            let platform =
+                detect_platform().unwrap_or_else(|_| installer_core::platform::PlatformInfo {
+                    arch: std::env::consts::ARCH.to_string(),
+                    distro: "unknown".to_string(),
+                    distro_version: "unknown".to_string(),
+                    distro_codename: "unknown".to_string(),
+                    distro_family: "unknown".to_string(),
+                    pi_model: None,
+                    cpu_model: "Unknown".to_string(),
+                    cpu_cores: 0,
+                    ram_total_gb: 0.0,
+                });
 
             let profile = installer_core::SystemProfile::detect(&installer_core::REAL_SYSTEM)
                 .unwrap_or_default();
 
-            let _ = tx.send(TuiMessage::ScanComplete { platform, profile });
+            let _ = tx.send(TuiMessage::ScanComplete {
+                platform,
+                profile: Box::new(profile),
+            });
         });
     }
 

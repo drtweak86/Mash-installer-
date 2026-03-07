@@ -633,10 +633,15 @@ pub fn draw_system_summary(f: &mut Frame, area: Rect, app: &TuiApp) {
     if let Some(ref profile) = app.system_profile {
         let engine = installer_core::advice::AdviceEngine::default();
         let options = app.build_options();
-        let advice = engine.run(profile, &installer_core::UserOptionsContext::from_options(&options));
+        let advice = engine.run(
+            profile,
+            &installer_core::UserOptionsContext::from_options(&options),
+        );
 
         if advice.is_empty() {
-            wisdom.push(Line::from("  THE FORGE IS OPTIMAL. NO CRITICAL OMENS DETECTED."));
+            wisdom.push(Line::from(
+                "  THE FORGE IS OPTIMAL. NO CRITICAL OMENS DETECTED.",
+            ));
         } else {
             for entry in advice {
                 let color = match entry.level {
@@ -654,10 +659,7 @@ pub fn draw_system_summary(f: &mut Frame, area: Rect, app: &TuiApp) {
         wisdom.push(Line::from("  WAITING FOR STATION TELEMETRY..."));
     }
 
-    f.render_widget(
-        Paragraph::new(wisdom).wrap(Wrap { trim: false }),
-        chunks[1],
-    );
+    f.render_widget(Paragraph::new(wisdom).wrap(Wrap { trim: false }), chunks[1]);
 
     let prompt = Paragraph::new("PRESS [ENTER] TO ACKNOWLEDGE WISDOM")
         .style(theme::warning_style())
@@ -783,11 +785,17 @@ pub fn draw_chezmoi_config(f: &mut Frame, area: Rect, app: &TuiApp) {
         ])
         .split(inner);
 
-    f.render_widget(Paragraph::new("CONFIGURE CHEZMOI DOTFILE RECOVERY:"), chunks[0]);
+    f.render_widget(
+        Paragraph::new("CONFIGURE CHEZMOI DOTFILE RECOVERY:"),
+        chunks[0],
+    );
 
     let mut items = Vec::new();
     items.push(command_prompt_line(
-        format!("Enable Chezmoi: [{}]", if app.chezmoi_enabled { "X" } else { " " }),
+        format!(
+            "Enable Chezmoi: [{}]",
+            if app.chezmoi_enabled { "X" } else { " " }
+        ),
         1,
         app.menu_cursor == 0,
     ));

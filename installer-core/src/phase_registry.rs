@@ -278,8 +278,8 @@ impl PhaseGate {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::SoftwareTierPlan;
     use crate::model::options::EnvironmentTag;
+    use crate::SoftwareTierPlan;
     use std::path::PathBuf;
 
     fn dummy_run(_ctx: &mut PhaseContext) -> Result<PhaseResult> {

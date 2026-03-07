@@ -3,8 +3,8 @@
 //! This module provides an intelligent advice engine that analyzes a `SystemProfile`
 //! and returns actionable wisdom, performance hints, and critical warnings.
 
-use crate::SystemProfile;
 use crate::context::UserOptionsContext;
+use crate::SystemProfile;
 use serde::{Deserialize, Serialize};
 
 /// Severity of the advice.
@@ -496,9 +496,9 @@ impl Rule for ChezmoiHeuristicRule {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::profile::SystemProfile;
     use crate::context::UserOptionsContext;
     use crate::options::ProfileLevel;
+    use crate::profile::SystemProfile;
     use std::path::PathBuf;
 
     fn default_options() -> UserOptionsContext {

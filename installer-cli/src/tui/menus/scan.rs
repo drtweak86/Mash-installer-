@@ -37,16 +37,16 @@ pub fn draw_system_scan(f: &mut Frame, area: Rect, app: &TuiApp) {
     // Simple animated gauge based on ticks or time
     let progress = (app.start_time.elapsed().as_millis() % 2000) as f64 / 2000.0;
     let label = format!("{:.0}%", progress * 100.0);
-    
+
     let gauge = Gauge::default()
         .block(Block::default().borders(Borders::NONE))
         .gauge_style(theme::accent_style())
         .ratio(progress)
         .label(label);
-    
+
     // Wait, I need to import Block and Borders if I use them, but Gauge has its own.
     // Actually theme might have some styles for gauges.
-    
+
     f.render_widget(gauge, chunks[1]);
 
     let hint = Paragraph::new("ANALYSIS IN PROGRESS")

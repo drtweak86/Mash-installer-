@@ -5,9 +5,7 @@ use ratatui::widgets::{List, ListItem, Paragraph, Wrap};
 use ratatui::Frame;
 
 use crate::tui::app::TuiApp;
-use crate::tui::menus::helpers::{
-    command_prompt_line, draw_navigation_info, station_block,
-};
+use crate::tui::menus::helpers::{command_prompt_line, draw_navigation_info, station_block};
 use crate::tui::theme;
 use installer_core::desktop::DesktopEnvironment;
 
@@ -211,9 +209,30 @@ pub fn draw_argon_config(f: &mut Frame, area: Rect, app: &TuiApp) {
     f.render_widget(Paragraph::new("CONFIGURE ARGON ONE CASE:"), chunks[0]);
 
     let options = [
-        format!("Quiet Profile     {}", if app.argon.enabled && app.argon.cooling_profile == "Quiet" { "[X]" } else { "[ ]" }),
-        format!("Balanced Profile  {}", if app.argon.enabled && app.argon.cooling_profile == "Balanced" { "[X]" } else { "[ ]" }),
-        format!("Performance Profile {}", if app.argon.enabled && app.argon.cooling_profile == "Performance" { "[X]" } else { "[ ]" }),
+        format!(
+            "Quiet Profile     {}",
+            if app.argon.enabled && app.argon.cooling_profile == "Quiet" {
+                "[X]"
+            } else {
+                "[ ]"
+            }
+        ),
+        format!(
+            "Balanced Profile  {}",
+            if app.argon.enabled && app.argon.cooling_profile == "Balanced" {
+                "[X]"
+            } else {
+                "[ ]"
+            }
+        ),
+        format!(
+            "Performance Profile {}",
+            if app.argon.enabled && app.argon.cooling_profile == "Performance" {
+                "[X]"
+            } else {
+                "[ ]"
+            }
+        ),
         "CONFIRM AND CONTINUE".to_string(),
     ];
 
@@ -227,7 +246,8 @@ pub fn draw_argon_config(f: &mut Frame, area: Rect, app: &TuiApp) {
     f.render_widget(list, chunks[1]);
 
     f.render_widget(
-        Paragraph::new("INTEL: Argon One scripts enable fan control and power button logic.").style(theme::dim_style()),
+        Paragraph::new("INTEL: Argon One scripts enable fan control and power button logic.")
+            .style(theme::dim_style()),
         chunks[2],
     );
 
@@ -251,7 +271,10 @@ pub fn draw_docker_config(f: &mut Frame, area: Rect, app: &TuiApp) {
     f.render_widget(Paragraph::new("CONFIGURE DOCKER DAEMON:"), chunks[0]);
 
     let options = [
-        format!("Relocate Data-Root  {}", if app.docker.enabled { "[X]" } else { "[ ]" }),
+        format!(
+            "Relocate Data-Root  {}",
+            if app.docker.enabled { "[X]" } else { "[ ]" }
+        ),
         "CONFIRM AND CONTINUE".to_string(),
     ];
 
@@ -265,7 +288,8 @@ pub fn draw_docker_config(f: &mut Frame, area: Rect, app: &TuiApp) {
     f.render_widget(list, chunks[1]);
 
     f.render_widget(
-        Paragraph::new("INTEL: Docker data-root can be relocated to staging for portability.").style(theme::dim_style()),
+        Paragraph::new("INTEL: Docker data-root can be relocated to staging for portability.")
+            .style(theme::dim_style()),
         chunks[2],
     );
 

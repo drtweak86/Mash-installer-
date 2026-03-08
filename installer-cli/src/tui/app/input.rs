@@ -57,7 +57,9 @@ impl TuiApp {
             Screen::Password => self.handle_password_key(code),
 
             Screen::SoftwareMode => self.handle_list_key(code, 3), // Bards, Auto, Manual
-            Screen::SoftwareCategorySelect => self.handle_list_key(code, self.catalog.categories.len() + 1),
+            Screen::SoftwareCategorySelect => {
+                self.handle_list_key(code, self.catalog.categories.len() + 1)
+            }
             Screen::SoftwareSelect => self.handle_software_key(code),
             Screen::Confirm => self.handle_confirm_key(code),
             Screen::DeSelect => self.handle_list_key(code, 12), // Added Cosmic/Hyprland

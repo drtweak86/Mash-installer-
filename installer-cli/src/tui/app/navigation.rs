@@ -69,7 +69,7 @@ impl TuiApp {
                     2 => installer_core::ThemePlan::None,
                     _ => installer_core::ThemePlan::None,
                 };
-                
+
                 // If Pi 4B detected, show Argon Config
                 if self.platform_info.pi_model.is_some() {
                     self.navigate_to(Screen::ArgonConfig, "Argon One Configuration");
@@ -106,9 +106,10 @@ impl TuiApp {
                 let categories_len = self.catalog.categories.len();
                 if self.menu_cursor >= categories_len {
                     // Check if Docker was selected
-                    let docker_selected = self.software_picks.values().any(|picks| 
-                        picks.iter().any(|p| p.to_lowercase().contains("docker"))
-                    );
+                    let docker_selected = self
+                        .software_picks
+                        .values()
+                        .any(|picks| picks.iter().any(|p| p.to_lowercase().contains("docker")));
 
                     if docker_selected {
                         self.navigate_to(Screen::DockerConfig, "Docker Configuration");

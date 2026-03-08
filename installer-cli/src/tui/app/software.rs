@@ -102,7 +102,7 @@ impl TuiApp {
             KeyCode::Enter | KeyCode::Char(' ') => {
                 let chosen = all_programs[self.menu_cursor];
                 let picks = self.software_picks.entry(category.id).or_default();
-                
+
                 if let Some(pos) = picks.iter().position(|id| id == &chosen.id) {
                     picks.remove(pos);
                 } else {

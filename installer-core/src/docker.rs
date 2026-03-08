@@ -47,7 +47,7 @@ pub fn install_phase(ctx: &mut PhaseContext) -> Result<PhaseResult> {
     add_user_to_docker_group(ctx)?;
     enable_docker_service(ctx)?;
 
-    let desired_data_root = if ctx.options.docker_data_root {
+    let desired_data_root = if ctx.options.docker.enabled {
         Some(ctx.options.staging_dir.join("docker"))
     } else {
         ctx.platform.config().docker.data_root.clone()
@@ -349,9 +349,9 @@ mod tests {
                 staging_dir: PathBuf::from("/tmp"),
                 dry_run,
                 interactive: false,
-                enable_argon: false,
+                argon: Default::default(),
                 enable_p10k: false,
-                docker_data_root: false,
+                docker: Default::default(),
                 software_plan: SoftwareTierPlan::default(),
                 system_profile: None,
                 environment: EnvironmentTag::Home,

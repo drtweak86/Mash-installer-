@@ -402,7 +402,7 @@ mod tests {
         localization::Localization,
         platform::PlatformInfo,
         rollback::RollbackManager,
-        EnvironmentTag, InstallContext, ProfileLevel, SoftwareTierPlan,
+        ArgonConfig, DockerConfig, EnvironmentTag, InstallContext, ProfileLevel, SoftwareTierPlan,
     };
     use anyhow::{anyhow, Result};
     use std::path::PathBuf;
@@ -552,9 +552,15 @@ mod tests {
             staging_dir: PathBuf::from("/tmp/mash-test"),
             dry_run: false,
             interactive: false,
-            enable_argon: false,
+            argon: ArgonConfig {
+                enabled: false,
+                cooling_profile: "Balanced".to_string(),
+            },
             enable_p10k: false,
-            docker_data_root: false,
+            docker: DockerConfig {
+                enabled: false,
+                data_root: None,
+            },
             software_plan: SoftwareTierPlan::default(),
             system_profile: None,
             environment: EnvironmentTag::Home,

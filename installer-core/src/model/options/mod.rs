@@ -25,11 +25,32 @@ pub enum EnvironmentTag {
     Traveling,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct ChezmoiOptions {
     pub enabled: bool,
     pub repo_url: Option<String>,
     pub branch: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ArgonConfig {
+    pub enabled: bool,
+    pub cooling_profile: String, // e.g., "Quiet", "Balanced", "Performance"
+}
+
+impl Default for ArgonConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            cooling_profile: "Balanced".to_string(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub struct DockerConfig {
+    pub enabled: bool,
+    pub data_root: Option<PathBuf>,
 }
 
 /// Options provided by the CLI that drive `run_with_driver`.
@@ -39,9 +60,9 @@ pub struct InstallOptions {
     pub staging_dir: Option<PathBuf>,
     pub dry_run: bool,
     pub interactive: bool,
-    pub enable_argon: bool,
+    pub argon: ArgonConfig,
     pub enable_p10k: bool,
-    pub docker_data_root: bool,
+    pub docker: DockerConfig,
     pub continue_on_error: bool,
     pub software_plan: SoftwareTierPlan,
     pub system_profile: Option<SystemProfile>,
@@ -78,9 +99,9 @@ impl Default for InstallOptions {
             staging_dir: None,
             dry_run: false,
             interactive: false,
-            enable_argon: false,
+            argon: ArgonConfig::default(),
             enable_p10k: false,
-            docker_data_root: false,
+            docker: DockerConfig::default(),
             continue_on_error: false,
             software_plan: SoftwareTierPlan::default(),
             system_profile: None,
@@ -107,9 +128,9 @@ pub struct UserOptionsContext {
     pub staging_dir: PathBuf,
     pub dry_run: bool,
     pub interactive: bool,
-    pub enable_argon: bool,
+    pub argon: ArgonConfig,
     pub enable_p10k: bool,
-    pub docker_data_root: bool,
+    pub docker: DockerConfig,
     pub software_plan: SoftwareTierPlan,
     pub system_profile: Option<SystemProfile>,
     pub environment: EnvironmentTag,
@@ -128,9 +149,9 @@ impl UserOptionsContext {
                 .unwrap_or_else(|| PathBuf::from("/tmp/mash-installer/staging")),
             dry_run: opts.dry_run,
             interactive: opts.interactive,
-            enable_argon: opts.enable_argon,
+            argon: opts.argon.clone(),
             enable_p10k: opts.enable_p10k,
-            docker_data_root: opts.docker_data_root,
+            docker: opts.docker.clone(),
             software_plan: opts.software_plan.clone(),
             system_profile: opts.system_profile.clone(),
             environment: opts.environment,

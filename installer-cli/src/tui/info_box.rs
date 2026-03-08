@@ -144,10 +144,7 @@ fn build_info_lines(app: &TuiApp) -> Vec<Line<'static>> {
         ],
 
         Screen::SoftwareCategorySelect => vec![
-            Line::from(Span::styled(
-                "Software Categories",
-                theme::accent_style(),
-            )),
+            Line::from(Span::styled("Software Categories", theme::accent_style())),
             Line::from(Span::styled(
                 "Choose a category to configure components",
                 theme::dim_style(),
@@ -155,10 +152,7 @@ fn build_info_lines(app: &TuiApp) -> Vec<Line<'static>> {
         ],
 
         Screen::SoftwareSelect => vec![
-            Line::from(Span::styled(
-                "Component Selection",
-                theme::accent_style(),
-            )),
+            Line::from(Span::styled("Component Selection", theme::accent_style())),
             Line::from(Span::styled(
                 "Toggle components with Space/Enter, Esc to go back",
                 theme::dim_style(),
@@ -177,10 +171,7 @@ fn build_info_lines(app: &TuiApp) -> Vec<Line<'static>> {
         ],
 
         Screen::DockerConfig => vec![
-            Line::from(Span::styled(
-                "Docker Configuration",
-                theme::accent_style(),
-            )),
+            Line::from(Span::styled("Docker Configuration", theme::accent_style())),
             Line::from(Span::styled(
                 "Configure Docker daemon and storage paths",
                 theme::dim_style(),

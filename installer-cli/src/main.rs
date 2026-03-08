@@ -3,9 +3,11 @@ use clap::{Parser, Subcommand};
 use installer_core::cmd::CommandExecutionDetails;
 use installer_core::SystemProfileExt;
 use installer_core::{
-    detect_platform, init_logging, interaction::InteractionService, ConfigService, DistroDriver,
-    InstallOptions, InstallationReport, ProfileLevel, SoftwareTierPlan,
+    detect_platform, init_logging,
+    interaction::InteractionService,
     model::options::{ArgonConfig, DockerConfig},
+    ConfigService, DistroDriver, InstallOptions, InstallationReport, ProfileLevel,
+    SoftwareTierPlan,
 };
 use std::io::{self, Write};
 use std::path::PathBuf;

@@ -4,10 +4,8 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{List, ListItem, Paragraph, Wrap};
 use ratatui::Frame;
 
-use crate::tui::app::{TuiApp, MODULE_LABELS};
-use crate::tui::menus::helpers::{
-    command_prompt_line, draw_navigation_info, module_checks, station_block,
-};
+use crate::tui::app::TuiApp;
+use crate::tui::menus::helpers::{command_prompt_line, draw_navigation_info, station_block};
 use crate::tui::theme;
 use installer_core::desktop::DesktopEnvironment;
 
@@ -80,70 +78,6 @@ pub fn draw_profile_select(f: &mut Frame, area: Rect, app: &TuiApp) {
     draw_navigation_info(f, area, app);
 }
 
-pub fn draw_module_select(f: &mut Frame, area: Rect, app: &TuiApp) {
-    let block = station_block("SUBSYSTEM_MODULATION");
-    f.render_widget(&block, area);
-    let inner = block.inner(area);
-
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(2),
-            Constraint::Min(0),
-            Constraint::Length(2),
-            Constraint::Length(3),
-        ])
-        .split(inner);
-
-    f.render_widget(Paragraph::new("TOGGLE SUBSYSTEM LOAD STATUS:"), chunks[0]);
-
-    let checked = module_checks(&app.modules);
-    let items: Vec<ListItem> = MODULE_LABELS
-        .iter()
-        .enumerate()
-        .map(|(i, (label, _)): (usize, &(&str, &str))| {
-            let status = if checked[i] { "LOADED" } else { "VOID  " };
-            let selected = i == app.menu_cursor;
-            let style = if selected {
-                theme::selected_style()
-            } else {
-                theme::default_style()
-            };
-
-            ListItem::new(Line::from(vec![
-                Span::styled(format!("  [{}] ", status), style),
-                Span::styled(label.to_uppercase(), style),
-            ]))
-        })
-        .collect();
-
-    // Add 'Confirm' as last item
-    let confirm_style = if app.menu_cursor == 3 {
-        theme::warning_style().add_modifier(Modifier::BOLD)
-    } else {
-        theme::warning_style()
-    };
-    let mut items = items;
-    items.push(ListItem::new(Line::from(vec![Span::styled(
-        "  [>>>>] PROCEED TO DESKTOP CONFIG",
-        confirm_style,
-    )])));
-
-    let list = List::new(items);
-    f.render_widget(list, chunks[1]);
-
-    // Help for current item
-    if app.menu_cursor < 3 {
-        let help = MODULE_LABELS[app.menu_cursor].1;
-        f.render_widget(
-            Paragraph::new(format!("INTEL: {}", help)).style(theme::dim_style()),
-            chunks[2],
-        );
-    }
-
-    draw_navigation_info(f, area, app);
-}
-
 pub fn draw_theme_select(f: &mut Frame, area: Rect, app: &TuiApp) {
     let block = station_block("AESTHETIC_CALIBRATION");
     f.render_widget(&block, area);
@@ -163,6 +97,9 @@ pub fn draw_theme_select(f: &mut Frame, area: Rect, app: &TuiApp) {
     let themes = [
         ("Retro Only", "Classic BBC/UNIX styling"),
         ("Retro + Wallpapers", "Adds the MASH wallpaper pack"),
+        ("Catppuccin", "Soothing pastel mocha theme"),
+        ("Nord", "Arctic, north-bluish palette"),
+        ("Dracula", "Dark theme for night owls"),
         ("None", "Maintain system defaults"),
     ];
 
@@ -174,6 +111,13 @@ pub fn draw_theme_select(f: &mut Frame, area: Rect, app: &TuiApp) {
 
     let list = List::new(items);
     f.render_widget(list, chunks[1]);
+
+    if let Some((_, desc)) = themes.get(app.menu_cursor) {
+        f.render_widget(
+            Paragraph::new(format!("INTEL: {}", desc)).style(theme::dim_style()),
+            chunks[2],
+        );
+    }
 
     draw_navigation_info(f, area, app);
 }
@@ -204,6 +148,8 @@ pub fn draw_de_select(f: &mut Frame, area: Rect, app: &TuiApp) {
         "Budgie",
         "Enlightenment",
         "LXDE",
+        "COSMIC (Epoch)",
+        "Hyprland (Wayland)",
         "None (CLI Only)",
     ];
 
@@ -215,6 +161,137 @@ pub fn draw_de_select(f: &mut Frame, area: Rect, app: &TuiApp) {
 
     let list = List::new(items);
     f.render_widget(list, chunks[1]);
+
+    if let Some(_label) = des.get(app.menu_cursor) {
+        let de = match app.menu_cursor {
+            0 => DesktopEnvironment::Gnome,
+            1 => DesktopEnvironment::Kde,
+            2 => DesktopEnvironment::Xfce,
+            3 => DesktopEnvironment::Lxqt,
+            4 => DesktopEnvironment::Mate,
+            5 => DesktopEnvironment::Cinnamon,
+            6 => DesktopEnvironment::Budgie,
+            7 => DesktopEnvironment::Enlightenment,
+            8 => DesktopEnvironment::Lxde,
+            9 => DesktopEnvironment::Cosmic,
+            10 => DesktopEnvironment::Hyprland,
+            _ => DesktopEnvironment::None,
+        };
+
+        let mut help_text = format!("INTEL: {}", de.description());
+        if let Some(warn) = de.pi_warning(app.platform_info.pi_model.is_some()) {
+            help_text.push_str(&format!("\nWARNING: {}", warn));
+        }
+
+        f.render_widget(
+            Paragraph::new(help_text).style(theme::dim_style()),
+            chunks[2],
+        );
+    }
+
+    draw_navigation_info(f, area, app);
+}
+
+pub fn draw_argon_config(f: &mut Frame, area: Rect, app: &TuiApp) {
+    let block = station_block("ARGON_ONE_SETUP");
+    f.render_widget(&block, area);
+    let inner = block.inner(area);
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(2),
+            Constraint::Min(0),
+            Constraint::Length(3),
+        ])
+        .split(inner);
+
+    f.render_widget(Paragraph::new("CONFIGURE ARGON ONE CASE:"), chunks[0]);
+
+    let options = [
+        format!(
+            "Quiet Profile     {}",
+            if app.argon.enabled && app.argon.cooling_profile == "Quiet" {
+                "[X]"
+            } else {
+                "[ ]"
+            }
+        ),
+        format!(
+            "Balanced Profile  {}",
+            if app.argon.enabled && app.argon.cooling_profile == "Balanced" {
+                "[X]"
+            } else {
+                "[ ]"
+            }
+        ),
+        format!(
+            "Performance Profile {}",
+            if app.argon.enabled && app.argon.cooling_profile == "Performance" {
+                "[X]"
+            } else {
+                "[ ]"
+            }
+        ),
+        "CONFIRM AND CONTINUE".to_string(),
+    ];
+
+    let items: Vec<ListItem> = options
+        .iter()
+        .enumerate()
+        .map(|(i, label)| command_prompt_line(label, i + 1, i == app.menu_cursor))
+        .collect();
+
+    let list = List::new(items);
+    f.render_widget(list, chunks[1]);
+
+    f.render_widget(
+        Paragraph::new("INTEL: Argon One scripts enable fan control and power button logic.")
+            .style(theme::dim_style()),
+        chunks[2],
+    );
+
+    draw_navigation_info(f, area, app);
+}
+
+pub fn draw_docker_config(f: &mut Frame, area: Rect, app: &TuiApp) {
+    let block = station_block("DOCKER_PROTOCOL");
+    f.render_widget(&block, area);
+    let inner = block.inner(area);
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(2),
+            Constraint::Min(0),
+            Constraint::Length(3),
+        ])
+        .split(inner);
+
+    f.render_widget(Paragraph::new("CONFIGURE DOCKER DAEMON:"), chunks[0]);
+
+    let options = [
+        format!(
+            "Relocate Data-Root  {}",
+            if app.docker.enabled { "[X]" } else { "[ ]" }
+        ),
+        "CONFIRM AND CONTINUE".to_string(),
+    ];
+
+    let items: Vec<ListItem> = options
+        .iter()
+        .enumerate()
+        .map(|(i, label)| command_prompt_line(label, i + 1, i == app.menu_cursor))
+        .collect();
+
+    let list = List::new(items);
+    f.render_widget(list, chunks[1]);
+
+    f.render_widget(
+        Paragraph::new("INTEL: Docker data-root can be relocated to staging for portability.")
+            .style(theme::dim_style()),
+        chunks[2],
+    );
 
     draw_navigation_info(f, area, app);
 }

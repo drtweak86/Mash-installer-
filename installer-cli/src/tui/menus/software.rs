@@ -41,6 +41,64 @@ pub fn draw_software_mode_select(f: &mut Frame, area: Rect, app: &TuiApp) {
     draw_navigation_info(f, area, app);
 }
 
+pub fn draw_software_category_select(f: &mut Frame, area: Rect, app: &TuiApp) {
+    let block = station_block("SOFTWARE_CATEGORIES");
+    f.render_widget(&block, area);
+    let inner = block.inner(area);
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(2),
+            Constraint::Min(0),
+            Constraint::Length(3),
+        ])
+        .split(inner);
+
+    f.render_widget(Paragraph::new("CHOOSE CATEGORY TO CONFIGURE:"), chunks[0]);
+
+    let mut items: Vec<ListItem> = app
+        .catalog
+        .categories
+        .iter()
+        .enumerate()
+        .map(|(i, cat)| {
+            let picks = app
+                .software_picks
+                .get(&cat.id)
+                .map(|p| p.len())
+                .unwrap_or(0);
+            let label = format!(
+                "{:<20} [{} SELECTED]",
+                cat.display_name.to_uppercase(),
+                picks
+            );
+            command_prompt_line(label, i + 1, i == app.menu_cursor)
+        })
+        .collect();
+
+    // Add 'Done' as last item
+    let done_idx = app.catalog.categories.len();
+    items.push(command_prompt_line(
+        "FINISH SELECTION & PROCEED".to_string(),
+        done_idx + 1,
+        app.menu_cursor == done_idx,
+    ));
+
+    let list = List::new(items);
+    f.render_widget(list, chunks[1]);
+
+    if app.menu_cursor < app.catalog.categories.len() {
+        let cat = &app.catalog.categories[app.menu_cursor];
+        f.render_widget(
+            Paragraph::new(format!("INTEL: {}", cat.description)).style(theme::dim_style()),
+            chunks[2],
+        );
+    }
+
+    draw_navigation_info(f, area, app);
+}
+
 pub fn draw_software_select(f: &mut Frame, area: Rect, app: &TuiApp) {
     let category = match app.catalog.categories.get(app.software_category_idx) {
         Some(c) => c,
@@ -64,9 +122,8 @@ pub fn draw_software_select(f: &mut Frame, area: Rect, app: &TuiApp) {
 
     f.render_widget(
         Paragraph::new(format!(
-            "STEP {} OF {}: CHOOSE COMPONENT",
-            app.software_category_idx + 1,
-            app.catalog.categories.len()
+            "CATEGORY: {} - TOGGLE WITH [SPACE] OR [ENTER]",
+            category.display_name.to_uppercase()
         )),
         chunks[0],
     );
@@ -96,10 +153,11 @@ pub fn draw_software_select(f: &mut Frame, area: Rect, app: &TuiApp) {
 
     // Help
     if let Some(prog) = all_programs.get(app.menu_cursor) {
-        f.render_widget(
-            Paragraph::new(format!("INTEL: {}", prog.description)).style(theme::dim_style()),
-            chunks[2],
-        );
+        let mut help = format!("INTEL: {}", prog.description);
+        if let Some(reason) = &prog.reasoning {
+            help.push_str(&format!(" | WHY: {}", reason));
+        }
+        f.render_widget(Paragraph::new(help).style(theme::dim_style()), chunks[2]);
     }
 
     draw_navigation_info(f, area, app);
@@ -125,14 +183,16 @@ fn software_status_line(
         "[        ]"
     };
     let rec = if p.recommended { " (REC)" } else { "" };
+    let tier = format!("[{:?}]", p.tier);
 
     ListItem::new(Line::from(vec![
         Span::styled(
             format!(
-                "{}{:<30} {:<10}{}",
+                "{}{:<25} {:<12} {:<6}{}",
                 prefix,
                 p.name.to_uppercase(),
                 status,
+                tier,
                 rec
             ),
             style,

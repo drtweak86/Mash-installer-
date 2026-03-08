@@ -24,6 +24,8 @@ pub enum DesktopEnvironment {
     Budgie,
     Enlightenment,
     Lxde,
+    Cosmic,
+    Hyprland,
     None, // Headless/server mode
 }
 
@@ -39,6 +41,8 @@ impl DesktopEnvironment {
             DesktopEnvironment::Budgie => "Budgie",
             DesktopEnvironment::Enlightenment => "Enlightenment",
             DesktopEnvironment::Lxde => "LXDE",
+            DesktopEnvironment::Cosmic => "COSMIC (Epoch)",
+            DesktopEnvironment::Hyprland => "Hyprland (Wayland)",
             DesktopEnvironment::None => "None (Headless)",
         }
     }
@@ -54,6 +58,8 @@ impl DesktopEnvironment {
             DesktopEnvironment::Budgie => "Modern, elegant desktop",
             DesktopEnvironment::Enlightenment => "Lightweight, customizable",
             DesktopEnvironment::Lxde => "Ultra-lightweight desktop",
+            DesktopEnvironment::Cosmic => "Modern Rust-based desktop environment",
+            DesktopEnvironment::Hyprland => "Dynamic tiling Wayland compositor",
             DesktopEnvironment::None => "No desktop environment",
         }
     }
@@ -74,6 +80,10 @@ impl DesktopEnvironment {
             DesktopEnvironment::Budgie => Some("Budgie works on Pi 4B with 4GB+ RAM"),
             DesktopEnvironment::Enlightenment => Some("Enlightenment is lightweight for Pi"),
             DesktopEnvironment::Lxde => Some("LXDE is very lightweight for Pi"),
+            DesktopEnvironment::Cosmic => {
+                Some("COSMIC is in early alpha; stability may vary on Pi")
+            }
+            DesktopEnvironment::Hyprland => Some("Hyprland requires modern Wayland drivers on Pi"),
             DesktopEnvironment::None => None,
         }
     }
@@ -90,6 +100,8 @@ impl DesktopEnvironment {
             DesktopEnvironment::Budgie => true,
             DesktopEnvironment::Enlightenment => true,
             DesktopEnvironment::Lxde => false,
+            DesktopEnvironment::Cosmic => true,
+            DesktopEnvironment::Hyprland => true,
             DesktopEnvironment::None => false,
         }
     }

@@ -268,7 +268,7 @@ impl PhaseGate {
         match self {
             PhaseGate::Always => true,
             PhaseGate::Profile(level) => options.profile >= *level,
-            PhaseGate::ModuleArgon => options.enable_argon,
+            PhaseGate::ModuleArgon => options.argon.enabled,
             PhaseGate::SoftwareTiers => !options.software_plan.is_empty(),
             PhaseGate::Chezmoi => options.chezmoi.enabled,
         }
@@ -298,9 +298,9 @@ mod tests {
             staging_dir: PathBuf::from("/tmp"),
             dry_run: false,
             interactive: false,
-            enable_argon: false,
+            argon: Default::default(),
             enable_p10k: false,
-            docker_data_root: false,
+            docker: Default::default(),
             software_plan: SoftwareTierPlan::default(),
             system_profile: None,
             environment: crate::model::options::EnvironmentTag::Home,

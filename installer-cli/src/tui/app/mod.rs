@@ -21,8 +21,7 @@ use installer_core::{detect_platform, DistroDriver, ProfileLevel, SystemProfileE
 use std::collections::BTreeMap;
 
 pub use crate::tui::state::{
-    LogEntry, LogLevel, ModuleState, Screen, SoftwareMode, SysStats, TuiApp, TuiMessage,
-    MODULE_LABELS,
+    LogEntry, LogLevel, Screen, SoftwareMode, SysStats, TuiApp, TuiMessage,
 };
 
 impl TuiApp {
@@ -34,7 +33,9 @@ impl TuiApp {
             menu_cursor: 0,
             drivers,
             selected_driver_idx: 0,
-            modules: ModuleState::default(),
+            argon: installer_core::model::options::ArgonConfig::default(),
+            docker: installer_core::model::options::DockerConfig::default(),
+            enable_p10k: false,
             profile_idx: 1, // Dev by default
             desktop_environment: None,
             display_protocol: installer_core::desktop::DisplayProtocol::Auto,

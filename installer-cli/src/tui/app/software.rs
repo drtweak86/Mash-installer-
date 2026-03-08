@@ -14,9 +14,9 @@ impl TuiApp {
             staging_dir: None,
             dry_run: self.dry_run,
             interactive: false,
-            enable_argon: self.modules.enable_argon,
-            enable_p10k: self.modules.enable_p10k,
-            docker_data_root: self.modules.docker_data_root,
+            argon: self.argon.clone(),
+            enable_p10k: self.enable_p10k,
+            docker: self.docker.clone(),
             continue_on_error: self.continue_on_error,
             software_plan: self.build_software_plan(),
             system_profile: self.system_profile.clone(),
@@ -63,9 +63,9 @@ impl TuiApp {
         };
         self.theme_plan = preset.software_plan.theme_plan.clone();
 
-        self.modules.enable_p10k = preset.tweaks.iter().any(|t| t == "enable_p10k");
-        self.modules.enable_argon = preset.tweaks.iter().any(|t| t == "enable_argon");
-        self.modules.docker_data_root = preset.tweaks.iter().any(|t| t == "docker_data_root");
+        self.enable_p10k = preset.tweaks.iter().any(|t| t == "enable_p10k");
+        self.argon.enabled = preset.tweaks.iter().any(|t| t == "enable_argon");
+        self.docker.enabled = preset.tweaks.iter().any(|t| t == "docker_data_root");
 
         self.software_picks.clear();
         for (cat, ids) in &preset.software_plan.selections {
@@ -77,8 +77,7 @@ impl TuiApp {
         let category = match self.catalog.categories.get(self.software_category_idx) {
             Some(category) => category,
             None => {
-                self.screen = Screen::Confirm;
-                self.menu_cursor = 0;
+                self.navigate_to(Screen::SoftwareCategorySelect, "Software Categories");
                 return;
             }
         };
@@ -100,38 +99,21 @@ impl TuiApp {
                     self.menu_cursor += 1;
                 }
             }
-            KeyCode::Enter => {
+            KeyCode::Enter | KeyCode::Char(' ') => {
                 let chosen = all_programs[self.menu_cursor];
-                self.software_picks
-                    .insert(category.id, vec![chosen.id.clone()]);
+                let picks = self.software_picks.entry(category.id).or_default();
 
-                if self.software_category_idx + 1 >= self.catalog.categories.len() {
-                    self.screen = Screen::Confirm;
-                    self.menu_cursor = 0;
+                if let Some(pos) = picks.iter().position(|id| id == &chosen.id) {
+                    picks.remove(pos);
                 } else {
-                    self.software_category_idx += 1;
-                    self.menu_cursor = self
-                        .selected_option_index(self.software_category_idx)
-                        .unwrap_or(0);
+                    picks.push(chosen.id.clone());
                 }
             }
-            KeyCode::Esc => self.go_back(),
+            KeyCode::Esc | KeyCode::Left | KeyCode::Char('h') => {
+                self.advance_from_list(); // This will go back to Category Select
+            }
             _ => {}
         }
-    }
-
-    pub fn selected_option_index(&self, category_idx: usize) -> Option<usize> {
-        let category = self.catalog.categories.get(category_idx)?;
-        let picked_vec = self.software_picks.get(&category.id)?;
-        let picked = picked_vec.first()?;
-
-        let all_programs: Vec<&Program> = category
-            .subcategories
-            .iter()
-            .flat_map(|sc| &sc.programs)
-            .collect();
-
-        all_programs.iter().position(|p| p.id == *picked)
     }
 
     #[allow(dead_code)]

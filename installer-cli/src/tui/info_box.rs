@@ -91,17 +91,6 @@ fn build_info_lines(app: &TuiApp) -> Vec<Line<'static>> {
             )),
         ],
 
-        Screen::ModuleSelect => vec![
-            Line::from(Span::styled(
-                "Select optional modules",
-                theme::accent_style(),
-            )),
-            Line::from(Span::styled(
-                "Toggle with Space, navigate with arrows",
-                theme::dim_style(),
-            )),
-        ],
-
         Screen::DeSelect => vec![
             Line::from(Span::styled(
                 "Desktop Environment Selection",
@@ -154,13 +143,37 @@ fn build_info_lines(app: &TuiApp) -> Vec<Line<'static>> {
             )),
         ],
 
-        Screen::SoftwareSelect => vec![
+        Screen::SoftwareCategorySelect => vec![
+            Line::from(Span::styled("Software Categories", theme::accent_style())),
             Line::from(Span::styled(
-                "Custom Software Selection",
+                "Choose a category to configure components",
+                theme::dim_style(),
+            )),
+        ],
+
+        Screen::SoftwareSelect => vec![
+            Line::from(Span::styled("Component Selection", theme::accent_style())),
+            Line::from(Span::styled(
+                "Toggle components with Space/Enter, Esc to go back",
+                theme::dim_style(),
+            )),
+        ],
+
+        Screen::ArgonConfig => vec![
+            Line::from(Span::styled(
+                "Argon One Configuration",
                 theme::accent_style(),
             )),
             Line::from(Span::styled(
-                "Select software categories and packages",
+                "Configure fan profiles for Argon One cases",
+                theme::dim_style(),
+            )),
+        ],
+
+        Screen::DockerConfig => vec![
+            Line::from(Span::styled("Docker Configuration", theme::accent_style())),
+            Line::from(Span::styled(
+                "Configure Docker daemon and storage paths",
                 theme::dim_style(),
             )),
         ],

@@ -1,7 +1,6 @@
 use crate::tui::app::SoftwareMode;
 use crate::tui::state::{Screen, TuiApp};
 use installer_core::desktop::DesktopEnvironment;
-use strum::IntoEnumIterator;
 
 impl TuiApp {
     pub fn advance_from_list(&mut self) {
@@ -12,7 +11,13 @@ impl TuiApp {
             }
             Screen::DistroSelect => {
                 self.selected_driver_idx = self.menu_cursor;
+                self.navigate_to(Screen::ProfileSelect, "Profile Selection");
+                self.menu_cursor = 1; // Default to Dev
+            }
+            Screen::ProfileSelect => {
+                self.profile_idx = self.menu_cursor;
                 self.navigate_to(Screen::SystemSummary, "System Results & Wisdom");
+                self.menu_cursor = 0;
             }
             Screen::SystemSummary => {
                 self.navigate_to(Screen::DeSelect, "Desktop Environment Selection");
@@ -29,7 +34,9 @@ impl TuiApp {
                     6 => DesktopEnvironment::Budgie,
                     7 => DesktopEnvironment::Enlightenment,
                     8 => DesktopEnvironment::Lxde,
-                    9 => DesktopEnvironment::None,
+                    9 => DesktopEnvironment::Cosmic,
+                    10 => DesktopEnvironment::Hyprland,
+                    11 => DesktopEnvironment::None,
                     _ => DesktopEnvironment::None,
                 });
                 self.navigate_to(Screen::ProtocolSelect, "Display Protocol Selection");
@@ -48,12 +55,32 @@ impl TuiApp {
             Screen::DeConfirm => {
                 if self.menu_cursor == 0 {
                     // YES
-                    self.navigate_to(Screen::FontPrep, "Font Curation");
+                    self.navigate_to(Screen::ThemeSelect, "Aesthetic Calibration");
                     self.menu_cursor = 0;
                 } else {
                     // NO
                     self.go_back();
                 }
+            }
+            Screen::ThemeSelect => {
+                self.theme_plan = match self.menu_cursor {
+                    0 => installer_core::ThemePlan::RetroOnly,
+                    1 => installer_core::ThemePlan::RetroWithWallpapers,
+                    2 => installer_core::ThemePlan::None,
+                    _ => installer_core::ThemePlan::None,
+                };
+
+                // If Pi 4B detected, show Argon Config
+                if self.platform_info.pi_model.is_some() {
+                    self.navigate_to(Screen::ArgonConfig, "Argon One Configuration");
+                } else {
+                    self.navigate_to(Screen::FontPrep, "Font Curation");
+                }
+                self.menu_cursor = 0;
+            }
+            Screen::ArgonConfig => {
+                self.navigate_to(Screen::FontPrep, "Font Curation");
+                self.menu_cursor = 0;
             }
             Screen::FontPrep => {
                 self.navigate_to(Screen::SoftwareMode, "Software Selection Mode");
@@ -67,28 +94,45 @@ impl TuiApp {
                     _ => SoftwareMode::BardsRecommendations,
                 };
                 if self.software_mode == SoftwareMode::Manual {
-                    self.navigate_to(Screen::SoftwareSelect, "Software Selection");
-                    self.software_category_idx = 0;
+                    self.navigate_to(Screen::SoftwareCategorySelect, "Software Categories");
                     self.menu_cursor = 0;
                 } else {
                     self.navigate_to(Screen::ChezmoiConfig, "Dotfile Restoration");
                     self.menu_cursor = 0;
                 }
             }
-            Screen::SoftwareSelect => {
-                // If we finished all categories, move to chezmoi
-                if self.software_category_idx
-                    >= installer_core::SoftwareCategory::iter()
-                        .count()
-                        .saturating_sub(1)
-                {
-                    self.navigate_to(Screen::ChezmoiConfig, "Dotfile Restoration");
+            Screen::SoftwareCategorySelect => {
+                // If 'Done' (last option) is selected, move to Docker or Chezmoi
+                let categories_len = self.catalog.categories.len();
+                if self.menu_cursor >= categories_len {
+                    // Check if Docker was selected
+                    let docker_selected = self
+                        .software_picks
+                        .values()
+                        .any(|picks| picks.iter().any(|p| p.to_lowercase().contains("docker")));
+
+                    if docker_selected {
+                        self.navigate_to(Screen::DockerConfig, "Docker Configuration");
+                    } else {
+                        self.navigate_to(Screen::ChezmoiConfig, "Dotfile Restoration");
+                    }
                     self.menu_cursor = 0;
                 } else {
-                    // This logic is usually handled in handle_key but for completeness:
-                    self.software_category_idx += 1;
+                    // Navigate to selection for this category
+                    self.software_category_idx = self.menu_cursor;
+                    self.navigate_to(Screen::SoftwareSelect, "Component Selection");
                     self.menu_cursor = 0;
                 }
+            }
+            Screen::SoftwareSelect => {
+                // Back to category select
+                self.navigate_to(Screen::SoftwareCategorySelect, "Software Categories");
+                // Restore cursor to the category we just came from
+                self.menu_cursor = self.software_category_idx;
+            }
+            Screen::DockerConfig => {
+                self.navigate_to(Screen::ChezmoiConfig, "Dotfile Restoration");
+                self.menu_cursor = 0;
             }
             Screen::ChezmoiConfig => {
                 self.navigate_to(Screen::Confirm, "Final Provisioning Summary");
@@ -123,9 +167,9 @@ impl TuiApp {
             Screen::SystemScan => "Active Scrying...",
             Screen::DistroSelect => "Distribution Selection",
             Screen::ProfileSelect => "Profile Selection",
-            Screen::ModuleSelect => "Module Selection",
             Screen::ThemeSelect => "Theme Selection",
             Screen::SoftwareMode => "Software Selection Mode",
+            Screen::SoftwareCategorySelect => "Software Categories",
             Screen::SoftwareSelect => "Software Selection",
             Screen::Confirm => "Final Provisioning Summary",
             Screen::DeSelect => "Desktop Environment Selection",
@@ -133,6 +177,8 @@ impl TuiApp {
             Screen::DeConfirm => "Desktop Environment Confirmation",
             Screen::FontPrep => "Font Curation",
             Screen::Wardrobe => "The Wardrobe (Presets)",
+            Screen::ArgonConfig => "Argon One Configuration",
+            Screen::DockerConfig => "Docker Configuration",
             Screen::ChezmoiConfig => "Dotfile Restoration",
             Screen::SystemSummary => "System Results & Wisdom",
             Screen::Password => "Password Prompt",
@@ -155,26 +201,27 @@ impl TuiApp {
 
         match self.screen {
             Screen::SystemScan => self.screen = Screen::Welcome,
-            Screen::SystemSummary => self.screen = Screen::SystemScan,
+            Screen::SystemSummary => self.screen = Screen::ProfileSelect,
+            Screen::ProfileSelect => self.screen = Screen::DistroSelect,
+            Screen::DistroSelect => self.screen = Screen::SystemScan,
             Screen::DeSelect => self.screen = Screen::SystemSummary,
-            Screen::ProtocolSelect => self.screen = Screen::DeSelect,
             Screen::DeConfirm => self.screen = Screen::ProtocolSelect,
-            Screen::FontPrep => self.screen = Screen::DeConfirm,
-            Screen::SoftwareMode => self.screen = Screen::FontPrep,
-            Screen::SoftwareSelect => {
-                if self.software_category_idx == 0 {
-                    self.screen = Screen::SoftwareMode;
-                    self.menu_cursor = 2;
+            Screen::ThemeSelect => self.screen = Screen::DeConfirm,
+            Screen::ArgonConfig => self.screen = Screen::ThemeSelect,
+            Screen::FontPrep => {
+                if self.platform_info.pi_model.is_some() {
+                    self.screen = Screen::ArgonConfig;
                 } else {
-                    self.software_category_idx = self.software_category_idx.saturating_sub(1);
+                    self.screen = Screen::ThemeSelect;
                 }
             }
+            Screen::SoftwareMode => self.screen = Screen::FontPrep,
+            Screen::SoftwareCategorySelect => self.screen = Screen::SoftwareMode,
+            Screen::SoftwareSelect => self.screen = Screen::SoftwareCategorySelect,
+            Screen::DockerConfig => self.screen = Screen::SoftwareCategorySelect,
             Screen::ChezmoiConfig => {
                 if self.software_mode == SoftwareMode::Manual {
-                    self.screen = Screen::SoftwareSelect;
-                    self.software_category_idx = installer_core::SoftwareCategory::iter()
-                        .count()
-                        .saturating_sub(1);
+                    self.screen = Screen::SoftwareCategorySelect;
                 } else {
                     self.screen = Screen::SoftwareMode;
                 }

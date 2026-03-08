@@ -269,6 +269,19 @@ description = "Monitoring, backup, and terminal tools"
 icon = "⚙️"
 
 [[categories.subcategories]]
+name = "terminal"
+description = "Terminal emulators and shell polish"
+
+[[categories.subcategories.programs]]
+id = "p10k"
+name = "Powerlevel10k"
+description = "High-performance, highly customizable Zsh theme"
+tier = "S"
+reasoning = "The Bard's Polish. The fastest and most versatile shell prompt in the neon district. Essential for a high-octane CLI experience."
+packages = { fedora = ["zsh-powerlevel10k"], debian = ["zsh-theme-powerlevel10k"], arch = ["zsh-theme-powerlevel10k-git"] }
+recommended = true
+
+[[categories.subcategories]]
 name = "monitoring"
 description = "Watch the pulse of the machine"
 

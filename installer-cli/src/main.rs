@@ -3,8 +3,11 @@ use clap::{Parser, Subcommand};
 use installer_core::cmd::CommandExecutionDetails;
 use installer_core::SystemProfileExt;
 use installer_core::{
-    detect_platform, init_logging, interaction::InteractionService, ConfigService, DistroDriver,
-    InstallOptions, InstallationReport, ProfileLevel, SoftwareTierPlan,
+    detect_platform, init_logging,
+    interaction::InteractionService,
+    model::options::{ArgonConfig, DockerConfig},
+    ConfigService, DistroDriver, InstallOptions, InstallationReport, ProfileLevel,
+    SoftwareTierPlan,
 };
 use std::io::{self, Write};
 use std::path::PathBuf;
@@ -229,9 +232,15 @@ fn main() -> Result<()> {
         staging_dir: cli.staging_dir,
         dry_run: cli.dry_run,
         interactive: !cli.non_interactive,
-        enable_argon: modules.enable_argon,
+        argon: ArgonConfig {
+            enabled: modules.enable_argon,
+            cooling_profile: "Balanced".to_string(),
+        },
         enable_p10k: modules.enable_p10k,
-        docker_data_root: modules.docker_data_root,
+        docker: DockerConfig {
+            enabled: modules.docker_data_root,
+            data_root: None, // Or logic to set it
+        },
         continue_on_error: cli.continue_on_error,
         software_plan,
         system_profile: None,

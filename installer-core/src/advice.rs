@@ -73,6 +73,7 @@ impl Default for AdviceEngine {
     fn default() -> Self {
         Self::new(vec![
             Box::new(LowRamRule),
+            Box::new(LowRamSoftwareRule),
             Box::new(NoSwapRule),
             Box::new(PiWaylandWarning),
             Box::new(PiGnomeWarning),
@@ -91,6 +92,26 @@ impl Default for AdviceEngine {
             Box::new(WaylandNvidiaWarning),
             Box::new(ChezmoiHeuristicRule),
         ])
+    }
+}
+
+struct LowRamSoftwareRule;
+impl Rule for LowRamSoftwareRule {
+    fn name(&self) -> &'static str {
+        "low_ram_software"
+    }
+    fn check(&self, profile: &SystemProfile, _options: &UserOptionsContext) -> Option<AdviceEntry> {
+        let ram_gb = profile.memory.ram_total_kb as f32 / (1024.0 * 1024.0);
+        if ram_gb < 4.0 {
+            Some(AdviceEntry {
+                name: "todo",
+                level: Severity::Warning,
+                message: "Very low system memory detected (< 4GB).".into(),
+                advice: "The Bard recommends installing 'zram-tools' and using 'i3' or 'XFCE' instead of heavy environments like GNOME.".into(),
+            })
+        } else {
+            None
+        }
     }
 }
 
@@ -404,7 +425,7 @@ impl Rule for PiWaylandWarning {
                 name: "todo",
                 level: Severity::Warning,
                 message: "Wayland selection on Raspberry Pi 4B.".into(),
-                advice: "Recommend NOT using Wayland on Pi 4B. X11 provides significantly better performance and hardware acceleration for this forge.".into(),
+                advice: "The Bard recommends you use an X11 session instead of Wayland. X11 provides significantly better hardware acceleration and stability on this hardware.".into(),
             })
         } else {
             None
@@ -542,9 +563,9 @@ mod tests {
             staging_dir: PathBuf::from("/tmp"),
             dry_run: true,
             interactive: false,
-            enable_argon: false,
+            argon: Default::default(),
             enable_p10k: false,
-            docker_data_root: false,
+            docker: Default::default(),
             software_plan: Default::default(),
             system_profile: None,
             environment: crate::options::EnvironmentTag::Home,
@@ -697,7 +718,9 @@ mod tests {
         options.display_protocol = DisplayProtocol::Wayland;
         let advice = engine.run(&profile, &options);
         let entry = advice.iter().find(|a| a.name() == "pi_wayland").unwrap();
-        assert!(entry.advice.contains("Recommend NOT using Wayland"));
+        assert!(entry
+            .advice
+            .contains("The Bard recommends you use an X11 session instead of Wayland"));
 
         // 2. X11 intended -> No warning
         options.display_protocol = DisplayProtocol::X11;

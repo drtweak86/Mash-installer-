@@ -1,4 +1,4 @@
-use crate::tui::app::{ModuleState, TuiApp};
+use crate::tui::app::TuiApp;
 use crate::tui::theme;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use ratatui::text::{Line, Span};
@@ -87,8 +87,4 @@ pub fn command_prompt_line(
     let content = format!("{}{} [{}]", prefix, label.to_uppercase(), index);
 
     ratatui::widgets::ListItem::new(Line::from(vec![Span::styled(content, style)]))
-}
-
-pub fn module_checks(m: &ModuleState) -> [bool; 3] {
-    [m.enable_argon, m.enable_p10k, m.docker_data_root]
 }

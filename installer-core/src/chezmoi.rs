@@ -119,7 +119,9 @@ mod tests {
     use crate::driver::DistroDriver;
     use crate::dry_run::DryRunLog;
     use crate::localization::Localization;
-    use crate::model::options::{ChezmoiOptions, EnvironmentTag, ProfileLevel};
+    use crate::model::options::{
+        ArgonConfig, ChezmoiOptions, DockerConfig, EnvironmentTag, ProfileLevel,
+    };
     use crate::platform::PlatformInfo;
     use crate::rollback::RollbackManager;
     use crate::{InstallContext, SoftwareTierPlan};
@@ -173,9 +175,15 @@ mod tests {
             staging_dir: PathBuf::from("/tmp/mash-test"),
             dry_run: true,
             interactive: false,
-            enable_argon: false,
+            argon: ArgonConfig {
+                enabled: false,
+                cooling_profile: "Balanced".to_string(),
+            },
             enable_p10k: false,
-            docker_data_root: false,
+            docker: DockerConfig {
+                enabled: false,
+                data_root: None,
+            },
             software_plan: SoftwareTierPlan::default(),
             system_profile: None,
             environment: EnvironmentTag::Home,

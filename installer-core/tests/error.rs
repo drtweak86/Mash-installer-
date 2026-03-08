@@ -1,5 +1,6 @@
 use anyhow::anyhow;
 use installer_core::cmd::{CommandExecutionDetails, CommandExecutionError};
+use installer_core::model::options::{ArgonConfig, DockerConfig};
 use installer_core::{
     DriverInfo, EnvironmentTag, ErrorSeverity, InstallOptions, InstallationReport, InstallerError,
     InstallerStateSnapshot, ProfileLevel, SoftwareTierPlan, UserOptionsContext,
@@ -12,9 +13,12 @@ fn build_user_options() -> UserOptionsContext {
         staging_dir: PathBuf::from("/tmp/mash-test"),
         dry_run: true,
         interactive: false,
-        enable_argon: true,
+        argon: ArgonConfig {
+            enabled: true,
+            cooling_profile: "Balanced".to_string(),
+        },
         enable_p10k: false,
-        docker_data_root: false,
+        docker: DockerConfig::default(),
         software_plan: SoftwareTierPlan::default(),
         system_profile: None,
         environment: EnvironmentTag::Home,

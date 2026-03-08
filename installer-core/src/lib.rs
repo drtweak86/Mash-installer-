@@ -74,7 +74,7 @@ pub use doctor::{run_doctor, DoctorOutput};
 pub use driver::{AptRepoConfig, DistroDriver, RepoKind, ServiceName};
 pub use model::phase::AuthType;
 pub use model::software::{SoftwareCategory, SoftwareTierPlan, ThemePlan, Tier};
-pub use options::{EnvironmentTag, InstallOptions, ProfileLevel};
+pub use options::{ArgonConfig, DockerConfig, EnvironmentTag, InstallOptions, ProfileLevel};
 pub use orchestrator::run_with_driver;
 pub use package_spec::{PackageIntent, PackageSpec};
 pub use phase_registry::PhaseRegistry;

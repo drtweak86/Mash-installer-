@@ -53,18 +53,22 @@ impl TuiApp {
                 self.handle_list_key(code, len);
             }
             Screen::ProfileSelect => self.handle_list_key(code, 3),
-            Screen::ModuleSelect => self.handle_module_key(code),
-            Screen::ThemeSelect => self.handle_list_key(code, 3),
+            Screen::ThemeSelect => self.handle_list_key(code, 6), // Extended with new themes
             Screen::Password => self.handle_password_key(code),
 
             Screen::SoftwareMode => self.handle_list_key(code, 3), // Bards, Auto, Manual
+            Screen::SoftwareCategorySelect => {
+                self.handle_list_key(code, self.catalog.categories.len() + 1)
+            }
             Screen::SoftwareSelect => self.handle_software_key(code),
             Screen::Confirm => self.handle_confirm_key(code),
-            Screen::DeSelect => self.handle_list_key(code, 10),
+            Screen::DeSelect => self.handle_list_key(code, 12), // Added Cosmic/Hyprland
             Screen::ProtocolSelect => self.handle_list_key(code, 3),
             Screen::DeConfirm => self.handle_confirm_key(code),
             Screen::FontPrep => self.handle_font_prep_key(code),
             Screen::Wardrobe => self.handle_wardrobe_key(code),
+            Screen::ArgonConfig => self.handle_argon_key(code),
+            Screen::DockerConfig => self.handle_docker_key(code),
             Screen::ChezmoiConfig => self.handle_chezmoi_config_key(code),
             Screen::SystemSummary => self.handle_system_summary_key(code),
             Screen::Authorization => self.handle_auth_key(code),
@@ -196,13 +200,13 @@ impl TuiApp {
         }
     }
 
-    fn handle_module_key(&mut self, code: KeyCode) {
+    fn handle_argon_key(&mut self, code: KeyCode) {
         match code {
             KeyCode::Up | KeyCode::Char('k') => {
                 if self.menu_cursor > 0 {
                     self.menu_cursor -= 1;
                 } else {
-                    self.menu_cursor = 3; // 3 options + Confirm
+                    self.menu_cursor = 3;
                 }
             }
             KeyCode::Down | KeyCode::Char('j') => {
@@ -213,15 +217,38 @@ impl TuiApp {
                 }
             }
             KeyCode::Enter | KeyCode::Char(' ') => match self.menu_cursor {
-                0 => self.modules.enable_argon = !self.modules.enable_argon,
-                1 => self.modules.enable_p10k = !self.modules.enable_p10k,
-                2 => self.modules.docker_data_root = !self.modules.docker_data_root,
-                3 => {
-                    self.screen = Screen::DeSelect;
-                    self.menu_cursor = 0;
+                0 => {
+                    self.argon.enabled = !self.argon.enabled;
+                    self.argon.cooling_profile = "Quiet".to_string();
                 }
+                1 => {
+                    self.argon.enabled = !self.argon.enabled;
+                    self.argon.cooling_profile = "Balanced".to_string();
+                }
+                2 => {
+                    self.argon.enabled = !self.argon.enabled;
+                    self.argon.cooling_profile = "Performance".to_string();
+                }
+                3 => self.advance_from_list(),
                 _ => {}
             },
+            KeyCode::Esc => self.go_back(),
+            _ => {}
+        }
+    }
+
+    fn handle_docker_key(&mut self, code: KeyCode) {
+        match code {
+            KeyCode::Up | KeyCode::Char('k') | KeyCode::Down | KeyCode::Char('j') => {
+                self.menu_cursor = if self.menu_cursor == 0 { 1 } else { 0 };
+            }
+            KeyCode::Enter | KeyCode::Char(' ') => {
+                if self.menu_cursor == 0 {
+                    self.docker.enabled = !self.docker.enabled;
+                } else {
+                    self.advance_from_list();
+                }
+            }
             KeyCode::Esc => self.go_back(),
             _ => {}
         }
@@ -296,9 +323,8 @@ impl TuiApp {
                     // YES
                     if self.screen == Screen::Confirm {
                         self.start_install();
-                    } else if self.screen == Screen::DeConfirm {
-                        self.screen = Screen::ThemeSelect;
-                        self.menu_cursor = 0;
+                    } else {
+                        self.advance_from_list();
                     }
                 } else {
                     // NO
@@ -308,9 +334,8 @@ impl TuiApp {
             KeyCode::Char('y') | KeyCode::Char('Y') => {
                 if self.screen == Screen::Confirm {
                     self.start_install();
-                } else if self.screen == Screen::DeConfirm {
-                    self.screen = Screen::ThemeSelect;
-                    self.menu_cursor = 0;
+                } else {
+                    self.advance_from_list();
                 }
             }
             KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {

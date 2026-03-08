@@ -44,9 +44,9 @@ pub struct InstallerStateSnapshot {
     pub staging_dir: PathBuf,
     pub dry_run: bool,
     pub interactive: bool,
-    pub enable_argon: bool,
+    pub argon: crate::model::options::ArgonConfig,
     pub enable_p10k: bool,
-    pub docker_data_root: bool,
+    pub docker: crate::model::options::DockerConfig,
     pub software_plan: SoftwareTierPlan,
 }
 
@@ -57,9 +57,9 @@ impl InstallerStateSnapshot {
             staging_dir: options.staging_dir.clone(),
             dry_run: options.dry_run,
             interactive: options.interactive,
-            enable_argon: options.enable_argon,
+            argon: options.argon.clone(),
             enable_p10k: options.enable_p10k,
-            docker_data_root: options.docker_data_root,
+            docker: options.docker.clone(),
             software_plan: options.software_plan.clone(),
         }
     }
@@ -72,9 +72,9 @@ impl Default for InstallerStateSnapshot {
             staging_dir: PathBuf::from("<unknown>"),
             dry_run: false,
             interactive: false,
-            enable_argon: false,
+            argon: crate::model::options::ArgonConfig::default(),
             enable_p10k: false,
-            docker_data_root: false,
+            docker: crate::model::options::DockerConfig::default(),
             software_plan: SoftwareTierPlan::default(),
         }
     }
@@ -84,14 +84,14 @@ impl fmt::Display for InstallerStateSnapshot {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "profile={:?}, staging={}, dry_run={}, interactive={}, enable_argon={}, enable_p10k={}, docker_data_root={}, software_plan(full={}, theme={:?}, selections={})",
+            "profile={:?}, staging={}, dry_run={}, interactive={}, argon={:?}, enable_p10k={}, docker={:?}, software_plan(full={}, theme={:?}, selections={})",
             self.profile,
             self.staging_dir.display(),
             self.dry_run,
             self.interactive,
-            self.enable_argon,
+            self.argon,
             self.enable_p10k,
-            self.docker_data_root,
+            self.docker,
             self.software_plan.full_install,
             self.software_plan.theme_plan,
             self.software_plan.selections.len(),

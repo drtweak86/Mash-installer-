@@ -53,9 +53,9 @@ pub enum Screen {
     SystemScan,
     DistroSelect,
     ProfileSelect,
-    ModuleSelect,
     ThemeSelect,
     SoftwareMode,
+    SoftwareCategorySelect,
     SoftwareSelect,
     Confirm,
     DeSelect,
@@ -63,6 +63,8 @@ pub enum Screen {
     DeConfirm,
     FontPrep,
     Wardrobe,
+    ArgonConfig,
+    DockerConfig,
     ChezmoiConfig,
     SystemSummary,
     Password,
@@ -195,24 +197,6 @@ pub enum SoftwareMode {
     Manual,
 }
 
-// ── Module selection ─────────────────────────────────────────────────────────
-
-#[derive(Debug, Clone, Default)]
-pub struct ModuleState {
-    pub enable_argon: bool,
-    pub enable_p10k: bool,
-    pub docker_data_root: bool,
-}
-
-pub const MODULE_LABELS: &[(&str, &str)] = &[
-    (
-        "Argon One fan control",
-        "Install Argon One scripts (Pi only)",
-    ),
-    ("Powerlevel10k prompt", "Enable p10k + zsh polish modules"),
-    ("Docker data-root", "Manage Docker data-root inside staging"),
-];
-
 // ── App state ────────────────────────────────────────────────────────────────
 
 pub struct TuiApp {
@@ -226,8 +210,10 @@ pub struct TuiApp {
     // Available drivers
     pub drivers: Vec<&'static dyn DistroDriver>,
     pub selected_driver_idx: usize,
-    // Module selection
-    pub modules: ModuleState,
+    // Specific configurations
+    pub argon: installer_core::model::options::ArgonConfig,
+    pub docker: installer_core::model::options::DockerConfig,
+    pub enable_p10k: bool,
     // Profile selection
     pub profile_idx: usize,
     // Desktop environment selection

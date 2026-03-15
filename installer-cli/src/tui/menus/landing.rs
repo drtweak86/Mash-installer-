@@ -75,11 +75,10 @@ pub fn draw_landing(f: &mut Frame, area: Rect, app: &TuiApp) {
     f.render_widget(menu, chunks[1]);
 
     // Footer with navigation instructions
-    let footer = Paragraph::new(
-        "Use ↑/↓ arrows or 1-7 keys to navigate | ENTER to select | ESC to go back",
-    )
-    .style(theme::dim_style())
-    .alignment(Alignment::Center);
+    let footer =
+        Paragraph::new("Use ↑/↓ arrows or 1-7 keys to navigate | ENTER to select | ESC to go back")
+            .style(theme::dim_style())
+            .alignment(Alignment::Center);
     f.render_widget(footer, chunks[2]);
 
     // System info display (shows after system scan completes)
@@ -87,10 +86,7 @@ pub fn draw_landing(f: &mut Frame, area: Rect, app: &TuiApp) {
         let ram_gb = profile.memory.ram_total_kb as f32 / (1024.0 * 1024.0);
         let sys_info = format!(
             "System: {} | CPU: {} | RAM: {:.1} GB | OS: {}",
-            profile.platform.model,
-            profile.cpu.model,
-            ram_gb,
-            profile.distro.pretty_name
+            profile.platform.model, profile.cpu.model, ram_gb, profile.distro.pretty_name
         );
         let sys_paragraph = Paragraph::new(sys_info)
             .style(theme::dim_style())

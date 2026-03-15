@@ -51,7 +51,7 @@ pub enum TuiMessage {
 pub enum Screen {
     Welcome,
     SystemScan,
-    Landing,      // ← NEW: Menu-driven navigation hub
+    Landing, // ← NEW: Menu-driven navigation hub
     DistroSelect,
     ProfileSelect,
     ThemeSelect,

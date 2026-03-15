@@ -3,6 +3,47 @@
 
 ---
 
+## 🏗️ ACTIVE SHAFT: AD - Menu-Driven Navigation System
+> *Status*: ✅ **SHAFT AD SEALED**
+> *Timeline*: 2026-03-09 to 2026-03-15
+
+### 🎯 Objective
+Transform the MASH installer from a linear, sequential workflow into a flexible menu-driven system that empowers users to navigate to any configuration section in any order.
+
+### 📋 Phase Progress
+| Phase | Status | Completion | ETA |
+|-------|--------|------------|-----|
+| Phase 1: Foundation | ✅ **COMPLETE** | 100% | 2026-03-09 |
+| Phase 2: Navigation | ✅ **COMPLETE** | 100% | 2026-03-09 |
+| Phase 3: Integration | ✅ **COMPLETE** | 100% | 2026-03-15 |
+| **Overall** | **✅ COMPLETE** | **100%** | **2026-03-15** |
+
+### 🏗️ RECENT PROGRESS (2026-03-15)
+
+**Shaft AD Sealed**: The menu-driven transformation is complete:
+- ✅ **Landing Menu**: Central hub with 7 numbered options implemented.
+- ✅ **Flexible Navigation**: Full routing between all configuration screens.
+- ✅ **Input Mastery**: Arrow keys, Vim-keys (j/k), and direct numeric shortcuts (1-7) supported.
+- ✅ **Integration**: System scan now correctly deposits the miner at the Main Menu.
+- ✅ **Stability**: 120+ tests passing workspace-wide, including comprehensive TUI navigation tests.
+- ✅ **Polish**: Warning-free build and clean clippy across the entire forge.
+
+**Next**: Define the next stage of the MASH evolution.
+
+### 📁 Documentation
+- **Overview**: `docs/mining-projects/shafts/shaft-ad/Overview.md`
+- **Excavation Tasks**: `docs/mining-projects/shafts/shaft-ad/EX_AD01_*`
+- **Scope**: 7 files to be created/touched
+
+### 🏺 Deliverables
+1. **Landing Menu Screen**: Centralized menu with 7 numbered options
+2. **Flexible Navigation**: Users can access any section in any order
+3. **Multiple Input Methods**: Arrow keys + direct number keys (1-7)
+4. **Visual Feedback**: Highlighted selection with system info display
+5. **Back Navigation**: ESC key returns to previous screen
+
+---
+
 ## 🏗️ ACTIVE SHAFT: AD - Future Excavations
 > *Status*: ⏳ **PLANNING**
 

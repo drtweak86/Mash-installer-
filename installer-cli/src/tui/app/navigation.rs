@@ -165,6 +165,7 @@ impl TuiApp {
         match screen {
             Screen::Welcome => "Welcome to MASH Installer",
             Screen::SystemScan => "Active Scrying...",
+            Screen::Landing => "Main Menu",
             Screen::DistroSelect => "Distribution Selection",
             Screen::ProfileSelect => "Profile Selection",
             Screen::ThemeSelect => "Theme Selection",
@@ -201,6 +202,7 @@ impl TuiApp {
 
         match self.screen {
             Screen::SystemScan => self.screen = Screen::Welcome,
+            Screen::Landing => self.screen = Screen::SystemScan,
             Screen::SystemSummary => self.screen = Screen::ProfileSelect,
             Screen::ProfileSelect => self.screen = Screen::DistroSelect,
             Screen::DistroSelect => self.screen = Screen::SystemScan,

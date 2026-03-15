@@ -64,10 +64,10 @@ impl TuiApp {
 
                 if matches.len() == 1 {
                     self.selected_driver_idx = matches[0];
-                    self.navigate_to(Screen::SystemSummary, "System Results & Wisdom");
+                    self.navigate_to(Screen::Landing, "Main Menu");
                 } else {
-                    // Fallback to manual selection if multiple or zero matches
-                    self.navigate_to(Screen::DistroSelect, "Distribution Selection");
+                    // Fallback to Landing even if multiple/zero matches
+                    self.navigate_to(Screen::Landing, "Main Menu");
                 }
             }
             TuiMessage::Done(report) => {

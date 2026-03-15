@@ -68,6 +68,16 @@ fn build_info_lines(app: &TuiApp) -> Vec<Line<'static>> {
                 theme::dim_style(),
             )),
         ],
+        Screen::Landing => vec![
+            Line::from(Span::styled(
+                "Main Forge Menu",
+                theme::success_style(),
+            )),
+            Line::from(Span::styled(
+                "Navigate using arrows or number keys",
+                theme::dim_style(),
+            )),
+        ],
 
         Screen::DistroSelect => vec![
             Line::from(Span::styled(

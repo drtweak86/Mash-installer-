@@ -3,6 +3,78 @@
 
 ---
 
+## Session: 2026-03-15 — Shaft AD: Menu-Driven Navigation Completion
+
+### Summary
+Successfully transformed the MASH installer from a linear workflow into a flexible menu-driven system. Users can now navigate freely between all configuration sections from a centralized Landing Menu hub.
+
+### Key Achievements
+- **Landing Menu Integration**: Forged a centralized 7-option hub that appears after the system scrying ritual.
+- **Input Mastery**: Implemented responsive input handling for arrows, Vim-keys (j/k), and direct numeric shortcuts (1-7).
+- **Flexible Routing**: Re-engineered the TUI state machine to allow non-linear access to all configuration screens (Distro, Profile, Summary, Theme, Software, Advanced, Install).
+- **Scan Handshake**: Updated the `SystemScan` completion logic to correctly deposit the user at the main menu.
+- **Verified Stability**: All 120+ tests passing workspace-wide, with specific new tests for menu navigation and back-navigation logic.
+
+---
+
+## Session: 2026-03-09 — Shaft AD: Menu-Driven Navigation Planning
+
+### Summary
+Completed comprehensive planning for Shaft AD - Menu-Driven Navigation System. Established the foundation for transforming the linear installer workflow into a flexible menu-driven system.
+
+### Key Achievements
+- [x] **Shaft Folder Creation**: Created `docs/mining-projects/shafts/shaft-ad/`
+- [x] **Overview Documentation**: Comprehensive 5.5KB `Overview.md` with scope, methodology, deliverables, and success criteria
+- [x] **Excavation Task Planning**: Detailed `EX_AD01_MenuSystem.md` with step-by-step implementation guide
+- [x] **Source of Truth Updates**: Updated `maps.md` to reflect Shaft AD as active work
+- [x] **Compliance Verification**: Ensured all planning follows MINING_GOVERNANCE rules
+
+### Deliverables Created
+1. **Overview.md** (5.5KB): Complete shaft documentation with:
+   - Objective and timeline (3 days: 2026-03-09 to 2026-03-11)
+   - Detailed scope (7 files to create/touch)
+   - Methodology (TDD, Ratatui patterns, incremental implementation)
+   - Deliverables (landing menu, flexible navigation, multiple input methods)
+   - Excavation tasks (6 tasks: infrastructure, UI, input, navigation, testing, documentation)
+   - Success criteria (functional, quality, performance requirements)
+   - Implementation phases (3 phases over 3 days)
+   - Future considerations and architecture notes
+
+2. **EX_AD01_MenuSystem.md** (7.3KB): First excavation task with:
+   - 7 detailed implementation steps
+   - Complete code samples for all changes
+   - Verification commands and checkpoints
+   - Design decisions and contingency plans
+   - Tool requirements and dependencies
+
+3. **maps.md Update**: Added Shaft AD as active work with:
+   - Timeline and status tracking
+   - Documentation references
+   - Deliverables summary
+
+### Compliance with Immutable Laws
+- ✅ **ABB - Always Be Backing Up**: All changes documented before implementation
+- ✅ **ABT - Always Be Testing**: Test-driven approach planned
+- ✅ **ABD - Always Be Documenting**: Comprehensive documentation created first
+- ✅ **KCS - Keep Commits Small**: Planning separated from implementation
+- ✅ **KISS - Keep It Simple**: Clear, straightforward menu design
+- ✅ **Function > Form**: Focus on usable navigation first
+- ✅ **SVR - Semantic Versioning**: No version changes during planning
+- ✅ **1.0 Threshold**: Maintains API stability
+
+### Next Steps
+1. **EX_U01 Implementation**: Execute the landing menu infrastructure plan
+2. **Navigation Logic**: Add input handling and screen transitions
+3. **Integration**: Connect to system scan completion
+4. **Testing**: Create comprehensive test suite
+5. **Finalization**: Update documentation and verify completion
+
+**Health Score**: 10/10 ✅
+**Risk Level**: Low (well-documented, follows existing patterns)
+**Timeline**: Planning complete, implementation ready to begin
+
+---
+
 ## Session: 2026-03-06 — Shaft AC: Chezmoi Integration
 
 ### Summary

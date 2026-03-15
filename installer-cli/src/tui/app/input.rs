@@ -48,6 +48,9 @@ impl TuiApp {
                     self.go_back();
                 }
             }
+            Screen::Landing => {
+                self.handle_landing_key(code);
+            }
             Screen::DistroSelect => {
                 let len = self.drivers.len();
                 self.handle_list_key(code, len);
@@ -428,5 +431,175 @@ impl TuiApp {
             }
             _ => false,
         }
+    }
+
+    fn handle_landing_key(&mut self, code: KeyCode) {
+        match code {
+            // Arrow key navigation (up/down)
+            KeyCode::Up | KeyCode::Char('k') => {
+                self.handle_landing_navigation(-1);
+            }
+            KeyCode::Down | KeyCode::Char('j') => {
+                self.handle_landing_navigation(1);
+            }
+
+            // Number key shortcuts (1-7)
+            KeyCode::Char('1') => {
+                self.menu_cursor = 0;
+                self.handle_landing_selection();
+            }
+            KeyCode::Char('2') => {
+                self.menu_cursor = 1;
+                self.handle_landing_selection();
+            }
+            KeyCode::Char('3') => {
+                self.menu_cursor = 2;
+                self.handle_landing_selection();
+            }
+            KeyCode::Char('4') => {
+                self.menu_cursor = 3;
+                self.handle_landing_selection();
+            }
+            KeyCode::Char('5') => {
+                self.menu_cursor = 4;
+                self.handle_landing_selection();
+            }
+            KeyCode::Char('6') => {
+                self.menu_cursor = 5;
+                self.handle_landing_selection();
+            }
+            KeyCode::Char('7') => {
+                self.menu_cursor = 6;
+                self.handle_landing_selection();
+            }
+
+            // ENTER/Space for selection
+            KeyCode::Enter | KeyCode::Char(' ') => {
+                self.handle_landing_selection();
+            }
+
+            // ESC for back navigation
+            KeyCode::Esc => {
+                self.go_back();
+            }
+
+            // Ignore other keys
+            _ => {}
+        }
+    }
+
+    fn handle_landing_navigation(&mut self, direction: i32) {
+        let menu_items = 7; // 0-6
+
+        if direction < 0 {
+            // Up navigation
+            if self.menu_cursor > 0 {
+                self.menu_cursor -= 1;
+            } else {
+                self.menu_cursor = menu_items - 1; // Wrap to bottom
+            }
+        } else {
+            // Down navigation
+            if self.menu_cursor < menu_items - 1 {
+                self.menu_cursor += 1;
+            } else {
+                self.menu_cursor = 0; // Wrap to top
+            }
+        }
+    }
+
+    fn handle_landing_selection(&mut self) {
+        match self.menu_cursor {
+            0 => {
+                // Distribution Selection
+                self.navigate_to(Screen::DistroSelect, "Distribution Selection");
+                self.menu_cursor = 0;
+            }
+            1 => {
+                // Profile Selection
+                self.navigate_to(Screen::ProfileSelect, "Profile Selection");
+                self.menu_cursor = 1; // Default to Dev
+            }
+            2 => {
+                // System Summary
+                self.navigate_to(Screen::SystemSummary, "System Results & Wisdom");
+                self.menu_cursor = 0;
+            }
+            3 => {
+                // Theme Selection
+                self.navigate_to(Screen::ThemeSelect, "Theme Selection");
+                self.menu_cursor = 0;
+            }
+            4 => {
+                // Software Selection
+                self.navigate_to(Screen::SoftwareMode, "Software Selection Mode");
+                self.menu_cursor = 0;
+            }
+            5 => {
+                // Advanced Configuration
+                if self.platform_info.pi_model.is_some() {
+                    self.navigate_to(Screen::ArgonConfig, "Argon One Configuration");
+                } else {
+                    self.navigate_to(Screen::DockerConfig, "Docker Configuration");
+                }
+                self.menu_cursor = 0;
+            }
+            6 => {
+                // Start Installation
+                self.start_install();
+            }
+            _ => {}
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::mpsc;
+
+    #[test]
+    fn test_landing_menu_navigation() {
+        let (tx, _rx) = mpsc::channel();
+        let mut app = TuiApp::new(tx, vec![]);
+
+        // Start at Landing screen
+        app.screen = Screen::Landing;
+        app.menu_cursor = 0;
+
+        // Test down navigation
+        app.handle_key(KeyCode::Down, KeyModifiers::NONE);
+        assert_eq!(app.menu_cursor, 1);
+
+        // Test up navigation (wrap to bottom)
+        app.handle_key(KeyCode::Up, KeyModifiers::NONE);
+        assert_eq!(app.menu_cursor, 0);
+        app.handle_key(KeyCode::Up, KeyModifiers::NONE);
+        assert_eq!(app.menu_cursor, 6);
+
+        // Test numeric shortcuts
+        app.handle_key(KeyCode::Char('3'), KeyModifiers::NONE);
+        assert_eq!(app.screen, Screen::SystemSummary);
+
+        // Go back to landing
+        app.screen = Screen::Landing;
+        app.menu_cursor = 0;
+
+        // Test Enter selection
+        app.menu_cursor = 1; // Profile Selection
+        app.handle_key(KeyCode::Enter, KeyModifiers::NONE);
+        assert_eq!(app.screen, Screen::ProfileSelect);
+    }
+
+    #[test]
+    fn test_landing_menu_back_navigation() {
+        let (tx, _rx) = mpsc::channel();
+        let mut app = TuiApp::new(tx, vec![]);
+
+        app.screen = Screen::Landing;
+        app.handle_key(KeyCode::Esc, KeyModifiers::NONE);
+
+        // Back from Landing should go to SystemScan
+        assert_eq!(app.screen, Screen::SystemScan);
     }
 }

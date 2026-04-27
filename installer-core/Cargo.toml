@@ -27,7 +27,7 @@ thiserror = { workspace = true }
 strum = { version = "0.27", features = ["derive"] }
 rusqlite = { version = "0.38.0", features = ["bundled"] }
 serde_urlencoded = "0.7"
-sha2 = "0.10"
+sha2 = "0.11"
 warp = { workspace = true }
 futures-util = { workspace = true }
 workspace-hack = { version = "0.1.0", path = "../workspace-hack" }
